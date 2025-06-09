@@ -2382,44 +2382,42 @@ def start_category_training(self):
    
     self.update_status(f"Category training started for: {category}")
 
+# In GUI or other places where team prediction is used:
 def predict_team_game(self):
     """Predict team vs team game outcome."""
     if not self.is_model_loaded:
         QMessageBox.warning(self, "Warning", "Please load or train a model first.")
         return
-   
+    
     team_a = self.team_a_combo.currentText()
     team_b = self.team_b_combo.currentText()
-   
+    
     if team_a == team_b:
         QMessageBox.warning(self, "Warning", "Please select different teams.")
         return
-   
+    
     # Get home team context
     home_selection = self.home_team_combo.currentText()
     game_context = {}
-   
+    
     if home_selection == "Team A":
         game_context['home_team'] = 'team_a'
     elif home_selection == "Team B":
         game_context['home_team'] = 'team_b'
-   
+    
     try:
         self.update_status(f"Predicting game: {team_a} vs {team_b}")
         self.team_results_text.setPlainText("Generating team predictions...\n")
         QApplication.processEvents()
-       
-        # Make prediction using enhanced predictor
-        if hasattr(self.predictor, 'team_predictor'):
-            prediction = self.predictor.team_predictor.predict_game(team_a, team_b, game_context)
-        else:
-            # Fallback to simple prediction
-            prediction = self._simple_team_prediction(team_a, team_b, game_context)
-       
+        
+        # Use get_team_predictor() instead of direct access
+        team_predictor = self.predictor.get_team_predictor()
+        prediction = team_predictor.predict_game(team_a, team_b, game_context)
+        
         # Display results
         self.display_team_prediction_results(prediction)
         self.update_status("Team prediction completed successfully!")
-       
+        
     except Exception as e:
         error_msg = f"Error predicting game {team_a} vs {team_b}: {str(e)}"
         logger.error(error_msg)

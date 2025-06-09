@@ -34,7 +34,9 @@ class EnhancedNBAPredictor:
         # Enhanced components
         self.player_fetcher = NBAPlayerFetcher()
         self.player_roles = PlayerRoles()
-        self.team_predictor = TeamGamePredictor()
+        
+        # Initialize team_predictor as None - will be created when needed
+        self.team_predictor = None
         
         self.raw_data = None
         self.processed_data = None
@@ -43,6 +45,12 @@ class EnhancedNBAPredictor:
         # Position-specific models
         self.position_models = {}
         self.general_model = None
+    
+    def get_team_predictor(self):
+        """Get or create team predictor."""
+        if self.team_predictor is None:
+            self.team_predictor = TeamGamePredictor(self)
+        return self.team_predictor
     
     # ENHANCED TRAINING METHODS
     def train_by_category(self, category: str, max_players_per_position: int = None, 
