@@ -119,7 +119,7 @@ class NBAPlayerFetcher:
             try:
                 # Longer delay between teams to avoid rate limiting
                 if i > 0:
-                    time.sleep(2.0)
+                    time.sleep(3.0)
                 
                 # Get team roster with timeout
                 roster = commonteamroster.CommonTeamRoster(
@@ -153,7 +153,7 @@ class NBAPlayerFetcher:
                             processed_players += 1
                         
                         # Small delay between players
-                        time.sleep(0.1)
+                        time.sleep(0.5)
                         
                     except Exception as e:
                         logger.warning(f"Error processing player {player_row.get('PLAYER', 'Unknown')}: {e}")

@@ -38,7 +38,7 @@ except ImportError:
     print("qdarkstyle not available, using default theme")
 
 try:
-    from src.predictor import NBAPlayerScoringPredictor
+    from src.predictor import EnhancedNBAPredictor
     from utils.logger import main_logger as logger
     from utils.nba_player_fetcher import NBAPlayerFetcher
     from utils.player_roles import PlayerRoles
@@ -46,7 +46,6 @@ except ImportError as e:
     print(f"Import error: {e}")
     print("Make sure you're running from the project root directory")
     sys.exit(1)
-
 # Configure matplotlib
 plt.style.use('seaborn-v0_8-darkgrid')
 sns.set_palette("husl")
