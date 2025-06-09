@@ -81,17 +81,17 @@ class FeatureEngineer:
     
     def _add_basic_features(self, df: pd.DataFrame) -> pd.DataFrame:
         """Add basic statistical features with proper data type handling."""
-    
+        
         # Define columns that should be numeric
         numeric_cols = ['MIN', 'FGM', 'FGA', 'FG3M', 'FG3A', 'FTM', 'FTA', 
                        'OREB', 'DREB', 'REB', 'AST', 'STL', 'BLK', 'TOV', 'PF', 
                        'PTS', 'PLUS_MINUS']
-    
+        
         # Convert to numeric, forcing errors to NaN, then fill with 0
         for col in numeric_cols:
             if col in df.columns:
                 df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0)
-    
+        
         # Handle percentage columns specially
         pct_cols = ['FG_PCT', 'FG3_PCT', 'FT_PCT']
         for col in pct_cols:
@@ -99,17 +99,22 @@ class FeatureEngineer:
                 df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0)
                 # Ensure percentages are in decimal format (0-1) not (0-100)
                 df[col] = df[col].clip(0, 1)
-    
+        
         return df
     
     def _add_rolling_features(self, df: pd.DataFrame) -> pd.DataFrame:
-        """Add rolling window statistics."""
+        """Add rolling window statistics with data type verification."""
         key_stats = ['PTS', 'MIN', 'FGA', 'FG_PCT', 'REB', 'AST']
         
-        for window in [3, 5, 10]:  # Simplified windows to avoid conflicts
+        for window in [3, 5, 10]:
             for stat in key_stats:
                 if stat in df.columns:
                     try:
+                        # CRITICAL: Ensure the column is numeric before rolling calculation
+                        if not pd.api.types.is_numeric_dtype(df[stat]):
+                            logger.warning(f"Converting non-numeric column {stat} to numeric")
+                            df[stat] = pd.to_numeric(df[stat], errors='coerce').fillna(0)
+                        
                         # Rolling mean
                         col_name = f'{stat}_ROLL_{window}'
                         df[col_name] = (
@@ -120,6 +125,9 @@ class FeatureEngineer:
                         )
                     except Exception as e:
                         logger.warning(f"Failed to create rolling feature {stat}_{window}: {e}")
+                        # Print debug info
+                        logger.warning(f"Column {stat} dtype: {df[stat].dtype}")
+                        logger.warning(f"Sample values: {df[stat].head().tolist()}")
                         continue
         
         return df
@@ -127,6 +135,12 @@ class FeatureEngineer:
     def _add_efficiency_metrics(self, df: pd.DataFrame) -> pd.DataFrame:
         """Add advanced efficiency metrics."""
         try:
+            # Ensure all required columns are numeric
+            required_cols = ['PTS', 'FGA', 'FTA', 'FGM', 'FG3M', 'TOV', 'MIN']
+            for col in required_cols:
+                if col in df.columns:
+                    df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0)
+            
             # True Shooting Percentage
             df['TRUE_SHOOTING_PCT'] = np.where(
                 (2 * (df.get('FGA', 0) + 0.44 * df.get('FTA', 0))) > 0,
@@ -211,6 +225,9 @@ class FeatureEngineer:
     def _add_trend_features(self, df: pd.DataFrame) -> pd.DataFrame:
         """Add performance trend features."""
         try:
+            # Ensure PTS is numeric
+            df['PTS'] = pd.to_numeric(df['PTS'], errors='coerce').fillna(0)
+            
             # Performance vs season average
             season_avg = df.groupby(['PLAYER_ID', 'SEASON'])['PTS'].expanding().mean()
             df['PTS_VS_SEASON_AVG'] = df['PTS'] - season_avg.values
@@ -249,6 +266,10 @@ class FeatureEngineer:
             # Handle missing values and infinite values
             X = df[feature_cols].fillna(0).replace([np.inf, -np.inf], 0)
             y = df['TARGET_PTS'].values
+            
+            # Ensure all feature columns are numeric
+            for col in X.columns:
+                X[col] = pd.to_numeric(X[col], errors='coerce').fillna(0)
             
             # Remove columns with zero variance
             X_clean = X.loc[:, X.var() > 0.001]
