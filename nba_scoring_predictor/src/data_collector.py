@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+﻿# -*- coding: utf-8 -*-
 """
 Data collection module for NBA player statistics
 """
@@ -41,8 +41,12 @@ class NBADataCollector:
                 found_players.extend(matches)
             return found_players
         else:
-            # Return a subset of players for demo (in production, implement better filtering)
-            return self.all_players[:100]
+            # Return a smaller subset of active/popular players
+            popular_players = [
+                'LeBron James', 'Stephen Curry', 'Luka Dončić', 'Giannis Antetokounmpo',
+                'Jayson Tatum', 'Kevin Durant', 'Nikola Jokić', 'Joel Embiid'
+            ]
+            return [p for p in self.all_players if p['full_name'] in popular_players]
     
     def collect_player_data(self, player_names: List[str] = None, 
                           seasons: List[str] = None, 
@@ -94,7 +98,7 @@ class NBADataCollector:
                     gamelog = playergamelog.PlayerGameLog(
                         player_id=player_id,
                         season=season,
-                        timeout=30
+                        timeout=60
                     )
                     
                     games_df = gamelog.get_data_frames()[0]
@@ -124,7 +128,7 @@ class NBADataCollector:
                     all_data.append(games_df)
                     
                     # Rate limiting
-                    time.sleep(0.1)
+                    time.sleep(1.0)
                     
                 except Exception as e:
                     logger.error(f"Error collecting data for {player_name} - {season}: {e}")
