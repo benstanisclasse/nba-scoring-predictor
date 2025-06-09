@@ -1197,36 +1197,72 @@ class NBAPlayerScoringGUI(QMainWindow):
             self.player_combo.addItem("Error loading players")
             self.player_combo.setEnabled(False)
    
-    def predict_player_points(self):
-        """Predict points for the selected player."""
-        if not self.is_model_loaded:
-            QMessageBox.warning(self, "Warning", "Please load a trained model first.")
-            return
-       
-        player_name = self.player_combo.currentText()
-        if not player_name or player_name in ["Load model first...", "No players found"]:
-            QMessageBox.warning(self, "Warning", "Please select a valid player.")
-            return
-       
-        recent_games = self.recent_games_slider.value()
-       
+    def predict_player_points(self, player_name: str, recent_games: int = 10) -> Dict:
+        """
+        Predict points for a specific player based on recent performance.
+        """
+        if not self.is_trained:
+            raise ValueError("Models not trained. Call train() first.")
+    
+        # Get recent data for the player
+        player_data = self._get_player_recent_data(player_name, recent_games)
+    
+        if player_data.empty:
+            raise ValueError(f"No recent data found for player: {player_name}")
+    
+        logger.info(f"Found {len(player_data)} games for {player_name}")
+    
+        # Process the data
         try:
-            self.update_status(f"Predicting points for {player_name}...")
-            self.results_text.setPlainText("Generating predictions...\n")
-            QApplication.processEvents()
-           
-            # Make prediction
-            predictions = self.predictor.predict_player_points(player_name, recent_games)
-           
-            # Display results
-            self.display_prediction_results(predictions)
-            self.update_status("Prediction completed successfully!")
-           
+            processed_data = self.feature_engineer.engineer_features(player_data)
+        
+            if len(processed_data) == 0:
+                raise ValueError(f"Insufficient data for prediction for player: {player_name}")
+        
+            # Get the most recent game's features
+            latest_game = processed_data.iloc[-1:].copy()
+        
+            # Ensure we have the same features as training
+            if hasattr(self.model_trainer, 'feature_names') and self.model_trainer.feature_names:
+                missing_features = set(self.model_trainer.feature_names) - set(latest_game.columns)
+                for feature in missing_features:
+                    latest_game[feature] = 0
+            
+                # Select only the features used in training
+                latest_game = latest_game[self.model_trainer.feature_names]
+        
+            X, _, _ = self.feature_engineer.prepare_features(latest_game)
+        
+            if X.shape[1] == 0:
+                raise ValueError("No valid features generated for prediction")
+        
+            # Scale features
+            X_scaled = self.model_trainer.scaler.transform(X)
+        
+            # Make predictions with all models
+            predictions = {}
+            for model_name, model_data in self.model_trainer.models.items():
+                model = model_data['model']
+                pred = model.predict(X_scaled)[0]
+            
+                # Calculate confidence interval
+                test_mae = model_data['test_mae']
+                predictions[model_name] = {
+                    'predicted_points': max(0, pred),
+                    'confidence_interval': (max(0, pred - test_mae), pred + test_mae),
+                    'model_mae': test_mae
+                }
+        
+            # Add recent performance context
+            recent_avg = player_data['PTS'].tail(recent_games).mean()
+            predictions['recent_average'] = recent_avg
+            predictions['player_name'] = player_name
+        
+            return predictions
+        
         except Exception as e:
-            error_msg = f"Error predicting for {player_name}: {str(e)}"
-            logger.error(error_msg)
-            self.results_text.setPlainText(f"Error: {error_msg}")
-            self.update_status("Prediction failed")
+            logger.error(f"Prediction failed for {player_name}: {e}")
+            raise ValueError(f"Prediction failed for {player_name}: {str(e)}")
    
     def display_prediction_results(self, predictions: Dict):
         """Display prediction results in the text widget."""

@@ -240,46 +240,80 @@ class FeatureEngineer:
         
         return df
     
-    def prepare_features(self, df: pd.DataFrame) -> Tuple[np.ndarray, np.ndarray, List[str]]:
-        """
-        Prepare features for model training.
+def prepare_features(self, df: pd.DataFrame) -> Tuple[np.ndarray, np.ndarray, List[str]]:
+    """
+    Prepare features for model training.
+    
+    Args:
+        df: DataFrame with engineered features
         
-        Args:
-            df: DataFrame with engineered features
-            
-        Returns:
-            Tuple of (X, y, feature_names)
-        """
-        logger.info("Preparing features for training...")
+    Returns:
+        Tuple of (X, y, feature_names)
+    """
+    logger.info("Preparing features for training...")
+    
+    try:
+        # Define columns to exclude
+        exclude_cols = {
+            'TARGET_PTS', 'PTS', 'PLAYER_ID', 'PLAYER_NAME', 'GAME_ID', 
+            'GAME_DATE', 'SEASON', 'MATCHUP', 'WL', 'PREV_GAME_DATE',
+            'Video_Available', 'Game_ID'
+        }
         
-        try:
-            # Define columns to exclude
-            exclude_cols = {
-                'TARGET_PTS', 'PTS', 'PLAYER_ID', 'PLAYER_NAME', 'GAME_ID', 
-                'GAME_DATE', 'SEASON', 'MATCHUP', 'WL', 'PREV_GAME_DATE',
-                'Video_Available', 'Game_ID'
-            }
+        # Select feature columns
+        feature_cols = [col for col in df.columns if col not in exclude_cols]
+        
+        if not feature_cols:
+            raise ValueError("No feature columns available after filtering")
+        
+        logger.info(f"Initial feature columns: {len(feature_cols)}")
+        
+        # Handle missing values and infinite values
+        X = df[feature_cols].copy()
+        
+        # Ensure all feature columns are numeric
+        for col in X.columns:
+            X[col] = pd.to_numeric(X[col], errors='coerce').fillna(0)
+        
+        # Replace infinite values
+        X = X.replace([np.inf, -np.inf], 0)
+        
+        # Remove columns with zero variance (but keep at least some features)
+        X_clean = X.copy()
+        if len(X.columns) > 10:  # Only filter if we have many features
+            variance_mask = X.var() > 0.001
+            if variance_mask.sum() > 5:  # Keep at least 5 features
+                X_clean = X.loc[:, variance_mask]
+        
+        final_features = list(X_clean.columns)
+        
+        if len(final_features) == 0:
+            # Fallback: use basic features
+            basic_features = []
+            for col in ['FGA', 'FG_PCT', 'FTA', 'FT_PCT', 'REB', 'AST', 'MIN']:
+                if col in df.columns:
+                    basic_features.append(col)
             
-            # Select feature columns
-            feature_cols = [col for col in df.columns if col not in exclude_cols]
-            
-            # Handle missing values and infinite values
-            X = df[feature_cols].fillna(0).replace([np.inf, -np.inf], 0)
+            if basic_features:
+                X_clean = df[basic_features].fillna(0)
+                for col in X_clean.columns:
+                    X_clean[col] = pd.to_numeric(X_clean[col], errors='coerce').fillna(0)
+                final_features = basic_features
+            else:
+                raise ValueError("No valid features available for prediction")
+        
+        # Get target variable
+        if 'TARGET_PTS' in df.columns:
             y = df['TARGET_PTS'].values
-            
-            # Ensure all feature columns are numeric
-            for col in X.columns:
-                X[col] = pd.to_numeric(X[col], errors='coerce').fillna(0)
-            
-            # Remove columns with zero variance
-            X_clean = X.loc[:, X.var() > 0.001]
-            final_features = list(X_clean.columns)
-            
-            logger.info(f"Selected {len(final_features)} features from {len(feature_cols)} original")
-            
-            self.feature_columns = final_features
-            return X_clean.values, y, final_features
-            
-        except Exception as e:
-            logger.error(f"Feature preparation failed: {e}")
-            raise
+        else:
+            y = np.zeros(len(df))  # Fallback for prediction
+        
+        logger.info(f"Selected {len(final_features)} features from {len(feature_cols)} original")
+        logger.info(f"Final feature shape: {X_clean.shape}")
+        
+        self.feature_columns = final_features
+        return X_clean.values, y, final_features
+        
+    except Exception as e:
+        logger.error(f"Feature preparation failed: {e}")
+        raise
