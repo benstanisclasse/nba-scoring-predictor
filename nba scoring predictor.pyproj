@@ -43,6 +43,9 @@
     <Compile Include="nba_scoring_predictor\utils\__init__.py" />
   </ItemGroup>
   <ItemGroup>
+    <Folder Include="data\" />
+    <Folder Include="logs\" />
+    <Folder Include="models\" />
     <Folder Include="nba_scoring_predictor\" />
     <Folder Include="nba_scoring_predictor\config\" />
     <Folder Include="nba_scoring_predictor\scripts\" />
@@ -50,6 +53,13 @@
     <Folder Include="nba_scoring_predictor\utils\" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="data\nba_data.db" />
+    <Content Include="data\nba_players_categorized.json" />
+    <Content Include="data\trained_players.json" />
+    <Content Include="logs\nba_predictor_20250608.log" />
+    <Content Include="logs\nba_predictor_20250609.log" />
+    <Content Include="models\allplayers-1.pkl" />
+    <Content Include="models\Luka.pkl" />
     <Content Include="nba_scoring_predictor\README.md" />
     <Content Include="nba_scoring_predictor\requirements.txt" />
   </ItemGroup>
