@@ -106,6 +106,32 @@ class TrainingWorker(QThread):
         self.use_cache = use_cache
         self.role_based = role_based
     
+    def collect_data_by_roles(self, roles: List[str], max_per_role: int = 3, 
+                            seasons: List[str] = None, use_cache: bool = True) -> pd.DataFrame:
+        """Collect data for players by their roles/positions."""
+        all_players = []
+    
+        for role in roles:
+            role_players = self._get_players_by_category(role, max_per_role)
+            all_players.extend(role_players)
+    
+        return self.collect_data(
+            player_names=all_players,
+            seasons=seasons,
+            use_cache=use_cache
+        )
+
+    def train_with_roles(self, data: pd.DataFrame, optimize: bool = True) -> Dict:
+        """Train models with role-based data."""
+        return self.train(data, optimize=optimize)
+
+    def get_feature_importance(self, top_n: int = 15) -> pd.DataFrame:
+        """Get feature importance from trained models."""
+        if not self.is_trained:
+            return pd.DataFrame()
+    
+        return self.model_trainer.get_feature_importance('xgboost').head(top_n)
+
     def run(self):
         """Run training in background thread with role support."""
         try:
@@ -1865,12 +1891,14 @@ NBA Data Management Instructions:
         if not self.is_model_loaded:
             QMessageBox.warning(self, "Warning", "Please load or train a model first.")
             return
-       
+    
         try:
             performance_df = self.predictor.get_model_performance()
+            # Fix column name reference
+            performance_df = performance_df.rename(columns={'Test R-squared': 'Test R²'})
             self.plot_widget.plot_model_performance(performance_df)
-            self.tab_widget.setCurrentIndex(1)  # Switch to analysis tab
-           
+            self.tab_widget.setCurrentIndex(1)
+        
         except Exception as e:
             logger.error(f"Error showing model performance: {e}")
             QMessageBox.critical(self, "Error", f"Failed to show performance:\n{str(e)}")

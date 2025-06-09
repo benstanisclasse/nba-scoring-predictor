@@ -355,21 +355,20 @@ class EnhancedNBAPredictor:
         
         return player_data.tail(n_games)
     
-    # Additional utility methods...
     def get_model_performance(self) -> pd.DataFrame:
         """Get performance metrics for all trained models."""
         if not self.is_trained:
-            raise ValueError("Models not trained. Call train_by_category() first.")
-        
+            raise ValueError("Models not trained.")
+    
         performance_data = []
         for model_name, metrics in self.model_trainer.models.items():
             performance_data.append({
                 'Model': model_name.title(),
                 'Test MAE': round(metrics['test_mae'], 3),
                 'Test RMSE': round(metrics['test_rmse'], 3),
-                'Test R-squared': round(metrics['test_r2'], 3)
+                'Test R-squared': round(metrics['test_r2'], 3)  # Fixed column name
             })
-        
+    
         return pd.DataFrame(performance_data)
     
     def get_available_players(self) -> List[str]:
