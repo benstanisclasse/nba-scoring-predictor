@@ -114,6 +114,26 @@ class EnhancedNBAPredictor:
         
         return results
     
+
+
+    def collect_data_by_roles(self, roles: List[str], max_per_role: int = 3, seasons: List[str] = None, use_cache: bool = True) -> pd.DataFrame:
+        """Collect data for players by their roles/positions."""
+        all_players = []
+
+        for role in roles:
+            role_players = self._get_players_by_category(role, max_per_role)
+            all_players.extend(role_players)
+
+        return self.collect_data(
+            player_names=all_players,
+            seasons=seasons,
+            use_cache=use_cache
+        )
+
+def train_with_roles(self, data: pd.DataFrame, optimize: bool = True) -> Dict:
+    """Train models with role-based data."""
+    return self.train(data, optimize=optimize)
+
     def _get_players_by_category(self, category: str, max_per_position: int = None) -> List[str]:
         """Get player names for a specific category."""
         
