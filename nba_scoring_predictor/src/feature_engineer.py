@@ -80,20 +80,26 @@ class FeatureEngineer:
             raise
     
     def _add_basic_features(self, df: pd.DataFrame) -> pd.DataFrame:
-        """Add basic statistical features."""
-        # Fill missing values in percentage columns
+        """Add basic statistical features with proper data type handling."""
+    
+        # Define columns that should be numeric
+        numeric_cols = ['MIN', 'FGM', 'FGA', 'FG3M', 'FG3A', 'FTM', 'FTA', 
+                       'OREB', 'DREB', 'REB', 'AST', 'STL', 'BLK', 'TOV', 'PF', 
+                       'PTS', 'PLUS_MINUS']
+    
+        # Convert to numeric, forcing errors to NaN, then fill with 0
+        for col in numeric_cols:
+            if col in df.columns:
+                df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0)
+    
+        # Handle percentage columns specially
         pct_cols = ['FG_PCT', 'FG3_PCT', 'FT_PCT']
         for col in pct_cols:
             if col in df.columns:
-                df[col] = df[col].fillna(0)
-        
-        # Fill missing values in other numeric columns
-        numeric_cols = ['MIN', 'FGM', 'FGA', 'FG3M', 'FG3A', 'FTM', 'FTA', 
-                       'OREB', 'DREB', 'REB', 'AST', 'STL', 'BLK', 'TOV', 'PF', 'PLUS_MINUS']
-        for col in numeric_cols:
-            if col in df.columns:
-                df[col] = df[col].fillna(0)
-        
+                df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0)
+                # Ensure percentages are in decimal format (0-1) not (0-100)
+                df[col] = df[col].clip(0, 1)
+    
         return df
     
     def _add_rolling_features(self, df: pd.DataFrame) -> pd.DataFrame:
