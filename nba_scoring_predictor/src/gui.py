@@ -1,4 +1,5 @@
-﻿"""
+﻿# -*- coding: utf-8 -*-
+"""
 Professional PyQt5 GUI for NBA Player Scoring Predictor
 """
 import sys
@@ -600,11 +601,11 @@ class NBAPlayerScoringGUI(QMainWindow):
         """Create the training tab."""
         training_widget = QWidget()
         layout = QVBoxLayout(training_widget)
-    
+        
         # Import player storage here to avoid circular imports
         from utils.player_storage import PlayerStorage
         self.player_storage = PlayerStorage()
-    
+        
         # Training configuration
         config_group = QGroupBox("Training Configuration")
         config_group.setFont(QFont("Arial", 12, QFont.Bold))
@@ -622,12 +623,12 @@ class NBAPlayerScoringGUI(QMainWindow):
                 padding: 0 5px 0 5px;
             }
         """)
-    
+        
         config_layout = QGridLayout(config_group)
-    
+        
         # Player selection method
         config_layout.addWidget(QLabel("Training Method:"), 0, 0)
-    
+        
         self.training_method_combo = QComboBox()
         self.training_method_combo.addItems([
             "Select from Available Players",
@@ -660,14 +661,14 @@ class NBAPlayerScoringGUI(QMainWindow):
         """)
         self.training_method_combo.currentTextChanged.connect(self.on_training_method_changed)
         config_layout.addWidget(self.training_method_combo, 0, 1)
-    
+        
         # Player selection dropdown (for method 1)
         config_layout.addWidget(QLabel("Select Players:"), 1, 0)
-    
+        
         self.player_selection_widget = QWidget()
         player_selection_layout = QVBoxLayout(self.player_selection_widget)
         player_selection_layout.setContentsMargins(0, 0, 0, 0)
-    
+        
         # Dropdown for available players
         self.available_players_combo = QComboBox()
         self.available_players_combo.setStyleSheet("""
@@ -687,10 +688,10 @@ class NBAPlayerScoringGUI(QMainWindow):
         """)
         self.refresh_available_players()
         player_selection_layout.addWidget(self.available_players_combo)
-    
+        
         # Buttons for player management
         player_buttons_layout = QHBoxLayout()
-    
+        
         self.add_player_button = QPushButton("➕ Add Selected")
         self.add_player_button.clicked.connect(self.add_selected_player)
         self.add_player_button.setStyleSheet("""
@@ -705,7 +706,7 @@ class NBAPlayerScoringGUI(QMainWindow):
                 background-color: #229954;
             }
         """)
-    
+        
         self.clear_players_button = QPushButton("🗑️ Clear All")
         self.clear_players_button.clicked.connect(self.clear_selected_players)
         self.clear_players_button.setStyleSheet("""
@@ -720,7 +721,7 @@ class NBAPlayerScoringGUI(QMainWindow):
                 background-color: #c0392b;
             }
         """)
-    
+        
         self.refresh_players_button = QPushButton("🔄 Refresh")
         self.refresh_players_button.clicked.connect(self.refresh_available_players)
         self.refresh_players_button.setStyleSheet("""
@@ -735,22 +736,22 @@ class NBAPlayerScoringGUI(QMainWindow):
                 background-color: #2980b9;
             }
         """)
-    
+        
         player_buttons_layout.addWidget(self.add_player_button)
         player_buttons_layout.addWidget(self.clear_players_button)
         player_buttons_layout.addWidget(self.refresh_players_button)
         player_buttons_layout.addStretch()
-    
+        
         player_selection_layout.addLayout(player_buttons_layout)
-    
+        
         # Selected players display
         self.selected_players_label = QLabel("Selected Players: None")
         self.selected_players_label.setStyleSheet("color: #3498db; font-weight: bold;")
         self.selected_players_label.setWordWrap(True)
         player_selection_layout.addWidget(self.selected_players_label)
-    
+        
         config_layout.addWidget(self.player_selection_widget, 1, 1)
-    
+        
         # Custom player entry (for method 2)
         config_layout.addWidget(QLabel("Custom Players:"), 2, 0)
         self.training_players_entry = QLineEdit()
@@ -765,48 +766,176 @@ class NBAPlayerScoringGUI(QMainWindow):
             }
         """)
         config_layout.addWidget(self.training_players_entry, 2, 1)
-    
+        
         # Options
         self.optimize_checkbox = QCheckBox("Optimize hyperparameters (slower but better)")
         self.optimize_checkbox.setStyleSheet("color: white;")
         self.use_cache_checkbox = QCheckBox("Use cached data when available")
         self.use_cache_checkbox.setChecked(True)
         self.use_cache_checkbox.setStyleSheet("color: white;")
-    
+        
         config_layout.addWidget(self.optimize_checkbox, 3, 0, 1, 2)
         config_layout.addWidget(self.use_cache_checkbox, 4, 0, 1, 2)
-    
+        
         layout.addWidget(config_group)
-    
+        
         # Initialize selected players list
         self.selected_players = []
-    
+        
         # Set initial state
         self.on_training_method_changed()
-    
-        # ... rest of the training tab creation code remains the same ...
-        # (training control, progress section, training log)
-    
-        def create_status_bar(self):
-            """Create the status bar."""
-            self.status_bar = QStatusBar()
-            self.setStatusBar(self.status_bar)
         
-            # Add permanent widgets to status bar
-            self.model_status_label = QLabel("Model: Not Loaded")
-            self.model_status_label.setStyleSheet("color: #e74c3c;")
+        # Training control
+        control_layout = QHBoxLayout()
         
-            self.data_status_label = QLabel("Data: Ready")
-            self.data_status_label.setStyleSheet("color: #27ae60;")
-        
-            self.status_bar.addWidget(self.model_status_label)
-            self.status_bar.addPermanentWidget(self.data_status_label)
-        
-            self.update_status("Ready - Load or train a model to begin predictions")
+        self.start_training_button = QPushButton("🚀 START TRAINING")
+        self.start_training_button.setMinimumHeight(50)
+        self.start_training_button.setFont(QFont("Arial", 12, QFont.Bold))
+        self.start_training_button.setStyleSheet("""
+            QPushButton {
+                background-color: #27ae60;
+                color: white;
+               border: none;
+               border-radius: 25px;
+               padding: 10px 30px;
+           }
+           QPushButton:hover {
+               background-color: #229954;
+           }
+           QPushButton:disabled {
+               background-color: #7f8c8d;
+           }
+       """)
+        self.start_training_button.clicked.connect(self.start_training)
+       
+        self.stop_training_button = QPushButton("⏹️ STOP TRAINING")
+        self.stop_training_button.setMinimumHeight(50)
+        self.stop_training_button.setFont(QFont("Arial", 12, QFont.Bold))
+        self.stop_training_button.setEnabled(False)
+        self.stop_training_button.clicked.connect(self.stop_training)
+        self.stop_training_button.setStyleSheet("""
+            QPushButton {
+                background-color: #e74c3c;
+                color: white;
+                border: none;
+                border-radius: 25px;
+                padding: 10px 30px;
+            }
+            QPushButton:hover {
+                background-color: #c0392b;
+            }
+            QPushButton:disabled {
+                background-color: #7f8c8d;
+            }
+        """)
+       
+        control_layout.addWidget(self.start_training_button)
+        control_layout.addWidget(self.stop_training_button)
+        control_layout.addStretch()
+       
+        layout.addLayout(control_layout)
+       
+        # Progress section
+        progress_group = QGroupBox("Training Progress")
+        progress_group.setStyleSheet("""
+            QGroupBox {
+                color: white;
+                border: 2px solid #555;
+                border-radius: 5px;
+                margin: 10px;
+                padding-top: 10px;
+            }
+            QGroupBox::title {
+                subcontrol-origin: margin;
+                left: 10px;
+                padding: 0 5px 0 5px;
+            }
+        """)
+       
+        progress_layout = QVBoxLayout(progress_group)
+       
+        self.progress_label = QLabel("Ready to train")
+        self.progress_label.setAlignment(Qt.AlignCenter)
+        self.progress_label.setStyleSheet("color: white; font-weight: bold;")
+        progress_layout.addWidget(self.progress_label)
+       
+        self.progress_bar = QProgressBar()
+        self.progress_bar.setMinimumHeight(25)
+        self.progress_bar.setStyleSheet("""
+            QProgressBar {
+                border: 2px solid #555;
+                border-radius: 5px;
+                text-align: center;
+                color: white;
+                background-color: #2c3e50;
+            }
+            QProgressBar::chunk {
+                background-color: #3498db;
+                border-radius: 3px;
+            }
+        """)
+        progress_layout.addWidget(self.progress_bar)
+       
+        layout.addWidget(progress_group)
+       
+        # Training log
+        log_group = QGroupBox("Training Log")
+        log_group.setStyleSheet("""
+            QGroupBox {
+                color: white;
+                border: 2px solid #555;
+                border-radius: 5px;
+                margin: 10px;
+                padding-top: 10px;
+            }
+            QGroupBox::title {
+                subcontrol-origin: margin;
+                left: 10px;
+                padding: 0 5px 0 5px;
+            }
+        """)
+       
+        log_layout = QVBoxLayout(log_group)
+       
+        self.training_log = QTextEdit()
+        self.training_log.setFont(QFont("Consolas", 9))
+        self.training_log.setMaximumHeight(200)
+        self.training_log.setStyleSheet("""
+            QTextEdit {
+                background-color: #2c3e50;
+                color: white;
+                border: 1px solid #555;
+                border-radius: 3px;
+                padding: 5px;
+            }
+        """)
+        log_layout.addWidget(self.training_log)
+       
+        layout.addWidget(log_group)
+       
+        self.tab_widget.addTab(training_widget, "🏋️ Training")
+   
+    def create_status_bar(self):
+        """Create the status bar."""
+        self.status_bar = QStatusBar()
+        self.setStatusBar(self.status_bar)
+       
+        # Add permanent widgets to status bar
+        self.model_status_label = QLabel("Model: Not Loaded")
+        self.model_status_label.setStyleSheet("color: #e74c3c;")
+       
+        self.data_status_label = QLabel("Data: Ready")
+        self.data_status_label.setStyleSheet("color: #27ae60;")
+       
+        self.status_bar.addWidget(self.model_status_label)
+        self.status_bar.addPermanentWidget(self.data_status_label)
+       
+        self.update_status("Ready - Load or train a model to begin predictions")
+   
     def on_training_method_changed(self):
         """Handle training method selection change."""
         method = self.training_method_combo.currentText()
-    
+       
         if method == "Select from Available Players":
             self.player_selection_widget.setVisible(True)
             self.training_players_entry.setVisible(False)
@@ -821,24 +950,24 @@ class NBAPlayerScoringGUI(QMainWindow):
         """Refresh the available players dropdown."""
         try:
             self.available_players_combo.clear()
-        
+           
             # Get all available players
             all_players = self.player_storage.get_all_players()
             trained_players = set(self.player_storage.get_trained_players())
-        
+           
             # Add section headers and players
             self.available_players_combo.addItem("--- Previously Trained ---")
             for player in self.player_storage.get_trained_players():
                 self.available_players_combo.addItem(f"✓ {player}")
-        
+           
             self.available_players_combo.addItem("--- Popular Players ---")
             for player in self.player_storage.get_popular_players():
                 if player not in trained_players:
                     self.available_players_combo.addItem(f"⭐ {player}")
-        
+           
             if all_players:
                 self.available_players_combo.setCurrentIndex(1)  # Select first actual player
-        
+           
         except Exception as e:
             logger.error(f"Error refreshing players: {e}")
             self.available_players_combo.addItem("Error loading players")
@@ -846,14 +975,14 @@ class NBAPlayerScoringGUI(QMainWindow):
     def add_selected_player(self):
         """Add the selected player to the training list."""
         current_text = self.available_players_combo.currentText()
-    
+       
         # Skip section headers
         if current_text.startswith("---"):
             return
-    
+       
         # Extract player name (remove prefix symbols)
         player_name = current_text.replace("✓ ", "").replace("⭐ ", "")
-    
+       
         if player_name and player_name not in self.selected_players:
             self.selected_players.append(player_name)
             self.update_selected_players_display()
@@ -869,7 +998,7 @@ class NBAPlayerScoringGUI(QMainWindow):
             display_text = f"Selected Players ({len(self.selected_players)}): " + ", ".join(self.selected_players)
         else:
             display_text = "Selected Players: None"
-    
+       
         self.selected_players_label.setText(display_text)
 
     def start_training(self):
@@ -877,10 +1006,10 @@ class NBAPlayerScoringGUI(QMainWindow):
         if self.training_worker and self.training_worker.isRunning():
             QMessageBox.warning(self, "Warning", "Training is already in progress.")
             return
-    
+       
         # Get parameters based on training method
         method = self.training_method_combo.currentText()
-    
+       
         if method == "Select from Available Players":
             if not self.selected_players:
                 QMessageBox.warning(self, "Warning", "Please select at least one player for training.")
@@ -894,10 +1023,10 @@ class NBAPlayerScoringGUI(QMainWindow):
             player_names = [name.strip() for name in players_text.split(',')]
         else:  # Train All Available Players
             player_names = None
-    
+       
         optimize = self.optimize_checkbox.isChecked()
         use_cache = self.use_cache_checkbox.isChecked()
-    
+       
         # Confirm training start
         if optimize:
             reply = QMessageBox.question(
@@ -908,26 +1037,26 @@ class NBAPlayerScoringGUI(QMainWindow):
             )
             if reply != QMessageBox.Yes:
                 return
-    
+       
         # Store the player names for later use
         self.current_training_players = player_names
-    
+       
         # Update UI
         self.start_training_button.setEnabled(False)
         self.stop_training_button.setEnabled(True)
         self.progress_bar.setValue(0)
         self.training_log.clear()
-    
+       
         # Create and start worker
         self.training_worker = TrainingWorker(self.predictor, player_names, optimize, use_cache)
-    
+       
         # Connect signals
         self.training_worker.progress_updated.connect(self.progress_bar.setValue)
         self.training_worker.status_updated.connect(self.progress_label.setText)
         self.training_worker.log_updated.connect(self.add_training_log)
         self.training_worker.training_completed.connect(self.on_training_completed)
         self.training_worker.training_failed.connect(self.on_training_failed)
-    
+       
         # Start training
         self.training_worker.start()
         self.update_status("Training started...")
@@ -937,22 +1066,22 @@ class NBAPlayerScoringGUI(QMainWindow):
         self.is_model_loaded = True
         self.update_ui_state()
         self.refresh_players()
-    
+       
         # Add trained players to storage
         if hasattr(self, 'current_training_players') and self.current_training_players:
             self.player_storage.add_trained_players(self.current_training_players)
             self.refresh_available_players()  # Refresh the dropdown
-    
+       
         # Reset training UI
         self.start_training_button.setEnabled(True)
         self.stop_training_button.setEnabled(False)
-    
+       
         self.update_status("Training completed successfully!")
-    
+       
         # Show results
         best_model = min(results.keys(), key=lambda k: results[k]['test_mae'])
         best_mae = results[best_model]['test_mae']
-    
+       
         QMessageBox.information(
             self, "Training Complete",
             f"Model training completed successfully!\n\n"
@@ -961,16 +1090,10 @@ class NBAPlayerScoringGUI(QMainWindow):
             f"Players have been added to your trained players list."
         )
 
-
-
-
-
-
-
     def update_status(self, message):
         """Update status bar message."""
         self.status_bar.showMessage(f"Status: {message}")
-    
+   
     def update_status_periodically(self):
         """Periodic status updates."""
         if hasattr(self, 'predictor') and self.predictor:
@@ -980,83 +1103,83 @@ class NBAPlayerScoringGUI(QMainWindow):
                 self.data_status_label.setText(f"Data: {len(players)} players cached")
             except:
                 self.data_status_label.setText("Data: Ready")
-    
+   
     def update_ui_state(self):
         """Update UI state based on model status."""
         self.predict_button.setEnabled(self.is_model_loaded)
         self.save_button.setEnabled(self.is_model_loaded)
         self.player_combo.setEnabled(self.is_model_loaded)
-        
+       
         if self.is_model_loaded:
             self.model_status_label.setText("Model: Loaded ✓")
             self.model_status_label.setStyleSheet("color: #27ae60;")
         else:
             self.model_status_label.setText("Model: Not Loaded")
             self.model_status_label.setStyleSheet("color: #e74c3c;")
-    
+   
     def update_recent_games_label(self, value):
         """Update recent games label."""
         self.recent_games_label.setText(f"{value} games")
-    
+   
     def show_training_tab(self):
         """Switch to training tab."""
         self.tab_widget.setCurrentIndex(2)
-    
+   
     def load_model(self):
         """Load a trained model."""
         file_path, _ = QFileDialog.getOpenFileName(
             self, "Load Trained Model", "", "Pickle files (*.pkl);;All files (*.*)"
         )
-        
+       
         if file_path:
             try:
                 self.update_status("Loading model...")
                 QApplication.processEvents()
-                
+               
                 self.predictor.load_model(file_path)
                 self.is_model_loaded = True
-                
+               
                 self.update_ui_state()
                 self.refresh_players()
-                
+               
                 self.update_status("Model loaded successfully!")
                 QMessageBox.information(self, "Success", "Model loaded successfully!")
-                
+               
             except Exception as e:
                 logger.error(f"Error loading model: {e}")
                 QMessageBox.critical(self, "Error", f"Failed to load model:\n{str(e)}")
                 self.update_status("Error loading model")
-    
+   
     def save_model(self):
         """Save the current trained model."""
         if not self.is_model_loaded:
             QMessageBox.warning(self, "Warning", "No trained model to save.")
             return
-        
+       
         file_path, _ = QFileDialog.getSaveFileName(
             self, "Save Trained Model", "nba_model.pkl", "Pickle files (*.pkl);;All files (*.*)"
         )
-        
+       
         if file_path:
             try:
                 self.update_status("Saving model...")
                 QApplication.processEvents()
-                
+               
                 self.predictor.save_model(file_path)
                 self.update_status("Model saved successfully!")
                 QMessageBox.information(self, "Success", f"Model saved to {file_path}")
-                
+               
             except Exception as e:
                 logger.error(f"Error saving model: {e}")
                 QMessageBox.critical(self, "Error", f"Failed to save model:\n{str(e)}")
                 self.update_status("Error saving model")
-    
+   
     def refresh_players(self):
         """Refresh the player dropdown list."""
         try:
             if self.is_model_loaded:
                 players = self.predictor.get_available_players()
-                
+               
                 self.player_combo.clear()
                 if players:
                     self.player_combo.addItems(players)
@@ -1067,100 +1190,100 @@ class NBAPlayerScoringGUI(QMainWindow):
                 self.player_combo.clear()
                 self.player_combo.addItem("Load model first...")
                 self.player_combo.setEnabled(False)
-                
+               
         except Exception as e:
             logger.error(f"Error refreshing players: {e}")
             self.player_combo.clear()
             self.player_combo.addItem("Error loading players")
             self.player_combo.setEnabled(False)
-    
+   
     def predict_player_points(self):
         """Predict points for the selected player."""
         if not self.is_model_loaded:
             QMessageBox.warning(self, "Warning", "Please load a trained model first.")
             return
-        
+       
         player_name = self.player_combo.currentText()
         if not player_name or player_name in ["Load model first...", "No players found"]:
             QMessageBox.warning(self, "Warning", "Please select a valid player.")
             return
-        
+       
         recent_games = self.recent_games_slider.value()
-        
+       
         try:
             self.update_status(f"Predicting points for {player_name}...")
             self.results_text.setPlainText("Generating predictions...\n")
             QApplication.processEvents()
-            
+           
             # Make prediction
             predictions = self.predictor.predict_player_points(player_name, recent_games)
-            
+           
             # Display results
             self.display_prediction_results(predictions)
             self.update_status("Prediction completed successfully!")
-            
+           
         except Exception as e:
             error_msg = f"Error predicting for {player_name}: {str(e)}"
             logger.error(error_msg)
             self.results_text.setPlainText(f"Error: {error_msg}")
             self.update_status("Prediction failed")
-    
+   
     def display_prediction_results(self, predictions: Dict):
         """Display prediction results in the text widget."""
         player_name = predictions.get('player_name', 'Unknown Player')
         recent_avg = predictions.get('recent_average', 0)
-        
+       
         # Build result text
         result_text = f"🏀 PREDICTION RESULTS FOR {player_name.upper()}\n"
         result_text += "=" * 60 + "\n\n"
-        
+       
         # Recent performance context
         recent_games = self.recent_games_slider.value()
         result_text += f"📊 Recent Average ({recent_games} games): {recent_avg:.1f} points\n\n"
-        
+       
         # Model predictions
         result_text += "🤖 MODEL PREDICTIONS:\n"
         result_text += "-" * 40 + "\n"
-        
+       
         model_order = ['ensemble', 'xgboost', 'lightgbm', 'random_forest', 'neural_network']
-        
+       
         for model_name in model_order:
             if model_name in predictions:
                 pred_data = predictions[model_name]
                 pred_points = pred_data['predicted_points']
                 ci_low, ci_high = pred_data['confidence_interval']
                 mae = pred_data['model_mae']
-                
+               
                 result_text += f"\n{model_name.replace('_', ' ').title()}:\n"
                 result_text += f"  • Predicted Points: {pred_points:.1f}\n"
                 result_text += f"  • Range: {ci_low:.1f} - {ci_high:.1f} points\n"
                 result_text += f"  • Model Accuracy (MAE): ±{mae:.1f} points\n"
-        
+       
         # Analysis
         ensemble_pred = predictions.get('ensemble', {}).get('predicted_points', 0)
         diff_from_avg = ensemble_pred - recent_avg
-        
+       
         result_text += "\n" + "=" * 60 + "\n"
         result_text += "📈 ANALYSIS:\n"
         result_text += "-" * 40 + "\n"
-        
+       
         if abs(diff_from_avg) < 2:
             trend = "consistent with"
         elif diff_from_avg > 2:
             trend = "above"
         else:
             trend = "below"
-        
+       
         result_text += f"• Ensemble prediction is {trend} recent average\n"
         result_text += f"• Difference from recent avg: {diff_from_avg:+.1f} points\n"
-        
+       
         if ensemble_pred > recent_avg:
             result_text += "• 📈 Model suggests potential for increased scoring\n"
         elif ensemble_pred < recent_avg:
             result_text += "• 📉 Model suggests potential for decreased scoring\n"
         else:
             result_text += "• ➡️ Model suggests consistent performance\n"
-        
+       
         # Confidence assessment
         ensemble_mae = predictions.get('ensemble', {}).get('model_mae', 5)
         if ensemble_mae < 4:
@@ -1169,13 +1292,13 @@ class NBAPlayerScoringGUI(QMainWindow):
             confidence = "MEDIUM"
         else:
             confidence = "LOW"
-        
+       
         result_text += f"• Prediction Confidence: {confidence}\n"
-        
+       
         # Fantasy/Betting Insights
         result_text += "\n" + "🎯 FANTASY/BETTING INSIGHTS:\n"
         result_text += "-" * 40 + "\n"
-        
+       
         if confidence == "HIGH" and ensemble_pred > recent_avg + 2:
             result_text += "• 🔥 STRONG BUY: Model confident in over-performance\n"
         elif confidence == "HIGH" and ensemble_pred < recent_avg - 2:
@@ -1184,58 +1307,15 @@ class NBAPlayerScoringGUI(QMainWindow):
             result_text += "• ⚖️ NEUTRAL: Moderate confidence, proceed with caution\n"
         else:
             result_text += "• ❓ LOW CONFIDENCE: High variance expected\n"
-        
+       
         # Disclaimer
         result_text += "\n" + "⚠️  DISCLAIMER:\n"
         result_text += "Predictions based on historical performance and statistical models.\n"
         result_text += "Actual results may vary due to injuries, matchups, and other factors.\n"
         result_text += "Use for entertainment and analysis purposes only.\n"
-        
+       
         self.results_text.setPlainText(result_text)
-    
-    def start_training(self):
-        """Start model training."""
-        if self.training_worker and self.training_worker.isRunning():
-            QMessageBox.warning(self, "Warning", "Training is already in progress.")
-            return
-        
-        # Get parameters
-        players_text = self.training_players_entry.text().strip()
-        player_names = [name.strip() for name in players_text.split(',')] if players_text else None
-        optimize = self.optimize_checkbox.isChecked()
-        use_cache = self.use_cache_checkbox.isChecked()
-        
-        # Confirm training start
-        if optimize:
-            reply = QMessageBox.question(
-                self, "Confirm Training",
-                "Hyperparameter optimization is enabled. This may take 30+ minutes.\n"
-                "Do you want to continue?",
-                QMessageBox.Yes | QMessageBox.No
-            )
-            if reply != QMessageBox.Yes:
-                return
-        
-        # Update UI
-        self.start_training_button.setEnabled(False)
-        self.stop_training_button.setEnabled(True)
-        self.progress_bar.setValue(0)
-        self.training_log.clear()
-        
-        # Create and start worker
-        self.training_worker = TrainingWorker(self.predictor, player_names, optimize, use_cache)
-        
-        # Connect signals
-        self.training_worker.progress_updated.connect(self.progress_bar.setValue)
-        self.training_worker.status_updated.connect(self.progress_label.setText)
-        self.training_worker.log_updated.connect(self.add_training_log)
-        self.training_worker.training_completed.connect(self.on_training_completed)
-        self.training_worker.training_failed.connect(self.on_training_failed)
-        
-        # Start training
-        self.training_worker.start()
-        self.update_status("Training started...")
-    
+   
     def stop_training(self):
         """Stop model training."""
         if self.training_worker and self.training_worker.isRunning():
@@ -1244,95 +1324,72 @@ class NBAPlayerScoringGUI(QMainWindow):
                 "Are you sure you want to stop training?\nProgress will be lost.",
                 QMessageBox.Yes | QMessageBox.No
             )
-            
+           
             if reply == QMessageBox.Yes:
                 self.training_worker.terminate()
                 self.training_worker.wait()
                 self.on_training_stopped()
-    
-    def on_training_completed(self, results):
-        """Handle training completion."""
-        self.is_model_loaded = True
-        self.update_ui_state()
-        self.refresh_players()
-        
-        # Reset training UI
-        self.start_training_button.setEnabled(True)
-        self.stop_training_button.setEnabled(False)
-        
-        self.update_status("Training completed successfully!")
-        
-        # Show results
-        best_model = min(results.keys(), key=lambda k: results[k]['test_mae'])
-        best_mae = results[best_model]['test_mae']
-        
-        QMessageBox.information(
-            self, "Training Complete",
-            f"Model training completed successfully!\n\n"
-            f"Best Model: {best_model.title()}\n"
-            f"Best MAE: {best_mae:.3f} points"
-        )
-    
+   
     def on_training_failed(self, error_message):
         """Handle training failure."""
         self.start_training_button.setEnabled(True)
         self.stop_training_button.setEnabled(False)
-        
+       
         self.update_status("Training failed")
         QMessageBox.critical(self, "Training Failed", f"Training failed:\n{error_message}")
-    
+   
     def on_training_stopped(self):
         """Handle training stop."""
         self.start_training_button.setEnabled(True)
         self.stop_training_button.setEnabled(False)
         self.progress_label.setText("Training stopped")
         self.update_status("Training stopped by user")
-    
+   
     def add_training_log(self, message):
         """Add message to training log."""
         timestamp = datetime.now().strftime("%H:%M:%S")
         self.training_log.append(f"[{timestamp}] {message}")
-        
+       
         # Auto-scroll to bottom
         cursor = self.training_log.textCursor()
         cursor.movePosition(cursor.End)
         self.training_log.setTextCursor(cursor)
-    
+   
     def show_model_performance(self):
         """Show model performance analysis."""
         if not self.is_model_loaded:
             QMessageBox.warning(self, "Warning", "Please load or train a model first.")
             return
-        
+       
         try:
             performance_df = self.predictor.get_model_performance()
             self.plot_widget.plot_model_performance(performance_df)
             self.tab_widget.setCurrentIndex(1)  # Switch to analysis tab
-            
+           
         except Exception as e:
             logger.error(f"Error showing model performance: {e}")
             QMessageBox.critical(self, "Error", f"Failed to show performance:\n{str(e)}")
-    
+   
     def show_feature_importance(self):
         """Show feature importance analysis."""
         if not self.is_model_loaded:
             QMessageBox.warning(self, "Warning", "Please load or train a model first.")
             return
-        
+       
         try:
             importance_df = self.predictor.get_feature_importance(top_n=15)
-            
+           
             if importance_df.empty:
                 QMessageBox.information(self, "Info", "Feature importance not available for this model.")
                 return
-            
+           
             self.plot_widget.plot_feature_importance(importance_df)
             self.tab_widget.setCurrentIndex(1)  # Switch to analysis tab
-            
+           
         except Exception as e:
             logger.error(f"Error showing feature importance: {e}")
             QMessageBox.critical(self, "Error", f"Failed to show feature importance:\n{str(e)}")
-    
+   
     def closeEvent(self, event):
         """Handle application close event."""
         if self.training_worker and self.training_worker.isRunning():
@@ -1341,7 +1398,7 @@ class NBAPlayerScoringGUI(QMainWindow):
                 "Training is in progress. Are you sure you want to exit?\nProgress will be lost.",
                 QMessageBox.Yes | QMessageBox.No
             )
-            
+           
             if reply == QMessageBox.Yes:
                 self.training_worker.terminate()
                 self.training_worker.wait()
@@ -1354,12 +1411,12 @@ class NBAPlayerScoringGUI(QMainWindow):
 def main():
     """Main function to run the PyQt5 GUI application."""
     app = QApplication(sys.argv)
-    
+   
     # Set application properties
     app.setApplicationName("NBA Player Scoring Predictor")
     app.setApplicationVersion("2.0")
     app.setOrganizationName("Basketball Analytics")
-    
+   
     # Apply dark theme if available
     if DARK_STYLE_AVAILABLE:
         app.setStyleSheet(qdarkstyle.load_stylesheet_pyqt5())
@@ -1378,20 +1435,20 @@ def main():
                 color: white;
             }
         """)
-    
+   
     # Create and show main window
     window = NBAPlayerScoringGUI()
     window.show()
-    
+   
     # Center window on screen
     screen = app.primaryScreen().geometry()
     window.move(
         (screen.width() - window.width()) // 2,
         (screen.height() - window.height()) // 2
     )
-    
+   
     logger.info("NBA Player Scoring Predictor GUI started")
-    
+   
     # Run application
     sys.exit(app.exec_())
 

@@ -86,7 +86,10 @@ class NBADataCollector:
             logger.info(f"Processing {i+1}/{len(players_to_process)}: {player_name}")
             
             # Cache player info
-            self.db_manager.cache_player_info(player_id, player_name, player)
+            try:
+                self.db_manager.cache_player_info(player_id, player_name, player)
+            except Exception as e:
+                logger.warning(f"Failed to cache player info for {player_name}: {e}")
             
             for season in seasons:
                 try:
@@ -125,15 +128,32 @@ class NBADataCollector:
                     games_df['PLAYER_NAME'] = player_name
                     games_df['SEASON'] = season
                     
-                    # Cache the cleaned data
+                    # Cache the cleaned data with better error handling
                     for _, game in games_df.iterrows():
-                        self.db_manager.cache_game_log(
-                            player_id, 
-                            str(game['Game_ID']),
-                            str(game['GAME_DATE']),
-                            season,
-                            game.to_dict()
-                        )
+                        try:
+                            # Convert the row to a dictionary and handle any datetime objects
+                            game_dict = game.to_dict()
+                            
+                            # Ensure GAME_DATE is properly formatted for caching
+                            if 'GAME_DATE' in game_dict and pd.notna(game_dict['GAME_DATE']):
+                                if isinstance(game_dict['GAME_DATE'], pd.Timestamp):
+                                    game_date_str = game_dict['GAME_DATE'].strftime('%Y-%m-%d')
+                                else:
+                                    game_date_str = str(game_dict['GAME_DATE'])
+                            else:
+                                game_date_str = str(game.get('GAME_DATE', ''))
+                            
+                            self.db_manager.cache_game_log(
+                                player_id, 
+                                str(game.get('Game_ID', '')),
+                                game_date_str,
+                                season,
+                                game_dict
+                            )
+                        except Exception as cache_error:
+                            logger.warning(f"Failed to cache game data: {cache_error}")
+                            # Continue without caching this game
+                            continue
                     
                     all_data.append(games_df)
                     

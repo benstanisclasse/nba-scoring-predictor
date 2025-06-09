@@ -1,5 +1,8 @@
 {
-  "trained_players": [],
+  "trained_players": [
+    "Giannis Antetokounmpo",
+    "Luka Dončić"
+  ],
   "popular_players": [
     "LeBron James",
     "Stephen Curry",
@@ -17,5 +20,5 @@
     "Ja Morant",
     "Zion Williamson"
   ],
-  "last_updated": "2025-06-08T22:48:59.400796"
+  "last_updated": "2025-06-08T23:24:37.103696"
 }
