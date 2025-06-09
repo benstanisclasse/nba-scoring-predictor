@@ -1,4 +1,5 @@
-﻿"""
+﻿# -*- coding: utf-8 -*-
+"""
 NBA Player Fetcher - Enhanced with better error handling and rate limiting
 """
 import json
@@ -180,10 +181,20 @@ class NBAPlayerFetcher:
         return success_rate > 0.7 and processed_players > 100
     
     def _process_player_simple(self, player_row: pd.Series, team_name: str, team_abbrev: str) -> Optional[Dict]:
-        """Process player with minimal API calls and fallback data."""
+        """Process player with minimal API calls and fallback data - FIXED VERSION."""
         try:
             player_id = str(player_row['PLAYER_ID'])
             player_name = player_row['PLAYER']
+            
+            # FIXED: Better handling of experience field
+            experience_raw = player_row.get('EXP', 0)
+            if pd.isna(experience_raw) or experience_raw == 'R':
+                experience = 0  # 'R' means Rookie (0 years experience)
+            else:
+                try:
+                    experience = int(experience_raw)
+                except (ValueError, TypeError):
+                    experience = 0
             
             # Use roster data directly when possible
             player_data = {
@@ -197,7 +208,7 @@ class NBAPlayerFetcher:
                 'height': player_row.get('HEIGHT', ''),
                 'weight': str(player_row.get('WEIGHT', '')),
                 'age': self._calculate_age_from_birthdate(player_row.get('BIRTH_DATE', '')),
-                'experience': int(player_row.get('EXP', 0)) if pd.notna(player_row.get('EXP', 0)) else 0,
+                'experience': experience,  # FIXED: Proper handling of 'R' values
                 'school': player_row.get('SCHOOL', ''),
                 'country': 'USA'  # Default, could be enhanced
             }
@@ -358,4 +369,72 @@ class NBAPlayerFetcher:
         if 'warning' in data['metadata']:
             logger.warning(f"Warning: {data['metadata']['warning']}")
 
-    # Keep all other existing methods unchanged...
+    # ADDED: Missing methods that are called by other components
+    def load_players_data(self) -> Optional[Dict]:
+        """Load players data from JSON file."""
+        try:
+            if os.path.exists(self.storage_path):
+                with open(self.storage_path, 'r', encoding='utf-8') as f:
+                    return json.load(f)
+            return None
+        except Exception as e:
+            logger.error(f"Error loading players data: {e}")
+            return None
+    
+    def update_players_data(self, force_refresh: bool = False) -> Dict:
+        """
+        Update players data if needed.
+        
+        Args:
+            force_refresh: Force refresh even if data is recent
+            
+        Returns:
+            Updated players data
+        """
+        existing_data = self.load_players_data()
+        
+        # Check if we need to update
+        if not force_refresh and existing_data:
+            last_updated = datetime.fromisoformat(existing_data['metadata']['last_updated'])
+            days_since_update = (datetime.now() - last_updated).days
+            
+            if days_since_update < 7:  # Don't update if less than a week old
+                logger.info(f"Players data is recent ({days_since_update} days old). Use force_refresh=True to update anyway.")
+                return existing_data
+        
+        logger.info("Updating NBA players data...")
+        return self.fetch_all_active_players()
+    
+    def get_players_by_position(self, position: str) -> List[Dict]:
+        """Get all players of a specific position."""
+        data = self.load_players_data()
+        if data:
+            return data['players_by_position'].get(position, [])
+        return []
+    
+    def get_players_by_team(self, team_abbrev: str) -> List[Dict]:
+        """Get all players from a specific team."""
+        data = self.load_players_data()
+        if data and team_abbrev in data['players_by_team']:
+            return data['players_by_team'][team_abbrev]['players']
+        return []
+    
+    def search_player(self, player_name: str) -> Optional[Dict]:
+        """Search for a specific player."""
+        data = self.load_players_data()
+        if not data:
+            return None
+        
+        for player in data['all_players']:
+            if player_name.lower() in player['name'].lower():
+                return player
+        
+        return None
+    
+    def get_position_distribution(self) -> Dict[str, int]:
+        """Get distribution of players by position."""
+        data = self.load_players_data()
+        if not data:
+            return {}
+        
+        return {pos: len(players) for pos, players in data['players_by_position'].items()}

@@ -1,0 +1,22 @@
+{
+  "metadata": {
+    "last_updated": "2025-06-09T13:14:10.365245",
+    "season": "2024-25",
+    "total_players": 534,
+    "total_teams": 30
+  },
+  "players_by_position": {
+    "PG": [],
+    "SG": [
+      {
+        "player_id": "1630811",
+        "name": "Keaton Wallace",
+        "position": "SG",
+        "raw_position": "Guard",
+        "team": "Atlanta Hawks",
+        "team_abbrev": "ATL",
+        "jersey_number": "2",
+        "height": "6-3",
+        "weight": "185",
+        "age": 26,
+        "experience": 

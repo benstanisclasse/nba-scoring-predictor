@@ -6,6 +6,7 @@ import os
 import sys
 import argparse
 from typing import List, Optional
+from src.predictor import EnhancedNBAPredictor as NBAPlayerScoringPredictor
 
 # Add project root to Python path
 project_root = os.path.dirname(os.path.abspath(__file__))
