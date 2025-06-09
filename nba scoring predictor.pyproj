@@ -26,6 +26,7 @@
     <Compile Include="nba_scoring_predictor\config\settings.py" />
     <Compile Include="nba_scoring_predictor\config\__init__.py" />
     <Compile Include="nba_scoring_predictor\main.py" />
+    <Compile Include="nba_scoring_predictor\scripts\update_nba_players.py" />
     <Compile Include="nba_scoring_predictor\src\data_collector.py" />
     <Compile Include="nba_scoring_predictor\src\feature_engineer.py" />
     <Compile Include="nba_scoring_predictor\src\gui.py" />
@@ -36,12 +37,15 @@
     <Compile Include="nba_scoring_predictor\test_system.py" />
     <Compile Include="nba_scoring_predictor\utils\database.py" />
     <Compile Include="nba_scoring_predictor\utils\logger.py" />
+    <Compile Include="nba_scoring_predictor\utils\nba_player_fetcher.py" />
+    <Compile Include="nba_scoring_predictor\utils\player_roles.py" />
     <Compile Include="nba_scoring_predictor\utils\player_storage.py" />
     <Compile Include="nba_scoring_predictor\utils\__init__.py" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="nba_scoring_predictor\" />
     <Folder Include="nba_scoring_predictor\config\" />
+    <Folder Include="nba_scoring_predictor\scripts\" />
     <Folder Include="nba_scoring_predictor\src\" />
     <Folder Include="nba_scoring_predictor\utils\" />
   </ItemGroup>
