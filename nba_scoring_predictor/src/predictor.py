@@ -130,9 +130,9 @@ class EnhancedNBAPredictor:
             use_cache=use_cache
         )
 
-def train_with_roles(self, data: pd.DataFrame, optimize: bool = True) -> Dict:
-    """Train models with role-based data."""
-    return self.train(data, optimize=optimize)
+    def train_with_roles(self, data: pd.DataFrame, optimize: bool = True) -> Dict:
+        """Train models with role-based data."""
+        return self.train(data, optimize=optimize)
 
     def _get_players_by_category(self, category: str, max_per_position: int = None) -> List[str]:
         """Get player names for a specific category."""
