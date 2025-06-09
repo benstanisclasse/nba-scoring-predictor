@@ -600,7 +600,11 @@ class NBAPlayerScoringGUI(QMainWindow):
         """Create the training tab."""
         training_widget = QWidget()
         layout = QVBoxLayout(training_widget)
-        
+    
+        # Import player storage here to avoid circular imports
+        from utils.player_storage import PlayerStorage
+        self.player_storage = PlayerStorage()
+    
         # Training configuration
         config_group = QGroupBox("Training Configuration")
         config_group.setFont(QFont("Arial", 12, QFont.Bold))
@@ -618,11 +622,137 @@ class NBAPlayerScoringGUI(QMainWindow):
                 padding: 0 5px 0 5px;
             }
         """)
-        
+    
         config_layout = QGridLayout(config_group)
-        
-        # Player selection
-        config_layout.addWidget(QLabel("Players (leave empty for all):"), 0, 0)
+    
+        # Player selection method
+        config_layout.addWidget(QLabel("Training Method:"), 0, 0)
+    
+        self.training_method_combo = QComboBox()
+        self.training_method_combo.addItems([
+            "Select from Available Players",
+            "Enter Custom Players",
+            "Train All Available Players"
+        ])
+        self.training_method_combo.setStyleSheet("""
+            QComboBox {
+                padding: 8px;
+                border: 1px solid #555;
+                border-radius: 3px;
+                background-color: #2c3e50;
+                color: white;
+                min-height: 20px;
+            }
+            QComboBox::drop-down {
+                border: none;
+            }
+            QComboBox::down-arrow {
+                image: none;
+                border-left: 5px solid transparent;
+                border-right: 5px solid transparent;
+                border-top: 5px solid white;
+            }
+            QComboBox QAbstractItemView {
+                background-color: #2c3e50;
+                color: white;
+                selection-background-color: #3498db;
+            }
+        """)
+        self.training_method_combo.currentTextChanged.connect(self.on_training_method_changed)
+        config_layout.addWidget(self.training_method_combo, 0, 1)
+    
+        # Player selection dropdown (for method 1)
+        config_layout.addWidget(QLabel("Select Players:"), 1, 0)
+    
+        self.player_selection_widget = QWidget()
+        player_selection_layout = QVBoxLayout(self.player_selection_widget)
+        player_selection_layout.setContentsMargins(0, 0, 0, 0)
+    
+        # Dropdown for available players
+        self.available_players_combo = QComboBox()
+        self.available_players_combo.setStyleSheet("""
+            QComboBox {
+                padding: 8px;
+                border: 1px solid #555;
+                border-radius: 3px;
+                background-color: #2c3e50;
+                color: white;
+                min-height: 20px;
+            }
+            QComboBox QAbstractItemView {
+                background-color: #2c3e50;
+                color: white;
+                selection-background-color: #3498db;
+            }
+        """)
+        self.refresh_available_players()
+        player_selection_layout.addWidget(self.available_players_combo)
+    
+        # Buttons for player management
+        player_buttons_layout = QHBoxLayout()
+    
+        self.add_player_button = QPushButton("➕ Add Selected")
+        self.add_player_button.clicked.connect(self.add_selected_player)
+        self.add_player_button.setStyleSheet("""
+            QPushButton {
+                background-color: #27ae60;
+                color: white;
+                border: none;
+                border-radius: 3px;
+                padding: 5px 10px;
+            }
+            QPushButton:hover {
+                background-color: #229954;
+            }
+        """)
+    
+        self.clear_players_button = QPushButton("🗑️ Clear All")
+        self.clear_players_button.clicked.connect(self.clear_selected_players)
+        self.clear_players_button.setStyleSheet("""
+            QPushButton {
+                background-color: #e74c3c;
+                color: white;
+                border: none;
+                border-radius: 3px;
+                padding: 5px 10px;
+            }
+            QPushButton:hover {
+                background-color: #c0392b;
+            }
+        """)
+    
+        self.refresh_players_button = QPushButton("🔄 Refresh")
+        self.refresh_players_button.clicked.connect(self.refresh_available_players)
+        self.refresh_players_button.setStyleSheet("""
+            QPushButton {
+                background-color: #3498db;
+                color: white;
+                border: none;
+                border-radius: 3px;
+                padding: 5px 10px;
+            }
+            QPushButton:hover {
+                background-color: #2980b9;
+            }
+        """)
+    
+        player_buttons_layout.addWidget(self.add_player_button)
+        player_buttons_layout.addWidget(self.clear_players_button)
+        player_buttons_layout.addWidget(self.refresh_players_button)
+        player_buttons_layout.addStretch()
+    
+        player_selection_layout.addLayout(player_buttons_layout)
+    
+        # Selected players display
+        self.selected_players_label = QLabel("Selected Players: None")
+        self.selected_players_label.setStyleSheet("color: #3498db; font-weight: bold;")
+        self.selected_players_label.setWordWrap(True)
+        player_selection_layout.addWidget(self.selected_players_label)
+    
+        config_layout.addWidget(self.player_selection_widget, 1, 1)
+    
+        # Custom player entry (for method 2)
+        config_layout.addWidget(QLabel("Custom Players:"), 2, 0)
         self.training_players_entry = QLineEdit()
         self.training_players_entry.setPlaceholderText("e.g., LeBron James, Stephen Curry, Luka Dončić")
         self.training_players_entry.setStyleSheet("""
@@ -634,168 +764,209 @@ class NBAPlayerScoringGUI(QMainWindow):
                 color: white;
             }
         """)
-        config_layout.addWidget(self.training_players_entry, 0, 1)
-        
+        config_layout.addWidget(self.training_players_entry, 2, 1)
+    
         # Options
         self.optimize_checkbox = QCheckBox("Optimize hyperparameters (slower but better)")
         self.optimize_checkbox.setStyleSheet("color: white;")
         self.use_cache_checkbox = QCheckBox("Use cached data when available")
         self.use_cache_checkbox.setChecked(True)
         self.use_cache_checkbox.setStyleSheet("color: white;")
-        
-        config_layout.addWidget(self.optimize_checkbox, 1, 0, 1, 2)
-        config_layout.addWidget(self.use_cache_checkbox, 2, 0, 1, 2)
-        
+    
+        config_layout.addWidget(self.optimize_checkbox, 3, 0, 1, 2)
+        config_layout.addWidget(self.use_cache_checkbox, 4, 0, 1, 2)
+    
         layout.addWidget(config_group)
+    
+        # Initialize selected players list
+        self.selected_players = []
+    
+        # Set initial state
+        self.on_training_method_changed()
+    
+        # ... rest of the training tab creation code remains the same ...
+        # (training control, progress section, training log)
+    
+        def create_status_bar(self):
+            """Create the status bar."""
+            self.status_bar = QStatusBar()
+            self.setStatusBar(self.status_bar)
         
-        # Training control
-        control_layout = QHBoxLayout()
+            # Add permanent widgets to status bar
+            self.model_status_label = QLabel("Model: Not Loaded")
+            self.model_status_label.setStyleSheet("color: #e74c3c;")
         
-        self.start_training_button = QPushButton("🚀 START TRAINING")
-        self.start_training_button.setMinimumHeight(50)
-        self.start_training_button.setFont(QFont("Arial", 12, QFont.Bold))
-        self.start_training_button.setStyleSheet("""
-            QPushButton {
-                background-color: #27ae60;
-                color: white;
-                border: none;
-                border-radius: 25px;
-                padding: 10px 30px;
-            }
-            QPushButton:hover {
-                background-color: #229954;
-            }
-            QPushButton:disabled {
-                background-color: #7f8c8d;
-            }
-        """)
-        self.start_training_button.clicked.connect(self.start_training)
+            self.data_status_label = QLabel("Data: Ready")
+            self.data_status_label.setStyleSheet("color: #27ae60;")
         
-        self.stop_training_button = QPushButton("⏹️ STOP TRAINING")
-        self.stop_training_button.setMinimumHeight(50)
-        self.stop_training_button.setFont(QFont("Arial", 12, QFont.Bold))
+            self.status_bar.addWidget(self.model_status_label)
+            self.status_bar.addPermanentWidget(self.data_status_label)
+        
+            self.update_status("Ready - Load or train a model to begin predictions")
+    def on_training_method_changed(self):
+        """Handle training method selection change."""
+        method = self.training_method_combo.currentText()
+    
+        if method == "Select from Available Players":
+            self.player_selection_widget.setVisible(True)
+            self.training_players_entry.setVisible(False)
+        elif method == "Enter Custom Players":
+            self.player_selection_widget.setVisible(False)
+            self.training_players_entry.setVisible(True)
+        else:  # Train All Available Players
+            self.player_selection_widget.setVisible(False)
+            self.training_players_entry.setVisible(False)
+
+    def refresh_available_players(self):
+        """Refresh the available players dropdown."""
+        try:
+            self.available_players_combo.clear()
+        
+            # Get all available players
+            all_players = self.player_storage.get_all_players()
+            trained_players = set(self.player_storage.get_trained_players())
+        
+            # Add section headers and players
+            self.available_players_combo.addItem("--- Previously Trained ---")
+            for player in self.player_storage.get_trained_players():
+                self.available_players_combo.addItem(f"✓ {player}")
+        
+            self.available_players_combo.addItem("--- Popular Players ---")
+            for player in self.player_storage.get_popular_players():
+                if player not in trained_players:
+                    self.available_players_combo.addItem(f"⭐ {player}")
+        
+            if all_players:
+                self.available_players_combo.setCurrentIndex(1)  # Select first actual player
+        
+        except Exception as e:
+            logger.error(f"Error refreshing players: {e}")
+            self.available_players_combo.addItem("Error loading players")
+
+    def add_selected_player(self):
+        """Add the selected player to the training list."""
+        current_text = self.available_players_combo.currentText()
+    
+        # Skip section headers
+        if current_text.startswith("---"):
+            return
+    
+        # Extract player name (remove prefix symbols)
+        player_name = current_text.replace("✓ ", "").replace("⭐ ", "")
+    
+        if player_name and player_name not in self.selected_players:
+            self.selected_players.append(player_name)
+            self.update_selected_players_display()
+
+    def clear_selected_players(self):
+        """Clear all selected players."""
+        self.selected_players = []
+        self.update_selected_players_display()
+
+    def update_selected_players_display(self):
+        """Update the selected players display."""
+        if self.selected_players:
+            display_text = f"Selected Players ({len(self.selected_players)}): " + ", ".join(self.selected_players)
+        else:
+            display_text = "Selected Players: None"
+    
+        self.selected_players_label.setText(display_text)
+
+    def start_training(self):
+        """Start model training."""
+        if self.training_worker and self.training_worker.isRunning():
+            QMessageBox.warning(self, "Warning", "Training is already in progress.")
+            return
+    
+        # Get parameters based on training method
+        method = self.training_method_combo.currentText()
+    
+        if method == "Select from Available Players":
+            if not self.selected_players:
+                QMessageBox.warning(self, "Warning", "Please select at least one player for training.")
+                return
+            player_names = self.selected_players.copy()
+        elif method == "Enter Custom Players":
+            players_text = self.training_players_entry.text().strip()
+            if not players_text:
+                QMessageBox.warning(self, "Warning", "Please enter player names for training.")
+                return
+            player_names = [name.strip() for name in players_text.split(',')]
+        else:  # Train All Available Players
+            player_names = None
+    
+        optimize = self.optimize_checkbox.isChecked()
+        use_cache = self.use_cache_checkbox.isChecked()
+    
+        # Confirm training start
+        if optimize:
+            reply = QMessageBox.question(
+                self, "Confirm Training",
+                "Hyperparameter optimization is enabled. This may take 30+ minutes.\n"
+                "Do you want to continue?",
+                QMessageBox.Yes | QMessageBox.No
+            )
+            if reply != QMessageBox.Yes:
+                return
+    
+        # Store the player names for later use
+        self.current_training_players = player_names
+    
+        # Update UI
+        self.start_training_button.setEnabled(False)
+        self.stop_training_button.setEnabled(True)
+        self.progress_bar.setValue(0)
+        self.training_log.clear()
+    
+        # Create and start worker
+        self.training_worker = TrainingWorker(self.predictor, player_names, optimize, use_cache)
+    
+        # Connect signals
+        self.training_worker.progress_updated.connect(self.progress_bar.setValue)
+        self.training_worker.status_updated.connect(self.progress_label.setText)
+        self.training_worker.log_updated.connect(self.add_training_log)
+        self.training_worker.training_completed.connect(self.on_training_completed)
+        self.training_worker.training_failed.connect(self.on_training_failed)
+    
+        # Start training
+        self.training_worker.start()
+        self.update_status("Training started...")
+
+    def on_training_completed(self, results):
+        """Handle training completion."""
+        self.is_model_loaded = True
+        self.update_ui_state()
+        self.refresh_players()
+    
+        # Add trained players to storage
+        if hasattr(self, 'current_training_players') and self.current_training_players:
+            self.player_storage.add_trained_players(self.current_training_players)
+            self.refresh_available_players()  # Refresh the dropdown
+    
+        # Reset training UI
+        self.start_training_button.setEnabled(True)
         self.stop_training_button.setEnabled(False)
-        self.stop_training_button.clicked.connect(self.stop_training)
-        self.stop_training_button.setStyleSheet("""
-            QPushButton {
-                background-color: #e74c3c;
-                color: white;
-                border: none;
-                border-radius: 25px;
-                padding: 10px 30px;
-            }
-            QPushButton:hover {
-                background-color: #c0392b;
-            }
-            QPushButton:disabled {
-                background-color: #7f8c8d;
-            }
-        """)
-        
-        control_layout.addWidget(self.start_training_button)
-        control_layout.addWidget(self.stop_training_button)
-        control_layout.addStretch()
-        
-        layout.addLayout(control_layout)
-        
-        # Progress section
-        progress_group = QGroupBox("Training Progress")
-        progress_group.setStyleSheet("""
-            QGroupBox {
-                color: white;
-                border: 2px solid #555;
-                border-radius: 5px;
-                margin: 10px;
-                padding-top: 10px;
-            }
-            QGroupBox::title {
-                subcontrol-origin: margin;
-                left: 10px;
-                padding: 0 5px 0 5px;
-            }
-        """)
-        
-        progress_layout = QVBoxLayout(progress_group)
-        
-        self.progress_label = QLabel("Ready to train")
-        self.progress_label.setAlignment(Qt.AlignCenter)
-        self.progress_label.setStyleSheet("color: white; font-weight: bold;")
-        progress_layout.addWidget(self.progress_label)
-        
-        self.progress_bar = QProgressBar()
-        self.progress_bar.setMinimumHeight(25)
-        self.progress_bar.setStyleSheet("""
-            QProgressBar {
-                border: 2px solid #555;
-                border-radius: 5px;
-                text-align: center;
-                color: white;
-                background-color: #2c3e50;
-            }
-            QProgressBar::chunk {
-                background-color: #3498db;
-                border-radius: 3px;
-            }
-        """)
-        progress_layout.addWidget(self.progress_bar)
-        
-        layout.addWidget(progress_group)
-        
-        # Training log
-        log_group = QGroupBox("Training Log")
-        log_group.setStyleSheet("""
-            QGroupBox {
-                color: white;
-                border: 2px solid #555;
-                border-radius: 5px;
-                margin: 10px;
-                padding-top: 10px;
-            }
-            QGroupBox::title {
-                subcontrol-origin: margin;
-                left: 10px;
-                padding: 0 5px 0 5px;
-            }
-        """)
-        
-        log_layout = QVBoxLayout(log_group)
-        
-        self.training_log = QTextEdit()
-        self.training_log.setFont(QFont("Consolas", 9))
-        self.training_log
-        self.training_log.setMaximumHeight(200)
-        self.training_log.setStyleSheet("""
-            QTextEdit {
-                background-color: #2c3e50;
-                color: white;
-                border: 1px solid #555;
-                border-radius: 3px;
-                padding: 5px;
-            }
-        """)
-        log_layout.addWidget(self.training_log)
-        
-        layout.addWidget(log_group)
-        
-        self.tab_widget.addTab(training_widget, "🏋️ Training")
     
-    def create_status_bar(self):
-        """Create the status bar."""
-        self.status_bar = QStatusBar()
-        self.setStatusBar(self.status_bar)
-        
-        # Add permanent widgets to status bar
-        self.model_status_label = QLabel("Model: Not Loaded")
-        self.model_status_label.setStyleSheet("color: #e74c3c;")
-        
-        self.data_status_label = QLabel("Data: Ready")
-        self.data_status_label.setStyleSheet("color: #27ae60;")
-        
-        self.status_bar.addWidget(self.model_status_label)
-        self.status_bar.addPermanentWidget(self.data_status_label)
-        
-        self.update_status("Ready - Load or train a model to begin predictions")
+        self.update_status("Training completed successfully!")
     
+        # Show results
+        best_model = min(results.keys(), key=lambda k: results[k]['test_mae'])
+        best_mae = results[best_model]['test_mae']
+    
+        QMessageBox.information(
+            self, "Training Complete",
+            f"Model training completed successfully!\n\n"
+            f"Best Model: {best_model.title()}\n"
+            f"Best MAE: {best_mae:.3f} points\n\n"
+            f"Players have been added to your trained players list."
+        )
+
+
+
+
+
+
+
     def update_status(self, message):
         """Update status bar message."""
         self.status_bar.showMessage(f"Status: {message}")

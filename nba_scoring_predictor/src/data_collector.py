@@ -25,11 +25,11 @@ class NBADataCollector:
     
     def find_players(self, player_names: List[str] = None) -> List[dict]:
         """
-        Find players by name or return active players.
-        
+        Find players by name or return popular players.
+    
         Args:
             player_names: List of player names to search for
-            
+        
         Returns:
             List of player dictionaries
         """
@@ -38,15 +38,25 @@ class NBADataCollector:
             for name in player_names:
                 matches = [p for p in self.all_players 
                           if name.lower() in p['full_name'].lower()]
-                found_players.extend(matches)
+                if matches:
+                    found_players.extend(matches)
+                else:
+                    logger.warning(f"No match found for player: {name}")
             return found_players
         else:
-            # Return a smaller subset of active/popular players
-            popular_players = [
-                'LeBron James', 'Stephen Curry', 'Luka Dončić', 'Giannis Antetokounmpo',
-                'Jayson Tatum', 'Kevin Durant', 'Nikola Jokić', 'Joel Embiid'
-            ]
-            return [p for p in self.all_players if p['full_name'] in popular_players]
+            # Import here to avoid circular imports
+            from utils.player_storage import PlayerStorage
+            storage = PlayerStorage()
+            popular_players = storage.get_popular_players()
+        
+            # Find matching player objects
+            found_players = []
+            for player_name in popular_players:
+                matches = [p for p in self.all_players 
+                          if player_name.lower() == p['full_name'].lower()]
+                found_players.extend(matches)
+        
+            return found_players
     
     def collect_player_data(self, player_names: List[str] = None, 
                           seasons: List[str] = None, 
