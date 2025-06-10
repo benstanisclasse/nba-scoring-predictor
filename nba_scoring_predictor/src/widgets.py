@@ -71,7 +71,7 @@ class ModelComparisonTable(QWidget):
                             item.setBackground(QColor("#f39c12"))  # Orange
                         else:
                             item.setBackground(QColor("#e74c3c"))  # Red
-                    elif j == 3:  # R² column (higher is better)
+                    elif j == 3:  # R column (higher is better)
                         if value > 0.7:
                             item.setBackground(QColor("#27ae60"))  # Green
                         elif value > 0.6:

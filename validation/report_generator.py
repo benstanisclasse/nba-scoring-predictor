@@ -101,47 +101,61 @@ class ValidationReportGenerator:
         
         return html_content
     
+        # In validation/report_generator.py - Fix string formatting
     def _generate_executive_summary(self, results: Dict) -> str:
         """Generate executive summary section."""
-        
+    
         performance = results.get('performance', {})
         overall_metrics = performance.get('overall_metrics', {})
-        
-        # Extract key metrics
+    
+        # FIXED: Handle missing data gracefully
         best_model = overall_metrics.get('best_model', {})
-        best_mae = best_model.get('mae', 'N/A')
-        best_r2 = best_model.get('r2', 'N/A')
-        
+        best_mae = best_model.get('mae', 0)
+        best_r2 = best_model.get('r2', 0)
+    
+        # FIXED: Ensure values are numbers before formatting
+        if isinstance(best_mae, (int, float)):
+            mae_str = f"{best_mae:.2f}"
+        else:
+            mae_str = "N/A"
+    
+        if isinstance(best_r2, (int, float)):
+            r2_str = f"{best_r2:.3f}"
+            r2_pct_str = f"{(best_r2 * 100):.1f}"
+        else:
+            r2_str = "N/A"
+            r2_pct_str = "N/A"
+    
         return f"""
         <section id="executive-summary">
             <h2>📊 Executive Summary</h2>
-            
+        
             <div class="summary-cards">
                 <div class="card">
                     <h3>Model Performance</h3>
-                    <p class="metric">{best_mae:.2f}</p>
+                    <p class="metric">{mae_str}</p>
                     <p class="label">Best MAE (Points)</p>
                 </div>
-                
+            
                 <div class="card">
                     <h3>Predictive Power</h3>
-                    <p class="metric">{best_r2:.3f}</p>
-                    <p class="label">Best R² Score</p>
+                    <p class="metric">{r2_str}</p>
+                    <p class="label">Best R Score</p>
                 </div>
-                
+            
                 <div class="card">
                     <h3>Models Tested</h3>
                     <p class="metric">{overall_metrics.get('model_count', 'N/A')}</p>
                     <p class="label">ML Algorithms</p>
                 </div>
             </div>
-            
+        
             <div class="key-findings">
                 <h3>🔍 Key Findings</h3>
                 <ul>
                     <li><strong>Best Performing Model:</strong> {best_model.get('name', 'Unknown')}</li>
-                    <li><strong>Prediction Accuracy:</strong> ±{best_mae:.1f} points average error</li>
-                    <li><strong>Explained Variance:</strong> {(best_r2 * 100):.1f}% of scoring variance explained</li>
+                    <li><strong>Prediction Accuracy:</strong> ±{mae_str} points average error</li>
+                    <li><strong>Explained Variance:</strong> {r2_pct_str}% of scoring variance explained</li>
                     <li><strong>Model Reliability:</strong> Consistent performance across seasons</li>
                 </ul>
             </div>
@@ -193,7 +207,7 @@ class ValidationReportGenerator:
                     <th>Model</th>
                     <th>Test MAE</th>
                     <th>Test RMSE</th>
-                    <th>Test R²</th>
+                    <th>Test R</th>
                     <th>Performance Grade</th>
                 </tr>
             </thead>
@@ -202,7 +216,7 @@ class ValidationReportGenerator:
         
         for model in model_comparison:
             mae = model.get('Test MAE', 0)
-            r2 = model.get('Test R²', 0)
+            r2 = model.get('Test R', 0)
             
             # Assign performance grade
             if mae < 4.5 and r2 > 0.75:
@@ -258,7 +272,7 @@ class ValidationReportGenerator:
                 <h4>{position}</h4>
                 <div class="position-metrics">
                     <p><strong>MAE:</strong> {mae:.2f}</p>
-                    <p><strong>R²:</strong> {r2:.3f}</p>
+                    <p><strong>R:</strong> {r2:.3f}</p>
                     <p><strong>Sample:</strong> {sample_size} games</p>
                 </div>
                 <p class="position-desc">{characteristics}</p>
@@ -291,7 +305,7 @@ class ValidationReportGenerator:
             <div class="month-card">
                 <h5>{month.title()}</h5>
                 <p>MAE: {mae:.2f}</p>
-                <p>R²: {r2:.3f}</p>
+                <p>R: {r2:.3f}</p>
             </div>
             """
         

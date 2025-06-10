@@ -1,8 +1,4 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
-Script to run comprehensive validation
-"""
+﻿# In scripts/run_validation.py - CORRECTED VERSION
 import sys
 import os
 
@@ -21,16 +17,43 @@ def main():
     # Initialize predictor
     predictor = EnhancedNBAPredictor()
     
-    # Load or train model
+    # FIXED: Ensure model is actually trained before validation
     try:
-        predictor.load_model('models/nba_model.pkl')
+        predictor.load_model('models/Rolebased9playerOH.pkl')
         logger.info("Loaded existing model")
     except:
         logger.info("Training new model for validation...")
-        # Add training logic here
-        pass
+        
+        # Train a basic model first
+        try:
+            # Use fallback players if NBA data unavailable
+            fallback_players = [
+                'LeBron James', 'Stephen Curry', 'Luka Dončić', 
+                'Giannis Antetokounmpo', 'Jayson Tatum'
+            ]
+            
+            # Collect data
+            data = predictor.collect_data(
+                player_names=fallback_players,
+                seasons=['2022-23', '2023-24'],
+                use_cache=True
+            )
+            
+            # Process and train
+            processed_data = predictor.process_data(data)
+            training_results = predictor.train(processed_data, optimize=False)
+            
+            # Save the model
+            os.makedirs('models', exist_ok=True)
+            predictor.save_model('models/nba_model.pkl')
+            
+            logger.info("Model training completed successfully")
+            
+        except Exception as e:
+            logger.error(f"Model training failed: {e}")
+            return None
     
-    # Run validation
+    # Run validation with trained model
     validator = NBAPredictionValidator(predictor)
     results = validator.run_comprehensive_validation(['2022-23', '2023-24'])
     

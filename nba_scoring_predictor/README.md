@@ -199,7 +199,7 @@ MODEL_CONFIGS = {
 ## 📊 Example Results
 
 ### Model Performance
-| Model | Test MAE | Test R² | Training Time |
+| Model | Test MAE | Test R | Training Time |
 |-------|----------|---------|---------------|
 | XGBoost | 4.2 | 0.78 | 2 min |
 | LightGBM | 4.3 | 0.77 | 1 min |

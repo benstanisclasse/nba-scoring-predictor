@@ -28,7 +28,7 @@ def clean_file_encoding(file_path):
         
         # Replace problematic characters
         replacements = {
-            'R²': 'R-squared',
+            'R': 'R-squared',
             '²': '-squared',
             ''': "'",
             ''': "'",

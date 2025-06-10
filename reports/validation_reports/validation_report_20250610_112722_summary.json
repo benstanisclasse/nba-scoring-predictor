@@ -1,0 +1,3532 @@
+{
+  "performance": {
+    "overall_metrics": {
+      "model_count": 5,
+      "best_model": {
+        "name": "Lightgbm",
+        "mae": 2.179,
+        "r2": 0.897
+      },
+      "model_comparison": [
+        {
+          "Model": "Xgboost",
+          "Test MAE": 2.557,
+          "Test RMSE": 2.778,
+          "Test R": 0.864
+        },
+        {
+          "Model": "Lightgbm",
+          "Test MAE": 2.179,
+          "Test RMSE": 2.412,
+          "Test R": 0.897
+        },
+        {
+          "Model": "Random_Forest",
+          "Test MAE": 2.817,
+          "Test RMSE": 3.085,
+          "Test R": 0.832
+        },
+        {
+          "Model": "Neural_Network",
+          "Test MAE": 3.151,
+          "Test RMSE": 3.656,
+          "Test R": 0.764
+        },
+        {
+          "Model": "Ensemble",
+          "Test MAE": 2.482,
+          "Test RMSE": 2.702,
+          "Test R": 0.871
+        }
+      ]
+    },
+    "temporal_analysis": {
+      "seasonal_performance": {
+        "2022-23": {
+          "mae": 5.509813403867641,
+          "r2": 0.6078121913513538,
+          "predictions_count": 729
+        },
+        "2023-24": {
+          "mae": 4.3128805565688895,
+          "r2": 0.7740324110528355,
+          "predictions_count": 1356
+        }
+      },
+      "monthly_trends": {
+        "october": {
+          "mae": 5.2,
+          "r2": 0.72
+        },
+        "november": {
+          "mae": 4.8,
+          "r2": 0.75
+        },
+        "december": {
+          "mae": 4.6,
+          "r2": 0.77
+        },
+        "january": {
+          "mae": 4.4,
+          "r2": 0.78
+        },
+        "february": {
+          "mae": 4.3,
+          "r2": 0.79
+        },
+        "march": {
+          "mae": 4.2,
+          "r2": 0.8
+        },
+        "april": {
+          "mae": 4.5,
+          "r2": 0.76
+        }
+      },
+      "trend_analysis": {
+        "improving_over_season": true,
+        "best_month": "march",
+        "worst_month": "october"
+      }
+    },
+    "player_type_analysis": {
+      "by_position": {
+        "PG": {
+          "mae": 4.2,
+          "r2": 0.78,
+          "sample_size": 450,
+          "avg_prediction": 15.3,
+          "characteristics": "High assist correlation, moderate scoring variance"
+        },
+        "SG": {
+          "mae": 4.8,
+          "r2": 0.74,
+          "sample_size": 380,
+          "avg_prediction": 18.7,
+          "characteristics": "High scoring variance, three-point dependent"
+        },
+        "SF": {
+          "mae": 4.5,
+          "r2": 0.76,
+          "sample_size": 420,
+          "avg_prediction": 17.2,
+          "characteristics": "Balanced performance, versatile roles"
+        },
+        "PF": {
+          "mae": 4.3,
+          "r2": 0.77,
+          "sample_size": 350,
+          "avg_prediction": 16.1,
+          "characteristics": "Rebound-dependent, inside scoring focus"
+        },
+        "C": {
+          "mae": 4.1,
+          "r2": 0.79,
+          "sample_size": 280,
+          "avg_prediction": 14.8,
+          "characteristics": "Most predictable, consistent role"
+        }
+      },
+      "by_experience": {
+        "rookie": {
+          "mae": 5.2,
+          "r2": 0.68,
+          "volatility": "high"
+        },
+        "sophomore": {
+          "mae": 4.9,
+          "r2": 0.71,
+          "volatility": "high"
+        },
+        "veteran_3-7": {
+          "mae": 4.3,
+          "r2": 0.78,
+          "volatility": "medium"
+        },
+        "veteran_8-12": {
+          "mae": 4.1,
+          "r2": 0.81,
+          "volatility": "low"
+        },
+        "veteran_13+": {
+          "mae": 4.4,
+          "r2": 0.76,
+          "volatility": "medium"
+        }
+      },
+      "best_predicted_type": "C",
+      "most_challenging_type": "SG",
+      "insights": [
+        "Centers are most predictable due to consistent role",
+        "Shooting guards have highest variance due to three-point shooting",
+        "Veterans (8-12 years) are most predictable",
+        "Rookies show high prediction variance"
+      ]
+    },
+    "prediction_distribution": {
+      "prediction_stats": {
+        "mean_predicted": 16.534721982756565,
+        "std_predicted": 11.917967865443378,
+        "min_predicted": -5.99500618371785,
+        "max_predicted": 66.69024927139785
+      },
+      "actual_stats": {
+        "mean_actual": 16.47944212891703,
+        "std_actual": 11.217243960782724,
+        "min_actual": 0.36735180887650704,
+        "max_actual": 62.29512341215386
+      },
+      "distribution_comparison": {
+        "correlation": 0.9455374505868517,
+        "bias": 0.055279853839533356,
+        "calibration_score": 0.78
+      }
+    },
+    "error_analysis": {
+      "error_statistics": {
+        "mean_error": 0.08699425120046476,
+        "std_error": 4.404267934863094,
+        "mae": 3.507725854077631,
+        "rmse": 4.405127017669883,
+        "median_error": 0.11385275505699713
+      },
+      "error_distribution": {
+        "within_1_point": 0.177,
+        "within_3_points": 0.514,
+        "within_5_points": 0.749,
+        "over_10_points": 0.02
+      },
+      "directional_accuracy": {
+        "over_predictions": 0.51,
+        "under_predictions": 0.49,
+        "exact_predictions": 0.0
+      },
+      "outlier_analysis": {
+        "large_positive_errors": 13,
+        "large_negative_errors": 7,
+        "outlier_threshold": 10.0,
+        "outlier_percentage": 0.02
+      }
+    },
+    "confidence_analysis": {
+      "confidence_distribution": {
+        "mean_confidence": 0.5029743616940723,
+        "std_confidence": 0.21669754412372058,
+        "high_confidence_pct": 0.093,
+        "low_confidence_pct": 0.196
+      },
+      "confidence_vs_accuracy": {
+        "correlation": -0.4930822498772484,
+        "high_confidence_mae": 0.48381087527518774,
+        "low_confidence_mae": 3.310613482121706,
+        "calibration_quality": "good"
+      },
+      "confidence_bins": {
+        "0-10%": {
+          "count": 22,
+          "avg_error": 4.682275108291972
+        },
+        "10-20%": {
+          "count": 77,
+          "avg_error": 3.1423603887203275
+        },
+        "20-30%": {
+          "count": 97,
+          "avg_error": 3.1330767029068642
+        },
+        "30-40%": {
+          "count": 142,
+          "avg_error": 2.7032107770384295
+        },
+        "40-50%": {
+          "count": 154,
+          "avg_error": 2.071073343132304
+        },
+        "50-60%": {
+          "count": 157,
+          "avg_error": 1.5937250946658048
+        },
+        "60-70%": {
+          "count": 153,
+          "avg_error": 1.495794154910823
+        },
+        "70-80%": {
+          "count": 105,
+          "avg_error": 0.9420456540184301
+        },
+        "80-90%": {
+          "count": 69,
+          "avg_error": 0.5540044711676849
+        },
+        "90-100%": {
+          "count": 24,
+          "avg_error": 0.282004287084259
+        }
+      }
+    }
+  },
+  "statistical": {
+    "baseline_comparison": {
+      "performance_comparison": {
+        "model_mae": 3.1001594257508853,
+        "season_average_mae": 8.71383325497702,
+        "recent_average_mae": 4.985728824804613,
+        "random_baseline_mae": 11.854474454915925
+      },
+      "improvement_over_baselines": {
+        "vs_season_average": {
+          "mae_improvement": 5.613673829226135,
+          "percent_improvement": 64.42255279580674,
+          "t_statistic": -23.890674556423406,
+          "p_value": 3.8426575951517185e-100,
+          "significant": "True"
+        },
+        "vs_recent_average": {
+          "mae_improvement": 1.8855693990537277,
+          "percent_improvement": 37.81933324718321,
+          "t_statistic": -13.696220033305341,
+          "p_value": 2.9562210471317046e-39,
+          "significant": "True"
+        }
+      },
+      "effect_sizes": {
+        "vs_season_average": 0.7947229172435296,
+        "vs_recent_average": 0.5060526449651263
+      }
+    },
+    "accuracy_tests": {
+      "accuracy_metrics": {
+        "mae": 3.2551673970384294,
+        "rmse": 4.074204669357167,
+        "r_squared": 0.8680791764951572,
+        "mean_error": 0.05804384653151001,
+        "std_error": 4.073791182632164,
+        "directional_accuracy": 0.881
+      },
+      "error_distribution": {
+        "within_1_point": 0.184,
+        "within_3_points": 0.545,
+        "within_5_points": 0.782,
+        "over_10_points": 0.017
+      },
+      "confidence_intervals": {
+        "mean_error_95ci": [
+          -0.19444770723264404,
+          0.31053540029566407
+        ],
+        "prediction_interval_95": [
+          -7.984483998495876,
+          7.984483998495876
+        ]
+      },
+      "statistical_tests": {
+        "normality_test": {
+          "statistic": 0.9989434632111291,
+          "p_value": 0.8426213933417745,
+          "is_normal": "True"
+        },
+        "zero_mean_test": {
+          "statistic": 0.4503396287076668,
+          "p_value": 0.6525632804927148,
+          "unbiased": "True"
+        }
+      }
+    },
+    "temporal_consistency": {
+      "monthly_performance": {
+        "October": {
+          "mae": 3.075395721504454,
+          "r2": 0.9035038984934292,
+          "sample_size": 131
+        },
+        "November": {
+          "mae": 4.071825145994193,
+          "r2": 0.7785883810960098,
+          "sample_size": 117
+        },
+        "December": {
+          "mae": 3.332348808324425,
+          "r2": 0.8455611041616239,
+          "sample_size": 146
+        },
+        "January": {
+          "mae": 3.686758395099524,
+          "r2": 0.8313110400894033,
+          "sample_size": 107
+        },
+        "February": {
+          "mae": 3.0854719603921454,
+          "r2": 0.9024388133140379,
+          "sample_size": 121
+        },
+        "March": {
+          "mae": 3.157106486317442,
+          "r2": 0.8414730660009417,
+          "sample_size": 125
+        },
+        "April": {
+          "mae": 3.7909001575174597,
+          "r2": 0.7909153065944909,
+          "sample_size": 89
+        }
+      },
+      "consistency_tests": {
+        "mae_anova": {
+          "f_statistic": 38.90053028008714,
+          "p_value": 5.439858273758545e-36,
+          "consistent": "False"
+        },
+        "performance_stability": {
+          "mae_coefficient_of_variation": 0.10551378820331733,
+          "r2_coefficient_of_variation": 0.0534808709608431,
+          "stable_performance": "True"
+        }
+      },
+      "seasonal_trends": {
+        "best_month": "October",
+        "worst_month": "November",
+        "improvement_over_season": false,
+        "trend_analysis": "Performance stable throughout season"
+      }
+    },
+    "player_type_analysis": {
+      "position_analysis": {
+        "PG": {
+          "mae": 3.3087534720785383,
+          "rmse": 4.14128293688871,
+          "r2": 0.8689723226328196,
+          "sample_size": 5984,
+          "players_analyzed": 88
+        },
+        "SG": {
+          "mae": 3.8586526430422725,
+          "rmse": 4.82628407709648,
+          "r2": 0.8157440339150367,
+          "sample_size": 3150,
+          "players_analyzed": 75
+        },
+        "SF": {
+          "mae": 3.581827030907129,
+          "rmse": 4.512777239502742,
+          "r2": 0.8319399024381571,
+          "sample_size": 4071,
+          "players_analyzed": 69
+        },
+        "PF": {
+          "mae": 3.4606029527780646,
+          "rmse": 4.299657789975679,
+          "r2": 0.8636165749924296,
+          "sample_size": 4250,
+          "players_analyzed": 85
+        },
+        "C": {
+          "mae": 3.331416300020016,
+          "rmse": 4.175117518210976,
+          "r2": 0.874177272942499,
+          "sample_size": 2688,
+          "players_analyzed": 56
+        }
+      },
+      "experience_analysis": {
+        "Rookie": {
+          "mae": 4.088634721454401,
+          "r2": 0.8095484420468998,
+          "sample_size": 343,
+          "volatility": "High"
+        },
+        "2nd Year": {
+          "mae": 3.917593159837691,
+          "r2": 0.7915305111263937,
+          "sample_size": 424,
+          "volatility": "High"
+        },
+        "3-7 Years": {
+          "mae": 3.574777748310388,
+          "r2": 0.8642268025857145,
+          "sample_size": 456,
+          "volatility": "Low"
+        },
+        "8-12 Years": {
+          "mae": 3.3135054134834743,
+          "r2": 0.8695223669251974,
+          "sample_size": 400,
+          "volatility": "Low"
+        },
+        "13+ Years": {
+          "mae": 3.5724642306622663,
+          "r2": 0.8556159136976456,
+          "sample_size": 482,
+          "volatility": "Low"
+        }
+      },
+      "statistical_tests": {
+        "position_differences": {
+          "f_statistic": 2.3368545790235324,
+          "p_value": 0.05449369295242104,
+          "significant_differences": "False"
+        },
+        "best_predicted_position": "PG",
+        "most_challenging_position": "SG",
+        "most_predictable_experience": "8-12 Years"
+      },
+      "insights": [
+        "Centers (C) are most predictable with MAE of 3.33",
+        "Shooting Guards (SG) are most challenging with MAE of 3.86",
+        "Veterans (8-12 years) show most consistent performance patterns",
+        "Rookies exhibit highest prediction variance due to adaptation period"
+      ]
+    }
+  },
+  "betting": {
+    "conservative": {
+      "initial_bankroll": 1000,
+      "final_bankroll": 1039.7495612722357,
+      "total_profit": 39.749561272235724,
+      "roi_percent": 3.9749561272235723,
+      "total_bets": 38,
+      "wins": 22,
+      "losses": 16,
+      "win_rate": 0.5789473684210527,
+      "max_drawdown_percent": -4.053149566834043,
+      "strategy_config": {
+        "type": "over_under",
+        "confidence_threshold": 0.8,
+        "edge_threshold": 2.0,
+        "max_bet_pct": 0.01
+      },
+      "bet_history": [
+        {
+          "bet_number": 1,
+          "bet_size": 10,
+          "confidence": 0.908575039575547,
+          "edge": -2.441140208563709,
+          "won": true,
+          "bankroll": 1009.1
+        },
+        {
+          "bet_number": 2,
+          "bet_size": 10.091000000000001,
+          "confidence": 0.8363402658624672,
+          "edge": -2.4283772255754643,
+          "won": false,
+          "bankroll": 999.009
+        },
+        {
+          "bet_number": 3,
+          "bet_size": 10,
+          "confidence": 0.8965837284752503,
+          "edge": -2.2025038096942238,
+          "won": true,
+          "bankroll": 1008.109
+        },
+        {
+          "bet_number": 4,
+          "bet_size": 10.081090000000001,
+          "confidence": 0.9231418646229453,
+          "edge": 3.2899354270025674,
+          "won": true,
+          "bankroll": 1017.2827919
+        },
+        {
+          "bet_number": 5,
+          "bet_size": 10.172827919,
+          "confidence": 0.8348251081848428,
+          "edge": 3.7736562242484735,
+          "won": false,
+          "bankroll": 1007.109963981
+        },
+        {
+          "bet_number": 6,
+          "bet_size": 10.071099639809999,
+          "confidence": 0.9657639385375602,
+          "edge": 2.540251093151431,
+          "won": true,
+          "bankroll": 1016.2746646532271
+        },
+        {
+          "bet_number": 7,
+          "bet_size": 10.162746646532272,
+          "confidence": 0.8771976208177168,
+          "edge": -3.3395583441368,
+          "won": false,
+          "bankroll": 1006.1119180066949
+        },
+        {
+          "bet_number": 8,
+          "bet_size": 10.06111918006695,
+          "confidence": 0.9237162755547698,
+          "edge": 2.2882704052328364,
+          "won": false,
+          "bankroll": 996.0507988266279
+        },
+        {
+          "bet_number": 9,
+          "bet_size": 10,
+          "confidence": 0.9171547218466204,
+          "edge": -2.003240019789831,
+          "won": false,
+          "bankroll": 986.0507988266279
+        },
+        {
+          "bet_number": 10,
+          "bet_size": 10,
+          "confidence": 0.8381680386151993,
+          "edge": 3.4991534863738787,
+          "won": false,
+          "bankroll": 976.0507988266279
+        },
+        {
+          "bet_number": 11,
+          "bet_size": 10,
+          "confidence": 0.8477390018457838,
+          "edge": -3.987471285142911,
+          "won": true,
+          "bankroll": 985.1507988266279
+        },
+        {
+          "bet_number": 12,
+          "bet_size": 10,
+          "confidence": 0.8480694492720556,
+          "edge": -5.051437267204976,
+          "won": true,
+          "bankroll": 994.2507988266279
+        },
+        {
+          "bet_number": 13,
+          "bet_size": 10,
+          "confidence": 0.8993449744185308,
+          "edge": -2.419389485682215,
+          "won": false,
+          "bankroll": 984.2507988266279
+        },
+        {
+          "bet_number": 14,
+          "bet_size": 10,
+          "confidence": 0.9027117697883691,
+          "edge": 2.579505508165491,
+          "won": true,
+          "bankroll": 993.350798826628
+        },
+        {
+          "bet_number": 15,
+          "bet_size": 10,
+          "confidence": 0.8491692041188111,
+          "edge": 2.333097181954012,
+          "won": true,
+          "bankroll": 1002.450798826628
+        },
+        {
+          "bet_number": 16,
+          "bet_size": 10.02450798826628,
+          "confidence": 0.8144333372228573,
+          "edge": 3.746595552435091,
+          "won": false,
+          "bankroll": 992.4262908383618
+        },
+        {
+          "bet_number": 17,
+          "bet_size": 10,
+          "confidence": 0.8408246862566878,
+          "edge": -3.0368978879294803,
+          "won": false,
+          "bankroll": 982.4262908383618
+        },
+        {
+          "bet_number": 18,
+          "bet_size": 10,
+          "confidence": 0.8037352442199331,
+          "edge": 3.1562136158230283,
+          "won": true,
+          "bankroll": 991.5262908383618
+        },
+        {
+          "bet_number": 19,
+          "bet_size": 10,
+          "confidence": 0.823526131257624,
+          "edge": -3.4516134575811934,
+          "won": true,
+          "bankroll": 1000.6262908383618
+        },
+        {
+          "bet_number": 20,
+          "bet_size": 10.006262908383619,
+          "confidence": 0.9382638211429278,
+          "edge": 3.6043296168628913,
+          "won": true,
+          "bankroll": 1009.7319900849909
+        },
+        {
+          "bet_number": 21,
+          "bet_size": 10.097319900849909,
+          "confidence": 0.8157074067235428,
+          "edge": 3.1364795178393026,
+          "won": true,
+          "bankroll": 1018.9205511947644
+        },
+        {
+          "bet_number": 22,
+          "bet_size": 10.189205511947645,
+          "confidence": 0.8347043409882909,
+          "edge": -2.9418175143751966,
+          "won": true,
+          "bankroll": 1028.1927282106367
+        },
+        {
+          "bet_number": 23,
+          "bet_size": 10.281927282106366,
+          "confidence": 0.8435327633376731,
+          "edge": 3.1083208414295482,
+          "won": false,
+          "bankroll": 1017.9108009285303
+        },
+        {
+          "bet_number": 24,
+          "bet_size": 10.179108009285303,
+          "confidence": 0.876346827744959,
+          "edge": -4.241400305270132,
+          "won": true,
+          "bankroll": 1027.17378921698
+        },
+        {
+          "bet_number": 25,
+          "bet_size": 10.2717378921698,
+          "confidence": 0.812527450191234,
+          "edge": -2.4093865656562254,
+          "won": false,
+          "bankroll": 1016.9020513248101
+        },
+        {
+          "bet_number": 26,
+          "bet_size": 10.169020513248102,
+          "confidence": 0.9534412515550662,
+          "edge": 2.5226362037000927,
+          "won": true,
+          "bankroll": 1026.155859991866
+        },
+        {
+          "bet_number": 27,
+          "bet_size": 10.26155859991866,
+          "confidence": 0.8759111596639304,
+          "edge": 2.6366046497053386,
+          "won": false,
+          "bankroll": 1015.8943013919474
+        },
+        {
+          "bet_number": 28,
+          "bet_size": 10.158943013919474,
+          "confidence": 0.8164871379945499,
+          "edge": 2.4600011454383,
+          "won": true,
+          "bankroll": 1025.138939534614
+        },
+        {
+          "bet_number": 29,
+          "bet_size": 10.251389395346141,
+          "confidence": 0.9208067334961269,
+          "edge": -2.30666480641149,
+          "won": true,
+          "bankroll": 1034.467703884379
+        },
+        {
+          "bet_number": 30,
+          "bet_size": 10.344677038843791,
+          "confidence": 0.9452282738222499,
+          "edge": 2.2081412185640996,
+          "won": false,
+          "bankroll": 1024.1230268455352
+        },
+        {
+          "bet_number": 31,
+          "bet_size": 10.241230268455352,
+          "confidence": 0.8524274896205989,
+          "edge": -2.313956950284584,
+          "won": true,
+          "bankroll": 1033.4425463898294
+        },
+        {
+          "bet_number": 32,
+          "bet_size": 10.334425463898295,
+          "confidence": 0.8405542786541716,
+          "edge": -2.3465391120078603,
+          "won": false,
+          "bankroll": 1023.1081209259312
+        },
+        {
+          "bet_number": 33,
+          "bet_size": 10.231081209259312,
+          "confidence": 0.9577669689961626,
+          "edge": 2.622334995605249,
+          "won": false,
+          "bankroll": 1012.8770397166719
+        },
+        {
+          "bet_number": 34,
+          "bet_size": 10.128770397166718,
+          "confidence": 0.9010748006802047,
+          "edge": -2.442154928176135,
+          "won": true,
+          "bankroll": 1022.0942207780936
+        },
+        {
+          "bet_number": 35,
+          "bet_size": 10.220942207780936,
+          "confidence": 0.8660255567318842,
+          "edge": -3.4423516505794485,
+          "won": false,
+          "bankroll": 1011.8732785703127
+        },
+        {
+          "bet_number": 36,
+          "bet_size": 10.118732785703127,
+          "confidence": 0.8414186460142138,
+          "edge": 2.1077831045917663,
+          "won": true,
+          "bankroll": 1021.0813254053026
+        },
+        {
+          "bet_number": 37,
+          "bet_size": 10.210813254053026,
+          "confidence": 0.8886664708617733,
+          "edge": 2.0677815781367817,
+          "won": true,
+          "bankroll": 1030.3731654664907
+        },
+        {
+          "bet_number": 38,
+          "bet_size": 10.303731654664908,
+          "confidence": 0.8039338535209517,
+          "edge": -2.712072890289469,
+          "won": true,
+          "bankroll": 1039.7495612722357
+        }
+      ]
+    },
+    "aggressive": {
+      "initial_bankroll": 1000,
+      "final_bankroll": 2454.7108152816904,
+      "total_profit": 1454.7108152816904,
+      "roi_percent": 145.47108152816904,
+      "total_bets": 272,
+      "wins": 160,
+      "losses": 112,
+      "win_rate": 0.5882352941176471,
+      "max_drawdown_percent": -22.450153723025547,
+      "strategy_config": {
+        "type": "over_under",
+        "confidence_threshold": 0.6,
+        "edge_threshold": 0.5,
+        "max_bet_pct": 0.03
+      },
+      "bet_history": [
+        {
+          "bet_number": 1,
+          "bet_size": 30.0,
+          "confidence": 0.906627895270603,
+          "edge": 1.4769331599908209,
+          "won": true,
+          "bankroll": 1027.3
+        },
+        {
+          "bet_number": 2,
+          "bet_size": 30.819,
+          "confidence": 0.7301109904953936,
+          "edge": -2.2611046093631337,
+          "won": false,
+          "bankroll": 996.481
+        },
+        {
+          "bet_number": 3,
+          "bet_size": 29.89443,
+          "confidence": 0.7207649428239716,
+          "edge": 1.4874225675424535,
+          "won": true,
+          "bankroll": 1023.6849313
+        },
+        {
+          "bet_number": 4,
+          "bet_size": 30.710547938999998,
+          "confidence": 0.6754613881886862,
+          "edge": -0.6553242931955364,
+          "won": true,
+          "bankroll": 1051.63152992449
+        },
+        {
+          "bet_number": 5,
+          "bet_size": 31.548945897734697,
+          "confidence": 0.7423150738936819,
+          "edge": -3.837542430598083,
+          "won": true,
+          "bankroll": 1080.3410706914285
+        },
+        {
+          "bet_number": 6,
+          "bet_size": 32.410232120742855,
+          "confidence": 0.6356719896757506,
+          "edge": 0.6796419283732875,
+          "won": true,
+          "bankroll": 1109.8343819213046
+        },
+        {
+          "bet_number": 7,
+          "bet_size": 33.29503145763914,
+          "confidence": 0.660253612575253,
+          "edge": 1.5462817117784977,
+          "won": true,
+          "bankroll": 1140.1328605477563
+        },
+        {
+          "bet_number": 8,
+          "bet_size": 34.20398581643269,
+          "confidence": 0.6376431770890862,
+          "edge": -1.0069513082323984,
+          "won": true,
+          "bankroll": 1171.25848764071
+        },
+        {
+          "bet_number": 9,
+          "bet_size": 35.1377546292213,
+          "confidence": 0.7903008513883925,
+          "edge": -1.7710247476576972,
+          "won": false,
+          "bankroll": 1136.1207330114887
+        },
+        {
+          "bet_number": 10,
+          "bet_size": 34.08362199034466,
+          "confidence": 0.7887935609816685,
+          "edge": 1.5636457435546207,
+          "won": true,
+          "bankroll": 1167.1368290227024
+        },
+        {
+          "bet_number": 11,
+          "bet_size": 35.014104870681074,
+          "confidence": 0.6964589982602788,
+          "edge": 3.731549022289513,
+          "won": false,
+          "bankroll": 1132.1227241520214
+        },
+        {
+          "bet_number": 12,
+          "bet_size": 33.963681724560644,
+          "confidence": 0.7713511407166832,
+          "edge": 1.574169207484904,
+          "won": false,
+          "bankroll": 1098.1590424274607
+        },
+        {
+          "bet_number": 13,
+          "bet_size": 32.94477127282382,
+          "confidence": 0.7491170867631803,
+          "edge": 2.166102486350554,
+          "won": true,
+          "bankroll": 1128.1387842857305
+        },
+        {
+          "bet_number": 14,
+          "bet_size": 33.84416352857191,
+          "confidence": 0.7183906347239212,
+          "edge": 1.5179384409865349,
+          "won": true,
+          "bankroll": 1158.936973096731
+        },
+        {
+          "bet_number": 15,
+          "bet_size": 34.768109192901925,
+          "confidence": 0.640267409566795,
+          "edge": 3.3226034612163082,
+          "won": true,
+          "bankroll": 1190.5759524622717
+        },
+        {
+          "bet_number": 16,
+          "bet_size": 35.71727857386815,
+          "confidence": 0.8643079975080821,
+          "edge": 0.7545925309208183,
+          "won": false,
+          "bankroll": 1154.8586738884037
+        },
+        {
+          "bet_number": 17,
+          "bet_size": 34.64576021665211,
+          "confidence": 0.844576104072362,
+          "edge": -2.55983946652626,
+          "won": true,
+          "bankroll": 1186.386315685557
+        },
+        {
+          "bet_number": 18,
+          "bet_size": 35.59158947056671,
+          "confidence": 0.6183603815396855,
+          "edge": -1.2004337543175894,
+          "won": false,
+          "bankroll": 1150.7947262149903
+        },
+        {
+          "bet_number": 19,
+          "bet_size": 34.52384178644971,
+          "confidence": 0.6005093729481652,
+          "edge": -0.9728655321047212,
+          "won": true,
+          "bankroll": 1182.2114222406594
+        },
+        {
+          "bet_number": 20,
+          "bet_size": 35.466342667219784,
+          "confidence": 0.6641994045615875,
+          "edge": -0.7109772818327195,
+          "won": false,
+          "bankroll": 1146.7450795734396
+        },
+        {
+          "bet_number": 21,
+          "bet_size": 34.40235238720319,
+          "confidence": 0.6192186562487745,
+          "edge": -1.794508742971663,
+          "won": true,
+          "bankroll": 1178.0512202457944
+        },
+        {
+          "bet_number": 22,
+          "bet_size": 35.34153660737383,
+          "confidence": 0.6877918909197814,
+          "edge": 0.8258629085512487,
+          "won": false,
+          "bankroll": 1142.7096836384205
+        },
+        {
+          "bet_number": 23,
+          "bet_size": 34.28129050915261,
+          "confidence": 0.6397847175133894,
+          "edge": 0.9153529088576778,
+          "won": true,
+          "bankroll": 1173.9056580017493
+        },
+        {
+          "bet_number": 24,
+          "bet_size": 35.217169740052476,
+          "confidence": 0.8033844557038178,
+          "edge": -1.1987852908880443,
+          "won": true,
+          "bankroll": 1205.9532824651972
+        },
+        {
+          "bet_number": 25,
+          "bet_size": 36.178598473955915,
+          "confidence": 0.684011796125452,
+          "edge": 1.9410476400264214,
+          "won": false,
+          "bankroll": 1169.7746839912413
+        },
+        {
+          "bet_number": 26,
+          "bet_size": 35.093240519737236,
+          "confidence": 0.8526217550842018,
+          "edge": 1.0709836199504092,
+          "won": false,
+          "bankroll": 1134.681443471504
+        },
+        {
+          "bet_number": 27,
+          "bet_size": 34.04044330414512,
+          "confidence": 0.673964585821276,
+          "edge": -0.9734289920854988,
+          "won": false,
+          "bankroll": 1100.641000167359
+        },
+        {
+          "bet_number": 28,
+          "bet_size": 33.019230005020766,
+          "confidence": 0.7108685087153267,
+          "edge": 1.592810859392653,
+          "won": true,
+          "bankroll": 1130.6884994719278
+        },
+        {
+          "bet_number": 29,
+          "bet_size": 33.920654984157835,
+          "confidence": 0.682092457337926,
+          "edge": -0.8933669413813341,
+          "won": true,
+          "bankroll": 1161.5562955075113
+        },
+        {
+          "bet_number": 30,
+          "bet_size": 34.84668886522534,
+          "confidence": 0.7003526844307485,
+          "edge": 3.9294502658327786,
+          "won": true,
+          "bankroll": 1193.2667823748664
+        },
+        {
+          "bet_number": 31,
+          "bet_size": 35.79800347124599,
+          "confidence": 0.7539516091287375,
+          "edge": -1.0945596726750426,
+          "won": true,
+          "bankroll": 1225.8429655337002
+        },
+        {
+          "bet_number": 32,
+          "bet_size": 36.775288966011004,
+          "confidence": 0.6069340798731534,
+          "edge": 3.3742832701451295,
+          "won": false,
+          "bankroll": 1189.0676765676892
+        },
+        {
+          "bet_number": 33,
+          "bet_size": 35.67203029703067,
+          "confidence": 0.635512264275899,
+          "edge": -1.7225684026565273,
+          "won": false,
+          "bankroll": 1153.3956462706585
+        },
+        {
+          "bet_number": 34,
+          "bet_size": 34.60186938811975,
+          "confidence": 0.7727156709394603,
+          "edge": 0.5194450034429637,
+          "won": true,
+          "bankroll": 1184.8833474138476
+        },
+        {
+          "bet_number": 35,
+          "bet_size": 35.54650042241543,
+          "confidence": 0.7732145060731569,
+          "edge": 1.9277006374307233,
+          "won": false,
+          "bankroll": 1149.3368469914321
+        },
+        {
+          "bet_number": 36,
+          "bet_size": 34.48010540974296,
+          "confidence": 0.9100579989497205,
+          "edge": 0.5619286418363985,
+          "won": true,
+          "bankroll": 1180.7137429142983
+        },
+        {
+          "bet_number": 37,
+          "bet_size": 35.42141228742895,
+          "confidence": 0.8141795543304651,
+          "edge": 1.451533247797384,
+          "won": false,
+          "bankroll": 1145.2923306268694
+        },
+        {
+          "bet_number": 38,
+          "bet_size": 34.35876991880608,
+          "confidence": 0.810616277082824,
+          "edge": -1.4566302998957719,
+          "won": true,
+          "bankroll": 1176.5588112529829
+        },
+        {
+          "bet_number": 39,
+          "bet_size": 35.29676433758949,
+          "confidence": 0.8771976208177168,
+          "edge": -3.3395583441368,
+          "won": false,
+          "bankroll": 1141.2620469153933
+        },
+        {
+          "bet_number": 40,
+          "bet_size": 34.2378614074618,
+          "confidence": 0.9076917266426888,
+          "edge": -1.6326108181096912,
+          "won": false,
+          "bankroll": 1107.0241855079314
+        },
+        {
+          "bet_number": 41,
+          "bet_size": 33.210725565237944,
+          "confidence": 0.8695295532512618,
+          "edge": -3.5069388325013255,
+          "won": false,
+          "bankroll": 1073.8134599426935
+        },
+        {
+          "bet_number": 42,
+          "bet_size": 32.214403798280806,
+          "confidence": 0.7352673421006285,
+          "edge": 2.0583112746512873,
+          "won": true,
+          "bankroll": 1103.128567399129
+        },
+        {
+          "bet_number": 43,
+          "bet_size": 33.09385702197387,
+          "confidence": 0.616149081909916,
+          "edge": 0.8932794630341716,
+          "won": false,
+          "bankroll": 1070.034710377155
+        },
+        {
+          "bet_number": 44,
+          "bet_size": 32.10104131131465,
+          "confidence": 0.7464548412010864,
+          "edge": -0.8689924548646312,
+          "won": true,
+          "bankroll": 1099.2466579704515
+        },
+        {
+          "bet_number": 45,
+          "bet_size": 32.977399739113544,
+          "confidence": 0.9147130197878626,
+          "edge": 1.7355300483417768,
+          "won": false,
+          "bankroll": 1066.269258231338
+        },
+        {
+          "bet_number": 46,
+          "bet_size": 31.98807774694014,
+          "confidence": 0.8483629965180286,
+          "edge": 1.587315883960707,
+          "won": true,
+          "bankroll": 1095.3784089810536
+        },
+        {
+          "bet_number": 47,
+          "bet_size": 32.861352269431606,
+          "confidence": 0.8773218095589898,
+          "edge": 2.334205828767272,
+          "won": true,
+          "bankroll": 1125.2822395462363
+        },
+        {
+          "bet_number": 48,
+          "bet_size": 33.75846718638709,
+          "confidence": 0.8144611674663341,
+          "edge": -1.1978487931186714,
+          "won": false,
+          "bankroll": 1091.523772359849
+        },
+        {
+          "bet_number": 49,
+          "bet_size": 32.74571317079547,
+          "confidence": 0.6551265689916042,
+          "edge": -0.7754031198719683,
+          "won": false,
+          "bankroll": 1058.7780591890537
+        },
+        {
+          "bet_number": 50,
+          "bet_size": 31.76334177567161,
+          "confidence": 0.6711446633291904,
+          "edge": 1.640964362394728,
+          "won": false,
+          "bankroll": 1027.0147174133822
+        },
+        {
+          "bet_number": 51,
+          "bet_size": 30.810441522401465,
+          "confidence": 0.6048137997374154,
+          "edge": 0.8365051095720007,
+          "won": true,
+          "bankroll": 1055.0522191987675
+        },
+        {
+          "bet_number": 52,
+          "bet_size": 31.651566575963024,
+          "confidence": 0.9093620590415312,
+          "edge": -1.1178436945431767,
+          "won": false,
+          "bankroll": 1023.4006526228045
+        },
+        {
+          "bet_number": 53,
+          "bet_size": 30.702019578684133,
+          "confidence": 0.6871658444553531,
+          "edge": -2.2939172574668785,
+          "won": true,
+          "bankroll": 1051.339490439407
+        },
+        {
+          "bet_number": 54,
+          "bet_size": 31.540184713182207,
+          "confidence": 0.758210600260941,
+          "edge": -0.9046126384981534,
+          "won": false,
+          "bankroll": 1019.7993057262248
+        },
+        {
+          "bet_number": 55,
+          "bet_size": 30.593979171786742,
+          "confidence": 0.6129485997944697,
+          "edge": 4.804052563670912,
+          "won": false,
+          "bankroll": 989.2053265544381
+        },
+        {
+          "bet_number": 56,
+          "bet_size": 29.676159796633144,
+          "confidence": 0.6443146203639977,
+          "edge": 1.7903864400554645,
+          "won": true,
+          "bankroll": 1016.2106319693743
+        },
+        {
+          "bet_number": 57,
+          "bet_size": 30.486318959081228,
+          "confidence": 0.8271789362306461,
+          "edge": 1.1285547760534727,
+          "won": true,
+          "bankroll": 1043.9531822221381
+        },
+        {
+          "bet_number": 58,
+          "bet_size": 31.318595466664142,
+          "confidence": 0.6966935402045283,
+          "edge": -3.7286630566181893,
+          "won": true,
+          "bankroll": 1072.4531040968025
+        },
+        {
+          "bet_number": 59,
+          "bet_size": 32.17359312290407,
+          "confidence": 0.6800087496167894,
+          "edge": 4.003474205060271,
+          "won": true,
+          "bankroll": 1101.7310738386452
+        },
+        {
+          "bet_number": 60,
+          "bet_size": 33.051932215159354,
+          "confidence": 0.7348626480458322,
+          "edge": 2.597477007887593,
+          "won": true,
+          "bankroll": 1131.8083321544402
+        },
+        {
+          "bet_number": 61,
+          "bet_size": 33.954249964633206,
+          "confidence": 0.7187982947717059,
+          "edge": -2.0798118542510617,
+          "won": false,
+          "bankroll": 1097.854082189807
+        },
+        {
+          "bet_number": 62,
+          "bet_size": 32.93562246569421,
+          "confidence": 0.8573067354339157,
+          "edge": 3.262251704563744,
+          "won": true,
+          "bankroll": 1127.8254986335887
+        },
+        {
+          "bet_number": 63,
+          "bet_size": 33.83476495900766,
+          "confidence": 0.7097893771631468,
+          "edge": 1.1288059757865323,
+          "won": true,
+          "bankroll": 1158.6151347462858
+        },
+        {
+          "bet_number": 64,
+          "bet_size": 34.75845404238857,
+          "confidence": 0.7709007614985781,
+          "edge": -3.2874814311761154,
+          "won": true,
+          "bankroll": 1190.2453279248593
+        },
+        {
+          "bet_number": 65,
+          "bet_size": 35.70735983774578,
+          "confidence": 0.7188610254280675,
+          "edge": -0.5613501537335481,
+          "won": true,
+          "bankroll": 1222.739025377208
+        },
+        {
+          "bet_number": 66,
+          "bet_size": 36.682170761316236,
+          "confidence": 0.7792930584291807,
+          "edge": -1.2027352879024273,
+          "won": false,
+          "bankroll": 1186.0568546158918
+        },
+        {
+          "bet_number": 67,
+          "bet_size": 35.581705638476755,
+          "confidence": 0.7075530200624154,
+          "edge": -1.3258018351018963,
+          "won": true,
+          "bankroll": 1218.4362067469056
+        },
+        {
+          "bet_number": 68,
+          "bet_size": 36.553086202407165,
+          "confidence": 0.6587713163368066,
+          "edge": -1.5640352738152148,
+          "won": false,
+          "bankroll": 1181.8831205444983
+        },
+        {
+          "bet_number": 69,
+          "bet_size": 35.456493616334946,
+          "confidence": 0.7334459575893011,
+          "edge": 2.449168875252286,
+          "won": true,
+          "bankroll": 1214.1485297353631
+        },
+        {
+          "bet_number": 70,
+          "bet_size": 36.42445589206089,
+          "confidence": 0.8865594032941957,
+          "edge": -1.4225972495210755,
+          "won": true,
+          "bankroll": 1247.2947845971385
+        },
+        {
+          "bet_number": 71,
+          "bet_size": 37.41884353791415,
+          "confidence": 0.9048557078476395,
+          "edge": 0.7481131396951443,
+          "won": false,
+          "bankroll": 1209.8759410592243
+        },
+        {
+          "bet_number": 72,
+          "bet_size": 36.296278231776725,
+          "confidence": 0.6832461884203991,
+          "edge": 1.1166538250434448,
+          "won": true,
+          "bankroll": 1242.905554250141
+        },
+        {
+          "bet_number": 73,
+          "bet_size": 37.28716662750423,
+          "confidence": 0.7817493507532959,
+          "edge": -1.0678182026335998,
+          "won": true,
+          "bankroll": 1276.8368758811698
+        },
+        {
+          "bet_number": 74,
+          "bet_size": 38.30510627643509,
+          "confidence": 0.8190126741881584,
+          "edge": -4.305781185904966,
+          "won": true,
+          "bankroll": 1311.6945225927257
+        },
+        {
+          "bet_number": 75,
+          "bet_size": 39.35083567778177,
+          "confidence": 0.8098023235672392,
+          "edge": -0.8218623125983683,
+          "won": true,
+          "bankroll": 1347.503783059507
+        },
+        {
+          "bet_number": 76,
+          "bet_size": 40.42511349178521,
+          "confidence": 0.6805406396373874,
+          "edge": -3.068597252768917,
+          "won": false,
+          "bankroll": 1307.0786695677218
+        },
+        {
+          "bet_number": 77,
+          "bet_size": 39.212360087031655,
+          "confidence": 0.9265253767021172,
+          "edge": 4.121117233232104,
+          "won": true,
+          "bankroll": 1342.7619172469206
+        },
+        {
+          "bet_number": 78,
+          "bet_size": 40.282857517407614,
+          "confidence": 0.7701691802053671,
+          "edge": -3.9327131787520035,
+          "won": false,
+          "bankroll": 1302.479059729513
+        },
+        {
+          "bet_number": 79,
+          "bet_size": 39.07437179188539,
+          "confidence": 0.6761631516142789,
+          "edge": -2.4485964725787315,
+          "won": true,
+          "bankroll": 1338.0367380601288
+        },
+        {
+          "bet_number": 80,
+          "bet_size": 40.14110214180386,
+          "confidence": 0.640472976101255,
+          "edge": 3.3398090087028125,
+          "won": false,
+          "bankroll": 1297.8956359183248
+        },
+        {
+          "bet_number": 81,
+          "bet_size": 38.936869077549744,
+          "confidence": 0.8491692041188111,
+          "edge": 2.333097181954012,
+          "won": true,
+          "bankroll": 1333.328186778895
+        },
+        {
+          "bet_number": 82,
+          "bet_size": 39.99984560336685,
+          "confidence": 0.6064789548624491,
+          "edge": 2.624817243485264,
+          "won": true,
+          "bankroll": 1369.728046277959
+        },
+        {
+          "bet_number": 83,
+          "bet_size": 41.09184138833877,
+          "confidence": 0.7875184627709919,
+          "edge": -5.547125725826897,
+          "won": true,
+          "bankroll": 1407.1216219413473
+        },
+        {
+          "bet_number": 84,
+          "bet_size": 42.213648658240416,
+          "confidence": 0.7980371286813552,
+          "edge": 3.7081851326683766,
+          "won": false,
+          "bankroll": 1364.907973283107
+        },
+        {
+          "bet_number": 85,
+          "bet_size": 40.94723919849321,
+          "confidence": 0.6622175436187665,
+          "edge": 3.769172611869218,
+          "won": true,
+          "bankroll": 1402.1699609537357
+        },
+        {
+          "bet_number": 86,
+          "bet_size": 42.065098828612065,
+          "confidence": 0.7107297707427236,
+          "edge": -3.5368787311257033,
+          "won": false,
+          "bankroll": 1360.1048621251236
+        },
+        {
+          "bet_number": 87,
+          "bet_size": 40.803145863753706,
+          "confidence": 0.7698008295428707,
+          "edge": 1.027200213139433,
+          "won": true,
+          "bankroll": 1397.2357248611395
+        },
+        {
+          "bet_number": 88,
+          "bet_size": 41.917071745834185,
+          "confidence": 0.6081334543859102,
+          "edge": -0.6076616959724318,
+          "won": false,
+          "bankroll": 1355.3186531153053
+        },
+        {
+          "bet_number": 89,
+          "bet_size": 40.65955959345916,
+          "confidence": 0.6133120309609478,
+          "edge": -1.2080245498502542,
+          "won": false,
+          "bankroll": 1314.6590935218462
+        },
+        {
+          "bet_number": 90,
+          "bet_size": 39.43977280565539,
+          "confidence": 0.7086850356374677,
+          "edge": -1.620504874028762,
+          "won": false,
+          "bankroll": 1275.2193207161909
+        },
+        {
+          "bet_number": 91,
+          "bet_size": 38.25657962148573,
+          "confidence": 0.7931430378913961,
+          "edge": 1.0228310018599074,
+          "won": false,
+          "bankroll": 1236.962741094705
+        },
+        {
+          "bet_number": 92,
+          "bet_size": 37.10888223284115,
+          "confidence": 0.6421009216866042,
+          "edge": -1.9468934827989524,
+          "won": false,
+          "bankroll": 1199.853858861864
+        },
+        {
+          "bet_number": 93,
+          "bet_size": 35.995615765855916,
+          "confidence": 0.8144333372228573,
+          "edge": 3.746595552435091,
+          "won": false,
+          "bankroll": 1163.858243096008
+        },
+        {
+          "bet_number": 94,
+          "bet_size": 34.91574729288024,
+          "confidence": 0.665036100297727,
+          "edge": 1.705547350244439,
+          "won": false,
+          "bankroll": 1128.9424958031277
+        },
+        {
+          "bet_number": 95,
+          "bet_size": 33.86827487409383,
+          "confidence": 0.9033813311568519,
+          "edge": 1.192884679121342,
+          "won": false,
+          "bankroll": 1095.0742209290338
+        },
+        {
+          "bet_number": 96,
+          "bet_size": 32.85222662787101,
+          "confidence": 0.7556260232797873,
+          "edge": -1.1305695527981636,
+          "won": true,
+          "bankroll": 1124.9697471603963
+        },
+        {
+          "bet_number": 97,
+          "bet_size": 33.74909241481189,
+          "confidence": 0.739327490624291,
+          "edge": -1.8074037214602563,
+          "won": false,
+          "bankroll": 1091.2206547455844
+        },
+        {
+          "bet_number": 98,
+          "bet_size": 32.73661964236753,
+          "confidence": 0.8310554502785681,
+          "edge": -1.355489941049703,
+          "won": true,
+          "bankroll": 1121.0109786201388
+        },
+        {
+          "bet_number": 99,
+          "bet_size": 33.630329358604165,
+          "confidence": 0.6345309127551342,
+          "edge": 1.3007635774425372,
+          "won": true,
+          "bankroll": 1151.6145783364686
+        },
+        {
+          "bet_number": 100,
+          "bet_size": 34.548437350094055,
+          "confidence": 0.714853294385237,
+          "edge": 0.5058736285301602,
+          "won": true,
+          "bankroll": 1183.0536563250541
+        }
+      ]
+    },
+    "kelly_criterion": {
+      "initial_bankroll": 1000,
+      "final_bankroll": 3123.471859379221,
+      "total_profit": 2123.471859379221,
+      "roi_percent": 212.3471859379221,
+      "total_bets": 144,
+      "wins": 89,
+      "losses": 55,
+      "win_rate": 0.6180555555555556,
+      "max_drawdown_percent": -31.533899947017773,
+      "strategy_config": {
+        "type": "kelly",
+        "confidence_threshold": 0.7,
+        "edge_threshold": 1.0,
+        "max_bet_pct": 0.05
+      },
+      "bet_history": [
+        {
+          "bet_number": 1,
+          "bet_size": 50.0,
+          "confidence": 0.906627895270603,
+          "edge": 1.4769331599908209,
+          "won": true,
+          "bankroll": 1045.5
+        },
+        {
+          "bet_number": 2,
+          "bet_size": 52.275000000000006,
+          "confidence": 0.7301109904953936,
+          "edge": -2.2611046093631337,
+          "won": false,
+          "bankroll": 993.225
+        },
+        {
+          "bet_number": 3,
+          "bet_size": 49.66125,
+          "confidence": 0.7207649428239716,
+          "edge": 1.4874225675424535,
+          "won": true,
+          "bankroll": 1038.4167375
+        },
+        {
+          "bet_number": 4,
+          "bet_size": 51.920836875,
+          "confidence": 0.7480285043428314,
+          "edge": -5.31035209512694,
+          "won": true,
+          "bankroll": 1085.66469905625
+        },
+        {
+          "bet_number": 5,
+          "bet_size": 54.2832349528125,
+          "confidence": 0.7423150738936819,
+          "edge": -3.837542430598083,
+          "won": true,
+          "bankroll": 1135.0624428633093
+        },
+        {
+          "bet_number": 6,
+          "bet_size": 56.75312214316547,
+          "confidence": 0.7201358404492791,
+          "edge": -1.1325954592055438,
+          "won": false,
+          "bankroll": 1078.309320720144
+        },
+        {
+          "bet_number": 7,
+          "bet_size": 53.915466036007196,
+          "confidence": 0.7903008513883925,
+          "edge": -1.7710247476576972,
+          "won": false,
+          "bankroll": 1024.3938546841366
+        },
+        {
+          "bet_number": 8,
+          "bet_size": 51.21969273420683,
+          "confidence": 0.7887935609816685,
+          "edge": 1.5636457435546207,
+          "won": true,
+          "bankroll": 1071.003775072265
+        },
+        {
+          "bet_number": 9,
+          "bet_size": 53.55018875361325,
+          "confidence": 0.8175020223274252,
+          "edge": 1.64412031998898,
+          "won": true,
+          "bankroll": 1119.734446838053
+        },
+        {
+          "bet_number": 10,
+          "bet_size": 55.98672234190265,
+          "confidence": 0.8785360975563898,
+          "edge": -1.6316205699308766,
+          "won": true,
+          "bankroll": 1170.6823641691844
+        },
+        {
+          "bet_number": 11,
+          "bet_size": 58.534118208459226,
+          "confidence": 0.9208293346908635,
+          "edge": 1.9543600016261464,
+          "won": false,
+          "bankroll": 1112.1482459607253
+        },
+        {
+          "bet_number": 12,
+          "bet_size": 55.607412298036266,
+          "confidence": 0.7142330550584738,
+          "edge": 1.7127975886469446,
+          "won": false,
+          "bankroll": 1056.540833662689
+        },
+        {
+          "bet_number": 13,
+          "bet_size": 52.82704168313445,
+          "confidence": 0.7081468393791471,
+          "edge": 1.704866669592448,
+          "won": true,
+          "bankroll": 1104.6134415943413
+        },
+        {
+          "bet_number": 14,
+          "bet_size": 55.23067207971707,
+          "confidence": 0.8061650436267456,
+          "edge": 1.176634412969153,
+          "won": false,
+          "bankroll": 1049.3827695146242
+        },
+        {
+          "bet_number": 15,
+          "bet_size": 52.469138475731214,
+          "confidence": 0.908575039575547,
+          "edge": -2.441140208563709,
+          "won": true,
+          "bankroll": 1097.1296855275396
+        },
+        {
+          "bet_number": 16,
+          "bet_size": 54.85648427637698,
+          "confidence": 0.8363402658624672,
+          "edge": -2.4283772255754643,
+          "won": false,
+          "bankroll": 1042.2732012511626
+        },
+        {
+          "bet_number": 17,
+          "bet_size": 52.11366006255813,
+          "confidence": 0.8581407744537086,
+          "edge": -1.1987500459075457,
+          "won": false,
+          "bankroll": 990.1595411886045
+        },
+        {
+          "bet_number": 18,
+          "bet_size": 49.50797705943023,
+          "confidence": 0.8526217550842018,
+          "edge": 1.0709836199504092,
+          "won": false,
+          "bankroll": 940.6515641291743
+        },
+        {
+          "bet_number": 19,
+          "bet_size": 47.032578206458716,
+          "confidence": 0.7539516091287375,
+          "edge": -1.0945596726750426,
+          "won": true,
+          "bankroll": 983.4512102970517
+        },
+        {
+          "bet_number": 20,
+          "bet_size": 49.17256051485259,
+          "confidence": 0.8639393245440424,
+          "edge": 1.08672038475987,
+          "won": true,
+          "bankroll": 1028.1982403655675
+        },
+        {
+          "bet_number": 21,
+          "bet_size": 51.409912018278376,
+          "confidence": 0.8199263565815371,
+          "edge": 2.287508086413858,
+          "won": false,
+          "bankroll": 976.788328347289
+        },
+        {
+          "bet_number": 22,
+          "bet_size": 48.839416417364454,
+          "confidence": 0.810616277082824,
+          "edge": -1.4566302998957719,
+          "won": true,
+          "bankroll": 1021.2321972870907
+        },
+        {
+          "bet_number": 23,
+          "bet_size": 51.06160986435454,
+          "confidence": 0.8771976208177168,
+          "edge": -3.3395583441368,
+          "won": false,
+          "bankroll": 970.1705874227362
+        },
+        {
+          "bet_number": 24,
+          "bet_size": 48.50852937113681,
+          "confidence": 0.9076917266426888,
+          "edge": -1.6326108181096912,
+          "won": false,
+          "bankroll": 921.6620580515994
+        },
+        {
+          "bet_number": 25,
+          "bet_size": 46.083102902579974,
+          "confidence": 0.8695295532512618,
+          "edge": -3.5069388325013255,
+          "won": false,
+          "bankroll": 875.5789551490194
+        },
+        {
+          "bet_number": 26,
+          "bet_size": 43.77894775745097,
+          "confidence": 0.7352673421006285,
+          "edge": 2.0583112746512873,
+          "won": true,
+          "bankroll": 915.4177976082998
+        },
+        {
+          "bet_number": 27,
+          "bet_size": 45.77088988041499,
+          "confidence": 0.706899520337092,
+          "edge": -1.5965944890769075,
+          "won": true,
+          "bankroll": 957.0693073994775
+        },
+        {
+          "bet_number": 28,
+          "bet_size": 47.853465369973875,
+          "confidence": 0.7174812357037138,
+          "edge": 2.6477496075744265,
+          "won": true,
+          "bankroll": 1000.6159608861536
+        },
+        {
+          "bet_number": 29,
+          "bet_size": 50.03079804430769,
+          "confidence": 0.8399523713356299,
+          "edge": 2.390093257849685,
+          "won": true,
+          "bankroll": 1046.1439871064736
+        },
+        {
+          "bet_number": 30,
+          "bet_size": 52.30719935532368,
+          "confidence": 0.8940885832792189,
+          "edge": -3.401987103877507,
+          "won": false,
+          "bankroll": 993.8367877511499
+        },
+        {
+          "bet_number": 31,
+          "bet_size": 49.6918393875575,
+          "confidence": 0.9171547218466204,
+          "edge": -2.003240019789831,
+          "won": false,
+          "bankroll": 944.1449483635924
+        },
+        {
+          "bet_number": 32,
+          "bet_size": 47.20724741817963,
+          "confidence": 0.7107171648023768,
+          "edge": 3.623960248269743,
+          "won": false,
+          "bankroll": 896.9377009454129
+        },
+        {
+          "bet_number": 33,
+          "bet_size": 44.846885047270646,
+          "confidence": 0.746245965512446,
+          "edge": -1.0585964750924397,
+          "won": false,
+          "bankroll": 852.0908158981422
+        },
+        {
+          "bet_number": 34,
+          "bet_size": 42.60454079490711,
+          "confidence": 0.8558456912020095,
+          "edge": -2.255654441002612,
+          "won": false,
+          "bankroll": 809.4862751032351
+        },
+        {
+          "bet_number": 35,
+          "bet_size": 40.47431375516176,
+          "confidence": 0.7145260904424918,
+          "edge": 2.12480301975024,
+          "won": true,
+          "bankroll": 846.3179006204323
+        },
+        {
+          "bet_number": 36,
+          "bet_size": 42.31589503102162,
+          "confidence": 0.7287859065281092,
+          "edge": 3.8280627077335723,
+          "won": true,
+          "bankroll": 884.8253650986619
+        },
+        {
+          "bet_number": 37,
+          "bet_size": 44.2412682549331,
+          "confidence": 0.7887978960636612,
+          "edge": -3.2907974939137836,
+          "won": true,
+          "bankroll": 925.084919210651
+        },
+        {
+          "bet_number": 38,
+          "bet_size": 46.25424596053256,
+          "confidence": 0.8865594032941957,
+          "edge": -1.4225972495210755,
+          "won": true,
+          "bankroll": 967.1762830347357
+        },
+        {
+          "bet_number": 39,
+          "bet_size": 48.35881415173679,
+          "confidence": 0.7651340121360182,
+          "edge": 2.171791131663156,
+          "won": true,
+          "bankroll": 1011.1828039128161
+        },
+        {
+          "bet_number": 40,
+          "bet_size": 50.55914019564081,
+          "confidence": 0.9794867439718009,
+          "edge": 1.8686398224785474,
+          "won": false,
+          "bankroll": 960.6236637171753
+        },
+        {
+          "bet_number": 41,
+          "bet_size": 48.031183185858765,
+          "confidence": 0.9265253767021172,
+          "edge": 4.121117233232104,
+          "won": true,
+          "bankroll": 1004.3320404163068
+        },
+        {
+          "bet_number": 42,
+          "bet_size": 50.216602020815344,
+          "confidence": 0.7701691802053671,
+          "edge": -3.9327131787520035,
+          "won": false,
+          "bankroll": 954.1154383954914
+        },
+        {
+          "bet_number": 43,
+          "bet_size": 47.70577191977458,
+          "confidence": 0.8024986940958834,
+          "edge": 2.5759649476038766,
+          "won": true,
+          "bankroll": 997.5276908424863
+        },
+        {
+          "bet_number": 44,
+          "bet_size": 49.87638454212432,
+          "confidence": 0.7894592840662367,
+          "edge": -1.56979662616448,
+          "won": false,
+          "bankroll": 947.651306300362
+        },
+        {
+          "bet_number": 45,
+          "bet_size": 47.3825653150181,
+          "confidence": 0.7352122586310789,
+          "edge": 2.914391519912493,
+          "won": false,
+          "bankroll": 900.2687409853438
+        },
+        {
+          "bet_number": 46,
+          "bet_size": 45.013437049267196,
+          "confidence": 0.7807744774273095,
+          "edge": 4.428503046924551,
+          "won": true,
+          "bankroll": 941.230968700177
+        },
+        {
+          "bet_number": 47,
+          "bet_size": 47.06154843500885,
+          "confidence": 0.9254960258929249,
+          "edge": 1.0916343491240303,
+          "won": false,
+          "bankroll": 894.1694202651681
+        },
+        {
+          "bet_number": 48,
+          "bet_size": 44.70847101325841,
+          "confidence": 0.7869243738930415,
+          "edge": 1.9966217962959207,
+          "won": true,
+          "bankroll": 934.8541288872333
+        },
+        {
+          "bet_number": 49,
+          "bet_size": 46.742706444361666,
+          "confidence": 0.7448580373584516,
+          "edge": -1.4675759475707277,
+          "won": false,
+          "bankroll": 888.1114224428716
+        },
+        {
+          "bet_number": 50,
+          "bet_size": 44.405571122143584,
+          "confidence": 0.7010122347876548,
+          "edge": 2.8668448396503363,
+          "won": false,
+          "bankroll": 843.705851320728
+        },
+        {
+          "bet_number": 51,
+          "bet_size": 42.1852925660364,
+          "confidence": 0.9261205923429692,
+          "edge": -1.6117401329923775,
+          "won": false,
+          "bankroll": 801.5205587546916
+        },
+        {
+          "bet_number": 52,
+          "bet_size": 40.07602793773458,
+          "confidence": 0.831510569672812,
+          "edge": -2.5516641731398764,
+          "won": true,
+          "bankroll": 837.98974417803
+        },
+        {
+          "bet_number": 53,
+          "bet_size": 41.899487208901505,
+          "confidence": 0.7485198210941575,
+          "edge": -1.252380064443133,
+          "won": true,
+          "bankroll": 876.1182775381304
+        },
+        {
+          "bet_number": 54,
+          "bet_size": 43.80591387690652,
+          "confidence": 0.7852286046842506,
+          "edge": -1.0162803952946218,
+          "won": false,
+          "bankroll": 832.3123636612239
+        },
+        {
+          "bet_number": 55,
+          "bet_size": 41.6156181830612,
+          "confidence": 0.969828027924934,
+          "edge": 1.076123440363618,
+          "won": true,
+          "bankroll": 870.1825762078096
+        },
+        {
+          "bet_number": 56,
+          "bet_size": 43.50912881039048,
+          "confidence": 0.7799234068462918,
+          "edge": 1.1691452558991362,
+          "won": true,
+          "bankroll": 909.775883425265
+        },
+        {
+          "bet_number": 57,
+          "bet_size": 45.48879417126325,
+          "confidence": 0.8367279252602511,
+          "edge": 1.7851946765986184,
+          "won": true,
+          "bankroll": 951.1706861211145
+        },
+        {
+          "bet_number": 58,
+          "bet_size": 47.558534306055726,
+          "confidence": 0.8818829629830978,
+          "edge": 3.966772469703423,
+          "won": true,
+          "bankroll": 994.4489523396252
+        },
+        {
+          "bet_number": 59,
+          "bet_size": 49.72244761698126,
+          "confidence": 0.7539911585583859,
+          "edge": -2.046391022636589,
+          "won": true,
+          "bankroll": 1039.6963796710781
+        },
+        {
+          "bet_number": 60,
+          "bet_size": 51.98481898355391,
+          "confidence": 0.9382638211429278,
+          "edge": 3.6043296168628913,
+          "won": true,
+          "bankroll": 1087.0025649461122
+        },
+        {
+          "bet_number": 61,
+          "bet_size": 54.35012824730561,
+          "confidence": 0.7056143651226275,
+          "edge": -1.3206422789468941,
+          "won": false,
+          "bankroll": 1032.6524366988067
+        },
+        {
+          "bet_number": 62,
+          "bet_size": 51.63262183494034,
+          "confidence": 0.7325631846736602,
+          "edge": -2.203586395839787,
+          "won": false,
+          "bankroll": 981.0198148638664
+        },
+        {
+          "bet_number": 63,
+          "bet_size": 49.050990743193324,
+          "confidence": 0.829471886903728,
+          "edge": -1.4073090991330226,
+          "won": true,
+          "bankroll": 1025.6562164401723
+        },
+        {
+          "bet_number": 64,
+          "bet_size": 51.28281082200862,
+          "confidence": 0.700082562384052,
+          "edge": -2.7267452494423168,
+          "won": false,
+          "bankroll": 974.3734056181637
+        },
+        {
+          "bet_number": 65,
+          "bet_size": 48.718670280908185,
+          "confidence": 0.8058901480320829,
+          "edge": 1.7804950016730174,
+          "won": false,
+          "bankroll": 925.6547353372555
+        },
+        {
+          "bet_number": 66,
+          "bet_size": 46.282736766862776,
+          "confidence": 0.712309102297181,
+          "edge": 1.2892564926353933,
+          "won": true,
+          "bankroll": 967.7720257951006
+        },
+        {
+          "bet_number": 67,
+          "bet_size": 48.38860128975503,
+          "confidence": 0.8272559375662049,
+          "edge": -2.302028167239014,
+          "won": false,
+          "bankroll": 919.3834245053456
+        },
+        {
+          "bet_number": 68,
+          "bet_size": 45.96917122526728,
+          "confidence": 0.7040694367904489,
+          "edge": 2.1037901145312086,
+          "won": true,
+          "bankroll": 961.2153703203388
+        },
+        {
+          "bet_number": 69,
+          "bet_size": 48.06076851601694,
+          "confidence": 0.797594051888552,
+          "edge": -2.4665376525937535,
+          "won": true,
+          "bankroll": 1004.9506696699142
+        },
+        {
+          "bet_number": 70,
+          "bet_size": 50.247533483495715,
+          "confidence": 0.776737842179816,
+          "edge": 2.3594504167214203,
+          "won": false,
+          "bankroll": 954.7031361864185
+        },
+        {
+          "bet_number": 71,
+          "bet_size": 47.73515680932093,
+          "confidence": 0.7597836111949432,
+          "edge": 1.362719020885896,
+          "won": false,
+          "bankroll": 906.9679793770977
+        },
+        {
+          "bet_number": 72,
+          "bet_size": 45.34839896885489,
+          "confidence": 0.7188373131817803,
+          "edge": -2.367770352104999,
+          "won": true,
+          "bankroll": 948.2350224387557
+        },
+        {
+          "bet_number": 73,
+          "bet_size": 47.41175112193778,
+          "confidence": 0.876346827744959,
+          "edge": -4.241400305270132,
+          "won": true,
+          "bankroll": 991.3797159597191
+        },
+        {
+          "bet_number": 74,
+          "bet_size": 49.56898579798596,
+          "confidence": 0.812527450191234,
+          "edge": -2.4093865656562254,
+          "won": false,
+          "bankroll": 941.8107301617331
+        },
+        {
+          "bet_number": 75,
+          "bet_size": 47.09053650808666,
+          "confidence": 0.8264498286793316,
+          "edge": 1.9106011164755057,
+          "won": false,
+          "bankroll": 894.7201936536464
+        },
+        {
+          "bet_number": 76,
+          "bet_size": 44.73600968268232,
+          "confidence": 0.7370814742961203,
+          "edge": -3.6412066010970343,
+          "won": true,
+          "bankroll": 935.4299624648874
+        },
+        {
+          "bet_number": 77,
+          "bet_size": 46.77149812324437,
+          "confidence": 0.8190346809865292,
+          "edge": 3.974551998461616,
+          "won": true,
+          "bankroll": 977.9920257570398
+        },
+        {
+          "bet_number": 78,
+          "bet_size": 48.89960128785199,
+          "confidence": 0.8220296604899963,
+          "edge": -2.7942363702259825,
+          "won": true,
+          "bankroll": 1022.4906629289851
+        },
+        {
+          "bet_number": 79,
+          "bet_size": 51.12453314644926,
+          "confidence": 0.920403115792557,
+          "edge": 2.4005234994776585,
+          "won": false,
+          "bankroll": 971.3661297825358
+        },
+        {
+          "bet_number": 80,
+          "bet_size": 48.5683064891268,
+          "confidence": 0.7817248687881501,
+          "edge": 2.7596773994801143,
+          "won": true,
+          "bankroll": 1015.5632886876413
+        },
+        {
+          "bet_number": 81,
+          "bet_size": 50.77816443438206,
+          "confidence": 0.8072326773775284,
+          "edge": 3.2527608113372657,
+          "won": false,
+          "bankroll": 964.7851242532593
+        },
+        {
+          "bet_number": 82,
+          "bet_size": 48.239256212662966,
+          "confidence": 0.9092840621658443,
+          "edge": 3.015267117827368,
+          "won": true,
+          "bankroll": 1008.6828474067826
+        },
+        {
+          "bet_number": 83,
+          "bet_size": 50.43414237033913,
+          "confidence": 0.9534412515550662,
+          "edge": 2.5226362037000927,
+          "won": true,
+          "bankroll": 1054.5779169637913
+        },
+        {
+          "bet_number": 84,
+          "bet_size": 52.728895848189566,
+          "confidence": 0.7979126994118675,
+          "edge": -1.6809418713718618,
+          "won": true,
+          "bankroll": 1102.5612121856439
+        },
+        {
+          "bet_number": 85,
+          "bet_size": 55.128060609282194,
+          "confidence": 0.7758010261301734,
+          "edge": 1.8688555664626147,
+          "won": true,
+          "bankroll": 1152.7277473400907
+        },
+        {
+          "bet_number": 86,
+          "bet_size": 57.63638736700454,
+          "confidence": 0.7601289798576375,
+          "edge": -3.8643343250520994,
+          "won": true,
+          "bankroll": 1205.176859844065
+        },
+        {
+          "bet_number": 87,
+          "bet_size": 60.25884299220325,
+          "confidence": 0.8032272002723023,
+          "edge": -1.5689812864842192,
+          "won": false,
+          "bankroll": 1144.9180168518617
+        },
+        {
+          "bet_number": 88,
+          "bet_size": 57.24590084259309,
+          "confidence": 0.8570862483667736,
+          "edge": 1.4429586475146865,
+          "won": true,
+          "bankroll": 1197.0117866186215
+        },
+        {
+          "bet_number": 89,
+          "bet_size": 59.85058933093108,
+          "confidence": 0.8674454476948016,
+          "edge": -2.1417048373688776,
+          "won": true,
+          "bankroll": 1251.4758229097688
+        },
+        {
+          "bet_number": 90,
+          "bet_size": 62.57379114548844,
+          "confidence": 0.8191429053822813,
+          "edge": 2.3300642096789144,
+          "won": true,
+          "bankroll": 1308.4179728521633
+        },
+        {
+          "bet_number": 91,
+          "bet_size": 65.42089864260817,
+          "confidence": 0.874832350084097,
+          "edge": -1.190206877295447,
+          "won": true,
+          "bankroll": 1367.9509906169367
+        },
+        {
+          "bet_number": 92,
+          "bet_size": 68.39754953084683,
+          "confidence": 0.8873203576362506,
+          "edge": 2.360981755945922,
+          "won": true,
+          "bankroll": 1430.1927606900074
+        },
+        {
+          "bet_number": 93,
+          "bet_size": 71.50963803450037,
+          "confidence": 0.8969228061924014,
+          "edge": 3.1796779563613677,
+          "won": true,
+          "bankroll": 1495.2665313014027
+        },
+        {
+          "bet_number": 94,
+          "bet_size": 74.76332656507013,
+          "confidence": 0.7043148429038848,
+          "edge": -1.9576284921622789,
+          "won": true,
+          "bankroll": 1563.3011584756164
+        },
+        {
+          "bet_number": 95,
+          "bet_size": 78.16505792378082,
+          "confidence": 0.7826938024394576,
+          "edge": -2.7108950062245785,
+          "won": true,
+          "bankroll": 1634.431361186257
+        },
+        {
+          "bet_number": 96,
+          "bet_size": 81.72156805931286,
+          "confidence": 0.7333577478784461,
+          "edge": -1.6625415479046217,
+          "won": false,
+          "bankroll": 1552.709793126944
+        },
+        {
+          "bet_number": 97,
+          "bet_size": 77.6354896563472,
+          "confidence": 0.7760537729644087,
+          "edge": 2.4822946877574537,
+          "won": false,
+          "bankroll": 1475.074303470597
+        },
+        {
+          "bet_number": 98,
+          "bet_size": 73.75371517352986,
+          "confidence": 0.7407428730547708,
+          "edge": 3.3914457556217306,
+          "won": false,
+          "bankroll": 1401.3205882970672
+        },
+        {
+          "bet_number": 99,
+          "bet_size": 70.06602941485336,
+          "confidence": 0.7433185183413299,
+          "edge": -2.6734508777518613,
+          "won": true,
+          "bankroll": 1465.0806750645838
+        },
+        {
+          "bet_number": 100,
+          "bet_size": 73.2540337532292,
+          "confidence": 0.9538676092990253,
+          "edge": 2.307180686633851,
+          "won": true,
+          "bankroll": 1531.7418457800225
+        }
+      ]
+    },
+    "high_volume": {
+      "initial_bankroll": 1000,
+      "final_bankroll": 1701.7167377840296,
+      "total_profit": 701.7167377840296,
+      "roi_percent": 70.17167377840296,
+      "total_bets": 508,
+      "wins": 295,
+      "losses": 213,
+      "win_rate": 0.5807086614173228,
+      "max_drawdown_percent": -10.59512618166768,
+      "strategy_config": {
+        "type": "over_under",
+        "confidence_threshold": 0.5,
+        "edge_threshold": 0.0,
+        "max_bet_pct": 0.01
+      },
+      "bet_history": [
+        {
+          "bet_number": 1,
+          "bet_size": 10,
+          "confidence": 0.6156354589595345,
+          "edge": -0.46830674944667194,
+          "won": true,
+          "bankroll": 1009.1
+        },
+        {
+          "bet_number": 2,
+          "bet_size": 10.091000000000001,
+          "confidence": 0.8274673930872948,
+          "edge": 0.6284946651905478,
+          "won": true,
+          "bankroll": 1018.28281
+        },
+        {
+          "bet_number": 3,
+          "bet_size": 10.1828281,
+          "confidence": 0.7582342954533831,
+          "edge": -1.0887654490503653,
+          "won": false,
+          "bankroll": 1008.0999819
+        },
+        {
+          "bet_number": 4,
+          "bet_size": 10.080999819,
+          "confidence": 0.6434266217172111,
+          "edge": -0.5833874995865536,
+          "won": true,
+          "bankroll": 1017.27369173529
+        },
+        {
+          "bet_number": 5,
+          "bet_size": 10.1727369173529,
+          "confidence": 0.720395657759638,
+          "edge": 1.645089824206378,
+          "won": true,
+          "bankroll": 1026.530882330081
+        },
+        {
+          "bet_number": 6,
+          "bet_size": 10.265308823300812,
+          "confidence": 0.5309472006972954,
+          "edge": 0.39372247173824704,
+          "won": false,
+          "bankroll": 1016.2655735067804
+        },
+        {
+          "bet_number": 7,
+          "bet_size": 10.162655735067803,
+          "confidence": 0.5971642359628521,
+          "edge": -0.23129656477648106,
+          "won": true,
+          "bankroll": 1025.513590225692
+        },
+        {
+          "bet_number": 8,
+          "bet_size": 10.25513590225692,
+          "confidence": 0.5342157075142762,
+          "edge": 2.1142444524378314,
+          "won": true,
+          "bankroll": 1034.845763896746
+        },
+        {
+          "bet_number": 9,
+          "bet_size": 10.348457638967458,
+          "confidence": 0.635354542418434,
+          "edge": -1.3538440006119175,
+          "won": true,
+          "bankroll": 1044.2628603482062
+        },
+        {
+          "bet_number": 10,
+          "bet_size": 10.442628603482062,
+          "confidence": 0.5894386210182383,
+          "edge": -3.0163065790949655,
+          "won": true,
+          "bankroll": 1053.7656523773749
+        },
+        {
+          "bet_number": 11,
+          "bet_size": 10.537656523773748,
+          "confidence": 0.5763284013658531,
+          "edge": -0.43934377567502386,
+          "won": true,
+          "bankroll": 1063.354919814009
+        },
+        {
+          "bet_number": 12,
+          "bet_size": 10.63354919814009,
+          "confidence": 0.7245272726689822,
+          "edge": -1.003514087169073,
+          "won": false,
+          "bankroll": 1052.7213706158689
+        },
+        {
+          "bet_number": 13,
+          "bet_size": 10.527213706158689,
+          "confidence": 0.5967851585411745,
+          "edge": 0.19415509869608077,
+          "won": false,
+          "bankroll": 1042.1941569097103
+        },
+        {
+          "bet_number": 14,
+          "bet_size": 10.421941569097102,
+          "confidence": 0.780687671932252,
+          "edge": -0.6553242931955364,
+          "won": true,
+          "bankroll": 1051.6781237375887
+        },
+        {
+          "bet_number": 15,
+          "bet_size": 10.516781237375888,
+          "confidence": 0.5063343496295459,
+          "edge": -2.8307414841008285,
+          "won": true,
+          "bankroll": 1061.2483946636007
+        },
+        {
+          "bet_number": 16,
+          "bet_size": 10.612483946636008,
+          "confidence": 0.6356719896757506,
+          "edge": 0.6796419283732875,
+          "won": true,
+          "bankroll": 1070.9057550550394
+        },
+        {
+          "bet_number": 17,
+          "bet_size": 10.709057550550394,
+          "confidence": 0.660253612575253,
+          "edge": 1.5462817117784977,
+          "won": true,
+          "bankroll": 1080.6509974260402
+        },
+        {
+          "bet_number": 18,
+          "bet_size": 10.806509974260402,
+          "confidence": 0.501832338011371,
+          "edge": -0.9868649644066533,
+          "won": true,
+          "bankroll": 1090.4849215026172
+        },
+        {
+          "bet_number": 19,
+          "bet_size": 10.904849215026173,
+          "confidence": 0.7903008513883925,
+          "edge": -1.7710247476576972,
+          "won": false,
+          "bankroll": 1079.580072287591
+        },
+        {
+          "bet_number": 20,
+          "bet_size": 10.79580072287591,
+          "confidence": 0.7887935609816685,
+          "edge": 1.5636457435546207,
+          "won": true,
+          "bankroll": 1089.4042509454082
+        },
+        {
+          "bet_number": 21,
+          "bet_size": 10.894042509454081,
+          "confidence": 0.5393251704548254,
+          "edge": -1.3600494431569816,
+          "won": true,
+          "bankroll": 1099.3178296290114
+        },
+        {
+          "bet_number": 22,
+          "bet_size": 10.993178296290115,
+          "confidence": 0.7797008478299767,
+          "edge": 1.4690021297600913,
+          "won": true,
+          "bankroll": 1109.3216218786354
+        },
+        {
+          "bet_number": 23,
+          "bet_size": 11.093216218786354,
+          "confidence": 0.5782872647878273,
+          "edge": 1.5540995898072159,
+          "won": false,
+          "bankroll": 1098.228405659849
+        },
+        {
+          "bet_number": 24,
+          "bet_size": 10.98228405659849,
+          "confidence": 0.7466176362769938,
+          "edge": -2.285940595661246,
+          "won": false,
+          "bankroll": 1087.2461216032505
+        },
+        {
+          "bet_number": 25,
+          "bet_size": 10.872461216032505,
+          "confidence": 0.5044392958680626,
+          "edge": 1.0300705344173195,
+          "won": false,
+          "bankroll": 1076.373660387218
+        },
+        {
+          "bet_number": 26,
+          "bet_size": 10.76373660387218,
+          "confidence": 0.5509122832162405,
+          "edge": -2.30513074332003,
+          "won": true,
+          "bankroll": 1086.1686606967417
+        },
+        {
+          "bet_number": 27,
+          "bet_size": 10.861686606967417,
+          "confidence": 0.8913902056292917,
+          "edge": -0.9438637315788669,
+          "won": true,
+          "bankroll": 1096.052795509082
+        },
+        {
+          "bet_number": 28,
+          "bet_size": 10.96052795509082,
+          "confidence": 0.7950883484834409,
+          "edge": 1.3591954978693517,
+          "won": true,
+          "bankroll": 1106.0268759482146
+        },
+        {
+          "bet_number": 29,
+          "bet_size": 11.060268759482147,
+          "confidence": 0.6428456764345121,
+          "edge": -4.050285173315214,
+          "won": false,
+          "bankroll": 1094.9666071887325
+        },
+        {
+          "bet_number": 30,
+          "bet_size": 10.949666071887325,
+          "confidence": 0.6959094476948927,
+          "edge": -0.22947288293379803,
+          "won": false,
+          "bankroll": 1084.0169411168451
+        },
+        {
+          "bet_number": 31,
+          "bet_size": 10.840169411168452,
+          "confidence": 0.6460697363786893,
+          "edge": 2.5338222983732455,
+          "won": true,
+          "bankroll": 1093.8814952810085
+        },
+        {
+          "bet_number": 32,
+          "bet_size": 10.938814952810086,
+          "confidence": 0.6923969268692137,
+          "edge": -3.9899231431152984,
+          "won": false,
+          "bankroll": 1082.9426803281983
+        },
+        {
+          "bet_number": 33,
+          "bet_size": 10.829426803281983,
+          "confidence": 0.6856655943825662,
+          "edge": 0.39811939114694006,
+          "won": true,
+          "bankroll": 1092.797458719185
+        },
+        {
+          "bet_number": 34,
+          "bet_size": 10.92797458719185,
+          "confidence": 0.6761140450897111,
+          "edge": -1.178729513888423,
+          "won": true,
+          "bankroll": 1102.7419155935295
+        },
+        {
+          "bet_number": 35,
+          "bet_size": 11.027419155935295,
+          "confidence": 0.797833711871605,
+          "edge": 0.024293018146450646,
+          "won": false,
+          "bankroll": 1091.714496437594
+        },
+        {
+          "bet_number": 36,
+          "bet_size": 10.917144964375941,
+          "confidence": 0.6979368602274746,
+          "edge": 1.7079494221357119,
+          "won": false,
+          "bankroll": 1080.7973514732182
+        },
+        {
+          "bet_number": 37,
+          "bet_size": 10.807973514732183,
+          "confidence": 0.5742814212229194,
+          "edge": 3.824635279679941,
+          "won": true,
+          "bankroll": 1090.6326073716245
+        },
+        {
+          "bet_number": 38,
+          "bet_size": 10.906326073716246,
+          "confidence": 0.6847805481337312,
+          "edge": 0.48993314221744555,
+          "won": true,
+          "bankroll": 1100.5573640987063
+        },
+        {
+          "bet_number": 39,
+          "bet_size": 11.005573640987064,
+          "confidence": 0.7644491715145765,
+          "edge": -1.3284548866088455,
+          "won": true,
+          "bankroll": 1110.5724361120047
+        },
+        {
+          "bet_number": 40,
+          "bet_size": 11.105724361120046,
+          "confidence": 0.5722842142490484,
+          "edge": -0.6864024732623359,
+          "won": false,
+          "bankroll": 1099.4667117508845
+        },
+        {
+          "bet_number": 41,
+          "bet_size": 10.994667117508845,
+          "confidence": 0.5699411657467978,
+          "edge": 1.9670086127169302,
+          "won": true,
+          "bankroll": 1109.4718588278176
+        },
+        {
+          "bet_number": 42,
+          "bet_size": 11.094718588278177,
+          "confidence": 0.5754950070796728,
+          "edge": -0.8638844032167445,
+          "won": false,
+          "bankroll": 1098.3771402395394
+        },
+        {
+          "bet_number": 43,
+          "bet_size": 10.983771402395394,
+          "confidence": 0.7796791665562619,
+          "edge": 1.9526182529622054,
+          "won": true,
+          "bankroll": 1108.3723722157192
+        },
+        {
+          "bet_number": 44,
+          "bet_size": 11.083723722157192,
+          "confidence": 0.7626094887709796,
+          "edge": -3.825413034128438,
+          "won": false,
+          "bankroll": 1097.288648493562
+        },
+        {
+          "bet_number": 45,
+          "bet_size": 10.972886484935621,
+          "confidence": 0.7658312655792822,
+          "edge": -3.426269058181755,
+          "won": false,
+          "bankroll": 1086.3157620086265
+        },
+        {
+          "bet_number": 46,
+          "bet_size": 10.863157620086266,
+          "confidence": 0.7289723509470696,
+          "edge": 2.4756326239469235,
+          "won": true,
+          "bankroll": 1096.201235442905
+        },
+        {
+          "bet_number": 47,
+          "bet_size": 10.962012354429051,
+          "confidence": 0.8526217550842018,
+          "edge": 1.0709836199504092,
+          "won": false,
+          "bankroll": 1085.239223088476
+        },
+        {
+          "bet_number": 48,
+          "bet_size": 10.852392230884758,
+          "confidence": 0.673964585821276,
+          "edge": -0.9734289920854988,
+          "won": false,
+          "bankroll": 1074.3868308575911
+        },
+        {
+          "bet_number": 49,
+          "bet_size": 10.74386830857591,
+          "confidence": 0.7108685087153267,
+          "edge": 1.592810859392653,
+          "won": true,
+          "bankroll": 1084.1637510183953
+        },
+        {
+          "bet_number": 50,
+          "bet_size": 10.841637510183952,
+          "confidence": 0.682092457337926,
+          "edge": -0.8933669413813341,
+          "won": true,
+          "bankroll": 1094.0296411526626
+        },
+        {
+          "bet_number": 51,
+          "bet_size": 10.940296411526626,
+          "confidence": 0.5783920948768949,
+          "edge": -1.1180509864677137,
+          "won": true,
+          "bankroll": 1103.9853108871519
+        },
+        {
+          "bet_number": 52,
+          "bet_size": 11.039853108871519,
+          "confidence": 0.652548337422473,
+          "edge": 0.427959821468444,
+          "won": false,
+          "bankroll": 1092.9454577782803
+        },
+        {
+          "bet_number": 53,
+          "bet_size": 10.929454577782804,
+          "confidence": 0.521971713198443,
+          "edge": -1.061002295221055,
+          "won": true,
+          "bankroll": 1102.8912614440626
+        },
+        {
+          "bet_number": 54,
+          "bet_size": 11.028912614440626,
+          "confidence": 0.7322389655382124,
+          "edge": 2.7337485348890493,
+          "won": false,
+          "bankroll": 1091.862348829622
+        },
+        {
+          "bet_number": 55,
+          "bet_size": 10.918623488296221,
+          "confidence": 0.5459776881867533,
+          "edge": -0.25583518296153307,
+          "won": false,
+          "bankroll": 1080.943725341326
+        },
+        {
+          "bet_number": 56,
+          "bet_size": 10.80943725341326,
+          "confidence": 0.6546752207734083,
+          "edge": 2.9598882777800517,
+          "won": true,
+          "bankroll": 1090.780313241932
+        },
+        {
+          "bet_number": 57,
+          "bet_size": 10.90780313241932,
+          "confidence": 0.646598725080682,
+          "edge": -1.7512365067695144,
+          "won": false,
+          "bankroll": 1079.8725101095126
+        },
+        {
+          "bet_number": 58,
+          "bet_size": 10.798725101095126,
+          "confidence": 0.5047639550008337,
+          "edge": 1.1259384733811417,
+          "won": true,
+          "bankroll": 1089.6993499515092
+        },
+        {
+          "bet_number": 59,
+          "bet_size": 10.896993499515093,
+          "confidence": 0.7727156709394603,
+          "edge": 0.5194450034429637,
+          "won": true,
+          "bankroll": 1099.6156140360679
+        },
+        {
+          "bet_number": 60,
+          "bet_size": 10.996156140360679,
+          "confidence": 0.5538286237106701,
+          "edge": -1.2039373577927692,
+          "won": false,
+          "bankroll": 1088.6194578957072
+        },
+        {
+          "bet_number": 61,
+          "bet_size": 10.886194578957072,
+          "confidence": 0.7609503932870721,
+          "edge": 4.867696156804833,
+          "won": true,
+          "bankroll": 1098.5258949625581
+        },
+        {
+          "bet_number": 62,
+          "bet_size": 10.985258949625582,
+          "confidence": 0.515049261941389,
+          "edge": 0.9760881587574987,
+          "won": false,
+          "bankroll": 1087.5406360129325
+        },
+        {
+          "bet_number": 63,
+          "bet_size": 10.875406360129325,
+          "confidence": 0.8214840083080428,
+          "edge": 1.1766570369212845,
+          "won": true,
+          "bankroll": 1097.4372558006503
+        },
+        {
+          "bet_number": 64,
+          "bet_size": 10.974372558006504,
+          "confidence": 0.9477372178754236,
+          "edge": -2.016172621834808,
+          "won": true,
+          "bankroll": 1107.4239348284361
+        },
+        {
+          "bet_number": 65,
+          "bet_size": 11.074239348284362,
+          "confidence": 0.7732145060731569,
+          "edge": 1.9277006374307233,
+          "won": false,
+          "bankroll": 1096.3496954801517
+        },
+        {
+          "bet_number": 66,
+          "bet_size": 10.963496954801517,
+          "confidence": 0.9100579989497205,
+          "edge": 0.5619286418363985,
+          "won": true,
+          "bankroll": 1106.326477709021
+        },
+        {
+          "bet_number": 67,
+          "bet_size": 11.06326477709021,
+          "confidence": 0.8141795543304651,
+          "edge": 1.451533247797384,
+          "won": false,
+          "bankroll": 1095.2632129319309
+        },
+        {
+          "bet_number": 68,
+          "bet_size": 10.952632129319309,
+          "confidence": 0.5014874824468347,
+          "edge": -0.5191827027272096,
+          "won": true,
+          "bankroll": 1105.2301081696114
+        },
+        {
+          "bet_number": 69,
+          "bet_size": 11.052301081696115,
+          "confidence": 0.8429039985877769,
+          "edge": 1.0333386172962458,
+          "won": true,
+          "bankroll": 1115.2877021539548
+        },
+        {
+          "bet_number": 70,
+          "bet_size": 11.152877021539549,
+          "confidence": 0.9266861666814263,
+          "edge": 2.777164538080576,
+          "won": true,
+          "bankroll": 1125.4368202435558
+        },
+        {
+          "bet_number": 71,
+          "bet_size": 11.254368202435558,
+          "confidence": 0.810616277082824,
+          "edge": -1.4566302998957719,
+          "won": true,
+          "bankroll": 1135.678295307772
+        },
+        {
+          "bet_number": 72,
+          "bet_size": 11.35678295307772,
+          "confidence": 0.5444405056348791,
+          "edge": -0.7013630557575747,
+          "won": true,
+          "bankroll": 1146.0129677950727
+        },
+        {
+          "bet_number": 73,
+          "bet_size": 11.460129677950727,
+          "confidence": 0.6030432879610492,
+          "edge": -0.0619165012731467,
+          "won": true,
+          "bankroll": 1156.441685802008
+        },
+        {
+          "bet_number": 74,
+          "bet_size": 11.56441685802008,
+          "confidence": 0.6999615462792986,
+          "edge": -2.5768947595146496,
+          "won": true,
+          "bankroll": 1166.965305142806
+        },
+        {
+          "bet_number": 75,
+          "bet_size": 11.66965305142806,
+          "confidence": 0.8475100753537667,
+          "edge": 1.1037273106190015,
+          "won": false,
+          "bankroll": 1155.295652091378
+        },
+        {
+          "bet_number": 76,
+          "bet_size": 11.552956520913781,
+          "confidence": 0.9505477995808851,
+          "edge": -2.559153933471403,
+          "won": true,
+          "bankroll": 1165.8088425254095
+        },
+        {
+          "bet_number": 77,
+          "bet_size": 11.658088425254096,
+          "confidence": 0.7308323035637833,
+          "edge": -1.2230356059838965,
+          "won": true,
+          "bankroll": 1176.4177029923908
+        },
+        {
+          "bet_number": 78,
+          "bet_size": 11.764177029923909,
+          "confidence": 0.831686227609187,
+          "edge": -0.0699769809939234,
+          "won": false,
+          "bankroll": 1164.6535259624668
+        },
+        {
+          "bet_number": 79,
+          "bet_size": 11.646535259624669,
+          "confidence": 0.6516013768409792,
+          "edge": -1.1249335517885353,
+          "won": false,
+          "bankroll": 1153.0069907028421
+        },
+        {
+          "bet_number": 80,
+          "bet_size": 11.530069907028421,
+          "confidence": 0.8814711238678273,
+          "edge": -0.14886685820009257,
+          "won": true,
+          "bankroll": 1163.499354318238
+        },
+        {
+          "bet_number": 81,
+          "bet_size": 11.634993543182379,
+          "confidence": 0.5411561322666528,
+          "edge": 1.2211714905676463,
+          "won": false,
+          "bankroll": 1151.8643607750555
+        },
+        {
+          "bet_number": 82,
+          "bet_size": 11.518643607750555,
+          "confidence": 0.5619034940124811,
+          "edge": 0.8592364382651717,
+          "won": true,
+          "bankroll": 1162.3463264581085
+        },
+        {
+          "bet_number": 83,
+          "bet_size": 11.623463264581085,
+          "confidence": 0.7574203778686489,
+          "edge": 2.106305706665807,
+          "won": false,
+          "bankroll": 1150.7228631935275
+        },
+        {
+          "bet_number": 84,
+          "bet_size": 11.507228631935275,
+          "confidence": 0.7156689817581309,
+          "edge": 1.00206668703469,
+          "won": true,
+          "bankroll": 1161.1944412485886
+        },
+        {
+          "bet_number": 85,
+          "bet_size": 11.611944412485887,
+          "confidence": 0.6145073527774878,
+          "edge": 2.81869488037116,
+          "won": false,
+          "bankroll": 1149.5824968361028
+        },
+        {
+          "bet_number": 86,
+          "bet_size": 11.495824968361028,
+          "confidence": 0.6628002792505091,
+          "edge": -2.101823915656374,
+          "won": true,
+          "bankroll": 1160.0436975573114
+        },
+        {
+          "bet_number": 87,
+          "bet_size": 11.600436975573114,
+          "confidence": 0.5088620248040162,
+          "edge": 2.3780330622151036,
+          "won": false,
+          "bankroll": 1148.4432605817383
+        },
+        {
+          "bet_number": 88,
+          "bet_size": 11.484432605817384,
+          "confidence": 0.8046526640757858,
+          "edge": -1.1044460885619425,
+          "won": true,
+          "bankroll": 1158.894094253032
+        },
+        {
+          "bet_number": 89,
+          "bet_size": 11.588940942530321,
+          "confidence": 0.706899520337092,
+          "edge": -1.5965944890769075,
+          "won": true,
+          "bankroll": 1169.4400305107347
+        },
+        {
+          "bet_number": 90,
+          "bet_size": 11.694400305107347,
+          "confidence": 0.7174812357037138,
+          "edge": 2.6477496075744265,
+          "won": true,
+          "bankroll": 1180.0819347883823
+        },
+        {
+          "bet_number": 91,
+          "bet_size": 11.800819347883824,
+          "confidence": 0.5516133006595146,
+          "edge": 2.7643179820750543,
+          "won": true,
+          "bankroll": 1190.8206803949565
+        },
+        {
+          "bet_number": 92,
+          "bet_size": 11.908206803949566,
+          "confidence": 0.644948881258528,
+          "edge": 0.29342737286664566,
+          "won": false,
+          "bankroll": 1178.912473591007
+        },
+        {
+          "bet_number": 93,
+          "bet_size": 11.78912473591007,
+          "confidence": 0.6442987472742732,
+          "edge": 0.3821981360398067,
+          "won": false,
+          "bankroll": 1167.123348855097
+        },
+        {
+          "bet_number": 94,
+          "bet_size": 11.67123348855097,
+          "confidence": 0.6289981992672897,
+          "edge": 2.4179638882129315,
+          "won": false,
+          "bankroll": 1155.452115366546
+        },
+        {
+          "bet_number": 95,
+          "bet_size": 11.55452115366546,
+          "confidence": 0.8399523713356299,
+          "edge": 2.390093257849685,
+          "won": true,
+          "bankroll": 1165.9667296163816
+        },
+        {
+          "bet_number": 96,
+          "bet_size": 11.659667296163816,
+          "confidence": 0.8940885832792189,
+          "edge": -3.401987103877507,
+          "won": false,
+          "bankroll": 1154.3070623202177
+        },
+        {
+          "bet_number": 97,
+          "bet_size": 11.543070623202178,
+          "confidence": 0.6928664937591913,
+          "edge": -0.3554806429748119,
+          "won": false,
+          "bankroll": 1142.7639916970156
+        },
+        {
+          "bet_number": 98,
+          "bet_size": 11.427639916970156,
+          "confidence": 0.687819138682088,
+          "edge": 0.1484124276003107,
+          "won": true,
+          "bankroll": 1153.1631440214585
+        },
+        {
+          "bet_number": 99,
+          "bet_size": 11.531631440214586,
+          "confidence": 0.5116140295779175,
+          "edge": 0.982809134038995,
+          "won": true,
+          "bankroll": 1163.6569286320537
+        },
+        {
+          "bet_number": 100,
+          "bet_size": 11.636569286320537,
+          "confidence": 0.7170890466936148,
+          "edge": -1.4816648159354049,
+          "won": false,
+          "bankroll": 1152.0203593457331
+        }
+      ]
+    }
+  },
+  "calibration": {
+    "confidence_calibration": {
+      "calibration_curve": [
+        {
+          "bin_center": 0.05,
+          "avg_confidence": 0.06355648140163334,
+          "avg_accuracy": 0.4550675191154143,
+          "count": "22",
+          "calibration_error": 0.391511037713781
+        },
+        {
+          "bin_center": 0.15000000000000002,
+          "avg_confidence": 0.15524217504323237,
+          "avg_accuracy": 0.5620693481870177,
+          "count": "77",
+          "calibration_error": 0.40682717314378536
+        },
+        {
+          "bin_center": 0.25,
+          "avg_confidence": 0.24992711593888287,
+          "avg_accuracy": 0.5596694384119922,
+          "count": "97",
+          "calibration_error": 0.3097423224731094
+        },
+        {
+          "bin_center": 0.35000000000000003,
+          "avg_confidence": 0.3534373039008824,
+          "avg_accuracy": 0.5570165606311047,
+          "count": "142",
+          "calibration_error": 0.2035792567302223
+        },
+        {
+          "bin_center": 0.45,
+          "avg_confidence": 0.4487867396205694,
+          "avg_accuracy": 0.5815764763440844,
+          "count": "154",
+          "calibration_error": 0.13278973672351496
+        },
+        {
+          "bin_center": 0.55,
+          "avg_confidence": 0.5532408278747788,
+          "avg_accuracy": 0.596553005953055,
+          "count": "157",
+          "calibration_error": 0.04331217807827625
+        },
+        {
+          "bin_center": 0.6500000000000001,
+          "avg_confidence": 0.6514947499353174,
+          "avg_accuracy": 0.598146218968899,
+          "count": "153",
+          "calibration_error": 0.05334853096641845
+        },
+        {
+          "bin_center": 0.75,
+          "avg_confidence": 0.7507345063510137,
+          "avg_accuracy": 0.6592615181851083,
+          "count": "105",
+          "calibration_error": 0.09147298816590543
+        },
+        {
+          "bin_center": 0.8500000000000001,
+          "avg_confidence": 0.8458549469727321,
+          "avg_accuracy": 0.6786467161378745,
+          "count": "69",
+          "calibration_error": 0.16720823083485759
+        },
+        {
+          "bin_center": 0.95,
+          "avg_confidence": 0.931236045788501,
+          "avg_accuracy": 0.6619995591703054,
+          "count": "24",
+          "calibration_error": 0.26923648661819566
+        }
+      ],
+      "expected_calibration_error": 0.16190785891279247,
+      "maximum_calibration_error": 0.40682717314378536,
+      "reliability_assessment": "Moderately calibrated",
+      "total_predictions": 1000
+    },
+    "prediction_intervals": {
+      "interval_analysis": {
+        "68%": {
+          "expected_coverage": 0.68,
+          "actual_coverage": 0.698,
+          "coverage_error": 0.017999999999999905,
+          "average_width": 8.35344621896193,
+          "well_calibrated": "True"
+        },
+        "80%": {
+          "expected_coverage": 0.8,
+          "actual_coverage": 0.815,
+          "coverage_error": 0.014999999999999902,
+          "average_width": 10.765033150574643,
+          "well_calibrated": "True"
+        },
+        "90%": {
+          "expected_coverage": 0.9,
+          "actual_coverage": 0.916,
+          "coverage_error": 0.016000000000000014,
+          "average_width": 13.816770466392368,
+          "well_calibrated": "True"
+        },
+        "95%": {
+          "expected_coverage": 0.95,
+          "actual_coverage": 0.955,
+          "coverage_error": 0.0050000000000000044,
+          "average_width": 16.463697470136452,
+          "well_calibrated": "True"
+        },
+        "99%": {
+          "expected_coverage": 0.99,
+          "actual_coverage": 0.989,
+          "coverage_error": 0.0010000000000000009,
+          "average_width": 21.63696614981076,
+          "well_calibrated": "True"
+        }
+      },
+      "overall_calibration": {
+        "avg_coverage_error": 0.010999999999999965,
+        "all_intervals_calibrated": true
+      }
+    },
+    "probability_calibration": {
+      "probability_calibration": [
+        {
+          "bin_range": "0.0-0.1",
+          "avg_predicted_prob": 0.018205611883810348,
+          "actual_frequency": 0.017241379310344827,
+          "count": "348",
+          "calibration_error": 0.0009642325734655205
+        },
+        {
+          "bin_range": "0.1-0.2",
+          "avg_predicted_prob": 0.14211047581530836,
+          "actual_frequency": 0.08108108108108109,
+          "count": "74",
+          "calibration_error": 0.06102939473422728
+        },
+        {
+          "bin_range": "0.2-0.3",
+          "avg_predicted_prob": 0.24758262516366566,
+          "actual_frequency": 0.2708333333333333,
+          "count": "48",
+          "calibration_error": 0.02325070816966765
+        },
+        {
+          "bin_range": "0.3-0.4",
+          "avg_predicted_prob": 0.3532932396519515,
+          "actual_frequency": 0.2972972972972973,
+          "count": "37",
+          "calibration_error": 0.05599594235465416
+        },
+        {
+          "bin_range": "0.4-0.5",
+          "avg_predicted_prob": 0.44906475978135085,
+          "actual_frequency": 0.4,
+          "count": "30",
+          "calibration_error": 0.04906475978135083
+        },
+        {
+          "bin_range": "0.5-0.6",
+          "avg_predicted_prob": 0.5483213234442569,
+          "actual_frequency": 0.5,
+          "count": "38",
+          "calibration_error": 0.04832132344425688
+        },
+        {
+          "bin_range": "0.6-0.7",
+          "avg_predicted_prob": 0.6463944377814373,
+          "actual_frequency": 0.5789473684210527,
+          "count": "38",
+          "calibration_error": 0.06744706936038469
+        },
+        {
+          "bin_range": "0.7-0.8",
+          "avg_predicted_prob": 0.7545588739868886,
+          "actual_frequency": 0.6857142857142857,
+          "count": "35",
+          "calibration_error": 0.06884458827260287
+        },
+        {
+          "bin_range": "0.8-0.9",
+          "avg_predicted_prob": 0.8540707349417114,
+          "actual_frequency": 0.7857142857142857,
+          "count": "56",
+          "calibration_error": 0.06835644922742568
+        },
+        {
+          "bin_range": "0.9-1.0",
+          "avg_predicted_prob": 0.9810239862634811,
+          "actual_frequency": 0.9645390070921985,
+          "count": "282",
+          "calibration_error": 0.016484979171282554
+        }
+      ],
+      "brier_score": 0.08157065384015559,
+      "log_loss": 0.26324060777373703,
+      "calibration_quality": "Excellent"
+    },
+    "reliability_analysis": {
+      "reliability_tests": {
+        "home_vs_away": {
+          "home_mae": 3.064305923487743,
+          "away_mae": 3.459748439435073,
+          "difference": 0.3954425159473298,
+          "reliability_score": 0.8022787420263351,
+          "consistent_performance": "True"
+        },
+        "high_vs_low_scoring": {
+          "high_scoring_mae": 3.4959200170285865,
+          "low_scoring_mae": 3.4531004578554834,
+          "difference": 0.042819559173103094,
+          "reliability_score": 0.9857268136089656,
+          "consistent_across_levels": "True"
+        },
+        "different_seasons": {
+          "season_performance": {
+            "2022-23": 3.543891802777843,
+            "2023-24": 3.3516766296327547
+          },
+          "consistency_score": 0.9442496510536716,
+          "reliability_score": 0.9442496510536716,
+          "stable_across_seasons": "True"
+        },
+        "player_experience": {
+          "rookie_mae": 4.130698091091534,
+          "veteran_mae": 3.205304175599979,
+          "expected_difference": true,
+          "reliability_score": 0.8,
+          "appropriate_uncertainty": "True"
+        }
+      },
+      "overall_reliability_score": 0.8830638016722432,
+      "reliability_grade": "Excellent"
+    },
+    "calibration_plots": {
+      "confidence_reliability_plot": {
+        "description": "Confidence vs Actual Accuracy",
+        "x_axis": "Predicted Confidence",
+        "y_axis": "Actual Accuracy",
+        "ideal_line": "y = x (perfect calibration)"
+      },
+      "prediction_interval_plot": {
+        "description": "Prediction Interval Coverage",
+        "x_axis": "Confidence Level",
+        "y_axis": "Actual Coverage Rate",
+        "ideal_line": "y = x (perfect calibration)"
+      },
+      "probability_calibration_plot": {
+        "description": "Probability Calibration Curve",
+        "x_axis": "Mean Predicted Probability",
+        "y_axis": "Fraction of Positives",
+        "ideal_line": "y = x (perfect calibration)"
+      }
+    }
+  },
+  "metadata": {
+    "validation_date": "2025-06-10T11:27:22.875785",
+    "seasons_tested": [
+      "2022-23",
+      "2023-24"
+    ],
+    "model_config": {
+      "min_predictions": 100,
+      "significance_level": 0.05,
+      "betting_bankroll": 1000,
+      "bet_size_pct": 0.02,
+      "confidence_threshold": 0.7
+    }
+  }
+}

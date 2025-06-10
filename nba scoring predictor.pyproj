@@ -74,6 +74,8 @@
     <Folder Include="nba_scoring_predictor\scripts\" />
     <Folder Include="nba_scoring_predictor\src\" />
     <Folder Include="nba_scoring_predictor\utils\" />
+    <Folder Include="reports\" />
+    <Folder Include="reports\validation_reports\" />
     <Folder Include="validation\" />
   </ItemGroup>
   <ItemGroup>

@@ -178,7 +178,7 @@ class TrainingWorker(QThread):
             # Log results
             for model_name, metrics in results.items():
                 self.log_updated.emit(
-                    f"{model_name}: MAE={metrics['test_mae']:.3f}, R²={metrics['test_r2']:.3f}"
+                    f"{model_name}: MAE={metrics['test_mae']:.3f}, R={metrics['test_r2']:.3f}"
                 )
             
             self.training_completed.emit(results)
@@ -238,10 +238,10 @@ class MatplotlibWidget(QWidget):
             ax1.text(bar.get_x() + bar.get_width()/2., height + 0.05,
                     f'{height:.2f}', ha='center', va='bottom', color='white')
         
-        # R² plot
-        bars2 = ax2.bar(performance_df['Model'], performance_df['Test R²'], color=colors)
-        ax2.set_title('R² Score (Higher is Better)', fontweight='bold')
-        ax2.set_ylabel('R² Score')
+        # R plot
+        bars2 = ax2.bar(performance_df['Model'], performance_df['Test R'], color=colors)
+        ax2.set_title('R Score (Higher is Better)', fontweight='bold')
+        ax2.set_ylabel('R Score')
         ax2.tick_params(axis='x', rotation=45)
         
         # Add value labels on bars
@@ -2090,7 +2090,7 @@ NBA Data Management Instructions:
         try:
             performance_df = self.predictor.get_model_performance()
             # Fix column name reference
-            performance_df = performance_df.rename(columns={'Test R-squared': 'Test R²'})
+            performance_df = performance_df.rename(columns={'Test R-squared': 'Test R'})
             self.plot_widget.plot_model_performance(performance_df)
             self.tab_widget.setCurrentIndex(1)
         
@@ -2835,7 +2835,7 @@ class CategoryTrainingWorker(QThread):
             # Log results
             for model_name, metrics in results.items():
                 self.log_updated.emit(
-                    f"{model_name}: MAE={metrics['test_mae']:.3f}, R²={metrics['test_r2']:.3f}"
+                    f"{model_name}: MAE={metrics['test_mae']:.3f}, R={metrics['test_r2']:.3f}"
                 )
            
             self.training_completed.emit(results)

@@ -419,7 +419,7 @@ class EnhancedNBAPredictor:
                 'Model': model_name.title(),
                 'Test MAE': round(metrics['test_mae'], 3),
                 'Test RMSE': round(metrics['test_rmse'], 3),
-                'Test R²': round(metrics['test_r2'], 3)  # Fixed column name
+                'Test R': round(metrics['test_r2'], 3)  # Fixed column name
             })
     
         return pd.DataFrame(performance_data)
