@@ -296,17 +296,20 @@ class NBAPlayerScoringGUI(QMainWindow):
         self.is_model_loaded = False
         self.training_worker = None
         self.nba_update_worker = None
-        
+    
         # Initialize NBA data components
         self.player_fetcher = NBAPlayerFetcher()
         self.player_roles = PlayerRoles()
-        
+    
         self.init_ui()
-        
+    
         # Status update timer
         self.status_timer = QTimer()
         self.status_timer.timeout.connect(self.update_status_periodically)
         self.status_timer.start(5000)
+    
+    
+        self.ensure_nba_data_available()
     
     def init_ui(self):
         """Initialize the user interface."""
@@ -404,6 +407,43 @@ class NBAPlayerScoringGUI(QMainWindow):
         
         layout.addWidget(header_frame)
     
+    def ensure_nba_data_available(self):
+        """Ensure NBA data is available for player search."""
+        try:
+            # Check if we have NBA data
+            nba_data = self.player_fetcher.load_players_data()
+        
+            if not nba_data:
+                logger.info("No NBA data found, fetching automatically...")
+            
+                # Show a progress dialog
+                from PyQt5.QtWidgets import QProgressDialog
+                progress = QProgressDialog("Loading NBA players data...", "Cancel", 0, 100, self)
+                progress.setWindowModality(Qt.WindowModal)
+                progress.show()
+                QApplication.processEvents()
+            
+                try:
+                    # Fetch NBA data
+                    nba_data = self.player_fetcher.fetch_all_active_players()
+                    progress.setValue(100)
+                    progress.close()
+                
+                    logger.info(f"Successfully loaded {nba_data['metadata']['total_players']} NBA players")
+                
+                    # Refresh the player lists
+                    self.refresh_players()
+                    self.check_nba_data_status()
+                
+                except Exception as e:
+                    progress.close()
+                    logger.error(f"Failed to fetch NBA data: {e}")
+                    # Continue with fallback players
+                
+        except Exception as e:
+            logger.error(f"Error ensuring NBA data: {e}")
+
+
     def create_tabs(self, layout):
         """Create the enhanced main tab widget."""
         self.tab_widget = QTabWidget()
@@ -1762,27 +1802,85 @@ NBA Data Management Instructions:
                 self.update_status("Error saving model")
    
     def refresh_players(self):
-        """Refresh the player dropdown list for predictions."""
+        """Enhanced refresh players method with search widget support."""
         try:
+            # Get players from multiple sources
+            all_available_players = []
+        
+            # 1. Try to get trained players (if model is loaded)
             if self.is_model_loaded:
-                players = self.predictor.get_available_players()
-               
-                self.player_combo.clear()
-                if players:
-                    self.player_combo.addItems(players)
+                try:
+                    trained_players = self.predictor.get_available_players()
+                    all_available_players.extend(trained_players)
+                    logger.info(f"Found {len(trained_players)} trained players")
+                except Exception as e:
+                    logger.warning(f"Could not get trained players: {e}")
+        
+            # 2. Get players from NBA data (this is the key addition)
+            try:
+                nba_data = self.player_fetcher.load_players_data()
+                if nba_data and 'all_players' in nba_data:
+                    nba_player_names = [player['name'] for player in nba_data['all_players']]
+                    all_available_players.extend(nba_player_names)
+                    logger.info(f"Found {len(nba_player_names)} NBA players")
                 else:
-                    self.player_combo.addItem("No players found")
-                    self.player_combo.setEnabled(False)
+                    logger.info("No NBA data available, trying to fetch...")
+                    # If no NBA data, try to get popular players as fallback
+                    from utils.player_storage import PlayerStorage
+                    storage = PlayerStorage()
+                    popular_players = storage.get_popular_players()
+                    all_available_players.extend(popular_players)
+                    logger.info(f"Using {len(popular_players)} popular players as fallback")
+            except Exception as e:
+                logger.warning(f"Could not get NBA players: {e}")
+        
+            # 3. Remove duplicates while preserving order
+            unique_players = []
+            seen = set()
+            for player in all_available_players:
+                if player not in seen:
+                    unique_players.append(player)
+                    seen.add(player)
+        
+            # 4. Update the dropdown (traditional method)
+            self.player_combo.clear()
+            if unique_players:
+                # Prioritize trained players at the top
+                if self.is_model_loaded:
+                    trained_players = []
+                    other_players = []
+                
+                    try:
+                        cached_players = set(self.predictor.get_available_players())
+                        for player in unique_players:
+                            if player in cached_players:
+                                trained_players.append(player)
+                            else:
+                                other_players.append(player)
+                    
+                        # Add trained players first, then others
+                        self.player_combo.addItems(trained_players + other_players)
+                    except:
+                        self.player_combo.addItems(unique_players)
+                else:
+                    self.player_combo.addItems(unique_players)
+            
+                self.player_combo.setEnabled(True)
             else:
-                self.player_combo.clear()
-                self.player_combo.addItem("Load model first...")
+                self.player_combo.addItem("No players available")
                 self.player_combo.setEnabled(False)
-               
+        
+            # 5. Update search widget (this is the most important part)
+            self.player_search_widget.update_player_list(unique_players)
+        
+            logger.info(f"Refreshed player list with {len(unique_players)} total players")
+        
         except Exception as e:
             logger.error(f"Error refreshing players: {e}")
             self.player_combo.clear()
             self.player_combo.addItem("Error loading players")
             self.player_combo.setEnabled(False)
+            self.player_search_widget.update_player_list([])
    
     def predict_player_points(self):
         """Predict points for the selected player."""
