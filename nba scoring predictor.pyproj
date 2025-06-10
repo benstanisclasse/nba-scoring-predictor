@@ -12,6 +12,7 @@
     <Name>nba scoring predictor</Name>
     <RootNamespace>nba scoring predictor</RootNamespace>
     <InterpreterId>Global|PythonCore|3.13</InterpreterId>
+    <TestFramework>Pytest</TestFramework>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
     <DebugSymbols>true</DebugSymbols>
@@ -28,6 +29,7 @@
     <Compile Include="nba_scoring_predictor\main.py" />
     <Compile Include="nba_scoring_predictor\scripts\generate_reports.py" />
     <Compile Include="nba_scoring_predictor\scripts\run_validation.py" />
+    <Compile Include="nba_scoring_predictor\src\team_comparison.py" />
     <Compile Include="nba_scoring_predictor\scripts\update_nba_players.py" />
     <Compile Include="nba_scoring_predictor\src\data_collector.py" />
     <Compile Include="nba_scoring_predictor\src\feature_engineer.py" />
