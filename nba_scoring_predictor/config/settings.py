@@ -50,3 +50,23 @@ COLORS = {
     'background': '#2c3e50',
     'text': '#ecf0f1'
 }
+
+# Validation settings
+VALIDATION_CONFIG = {
+    'min_sample_size': 100,
+    'significance_level': 0.05,
+    'confidence_intervals': [0.68, 0.95],  # 1 and 2 standard deviations
+    'betting_vig': 0.045,  # 4.5% sportsbook commission
+    'kelly_fraction': 0.25,  # Fractional Kelly betting
+    'backtest_seasons': ['2022-23', '2023-24'],
+    'validation_split': 0.8,  # 80% train, 20% test
+}
+
+# Report settings
+REPORT_CONFIG = {
+    'output_dir': 'reports/validation_reports',
+    'include_plots': True,
+    'plot_format': 'png',
+    'generate_html': True,
+    'generate_pdf': False
+}

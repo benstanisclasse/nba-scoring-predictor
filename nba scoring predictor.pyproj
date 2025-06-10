@@ -26,6 +26,8 @@
     <Compile Include="nba_scoring_predictor\config\settings.py" />
     <Compile Include="nba_scoring_predictor\config\__init__.py" />
     <Compile Include="nba_scoring_predictor\main.py" />
+    <Compile Include="nba_scoring_predictor\scripts\generate_reports.py" />
+    <Compile Include="nba_scoring_predictor\scripts\run_validation.py" />
     <Compile Include="nba_scoring_predictor\scripts\update_nba_players.py" />
     <Compile Include="nba_scoring_predictor\src\data_collector.py" />
     <Compile Include="nba_scoring_predictor\src\feature_engineer.py" />
@@ -35,6 +37,10 @@
     <Compile Include="nba_scoring_predictor\src\predictor.py" />
     <Compile Include="nba_scoring_predictor\src\widgets.py" />
     <Compile Include="nba_scoring_predictor\src\__init__.py" />
+    <Compile Include="nba_scoring_predictor\tests\test_backtester.py" />
+    <Compile Include="nba_scoring_predictor\tests\test_betting_simulator.py" />
+    <Compile Include="nba_scoring_predictor\tests\test_statistical_tests.py" />
+    <Compile Include="nba_scoring_predictor\tests\__init__.py" />
     <Compile Include="nba_scoring_predictor\utils\database.py" />
     <Compile Include="nba_scoring_predictor\utils\logger.py" />
     <Compile Include="nba_scoring_predictor\utils\nba_player_fetcher.py" />
@@ -59,6 +65,12 @@
     <Folder Include="models\" />
     <Folder Include="nba_scoring_predictor\" />
     <Folder Include="nba_scoring_predictor\config\" />
+    <Folder Include="nba_scoring_predictor\logs\" />
+    <Folder Include="nba_scoring_predictor\reports\" />
+    <Folder Include="nba_scoring_predictor\reports\betting_analysis\" />
+    <Folder Include="nba_scoring_predictor\reports\statistical_analysis\" />
+    <Folder Include="nba_scoring_predictor\reports\validation_reports\" />
+    <Folder Include="nba_scoring_predictor\tests\" />
     <Folder Include="nba_scoring_predictor\scripts\" />
     <Folder Include="nba_scoring_predictor\src\" />
     <Folder Include="nba_scoring_predictor\utils\" />
@@ -75,6 +87,8 @@
     <Content Include="models\Rolebased9playerOH.pkl" />
     <Content Include="nba_scoring_predictor\README.md" />
     <Content Include="nba_scoring_predictor\requirements.txt" />
+    <Content Include="nba_scoring_predictor\tests\nba_predictor_.log" />
+    <Content Include="nba_scoring_predictor\tests\validation_.log" />
   </ItemGroup>
   <ItemGroup>
     <InterpreterReference Include="Global|PythonCore|3.13" />
