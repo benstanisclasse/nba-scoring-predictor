@@ -365,11 +365,11 @@ class PerformanceAnalyzer:
                 
                 ax.bar(x - width/2, maes, width, label='MAE', alpha=0.7)
                 ax2 = ax.twinx()
-                ax2.bar(x + width/2, r2s, width, label='R²', alpha=0.7, color='orange')
+                ax2.bar(x + width/2, r2s, width, label='R', alpha=0.7, color='orange')
                 
                 ax.set_xlabel('Position')
                 ax.set_ylabel('MAE', color='blue')
-                ax2.set_ylabel('R²', color='orange')
+                ax2.set_ylabel('R', color='orange')
                 ax.set_title('Prediction Performance by Position')
                 ax.set_xticks(x)
                 ax.set_xticklabels(positions)
