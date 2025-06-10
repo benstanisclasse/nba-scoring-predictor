@@ -1,6 +1,4 @@
-﻿# Add this to src/predictor.py
-
-# -*- coding: utf-8 -*-
+﻿# -*- coding: utf-8 -*-
 """
 Enhanced predictor with position-based training and team predictions
 """
@@ -52,6 +50,43 @@ class EnhancedNBAPredictor:
             self.team_predictor = TeamGamePredictor(self)
         return self.team_predictor
     
+    def get_feature_importance(self, model_name: str = 'xgboost', top_n: int = 15) -> pd.DataFrame:
+        """
+        Get feature importance from trained models.
+        
+        Args:
+            model_name: Name of the model to get importance from ('xgboost', 'lightgbm', 'random_forest')
+            top_n: Number of top features to return
+            
+        Returns:
+            DataFrame with feature names and importance scores
+        """
+        if not self.is_trained:
+            logger.warning("No trained model available for feature importance")
+            return pd.DataFrame()
+        
+        try:
+            # Check if we have position-specific models
+            if hasattr(self, 'position_models') and self.position_models:
+                # Use the first available position model
+                first_position = list(self.position_models.keys())[0]
+                model_trainer = self.position_models[first_position]['model_trainer']
+                logger.info(f"Using {first_position}-specific model for feature importance")
+            elif hasattr(self, 'general_model') and self.general_model:
+                # Use general model
+                model_trainer = self.general_model['model_trainer']
+                logger.info("Using general model for feature importance")
+            else:
+                # Use default model trainer
+                model_trainer = self.model_trainer
+                logger.info("Using default model for feature importance")
+            
+            return model_trainer.get_feature_importance(model_name).head(top_n)
+            
+        except Exception as e:
+            logger.error(f"Error getting feature importance: {e}")
+            return pd.DataFrame()
+
     # ENHANCED TRAINING METHODS
     def train_by_category(self, category: str, max_players_per_position: int = None, 
                          seasons: List[str] = None, optimize: bool = True, 
@@ -113,8 +148,6 @@ class EnhancedNBAPredictor:
         logger.info(f"Category training completed for {category}")
         
         return results
-    
-
 
     def collect_data_by_roles(self, roles: List[str], max_per_role: int = 3, seasons: List[str] = None, use_cache: bool = True) -> pd.DataFrame:
         """Collect data for players by their roles/positions."""
@@ -386,7 +419,7 @@ class EnhancedNBAPredictor:
                 'Model': model_name.title(),
                 'Test MAE': round(metrics['test_mae'], 3),
                 'Test RMSE': round(metrics['test_rmse'], 3),
-                'Test R-squared': round(metrics['test_r2'], 3)  # Fixed column name
+                'Test R²': round(metrics['test_r2'], 3)  # Fixed column name
             })
     
         return pd.DataFrame(performance_data)
@@ -410,8 +443,13 @@ class EnhancedNBAPredictor:
         self.is_trained = True
         logger.info(f"Model loaded successfully from {filepath}")
 
+    # Backward compatibility method
+    def predict_player_points(self, player_name: str, recent_games: int = 10) -> Dict:
+        """Backward compatibility wrapper for predict_player_points_enhanced."""
+        return self.predict_player_points_enhanced(player_name, recent_games)
 
-# TEAM PREDICTION SYSTEM
+
+# TEAM PREDICTION SYSTEM (keep the existing team prediction classes...)
 class TeamGamePredictor:
     """Predict team vs team game outcomes using individual player predictions."""
     
