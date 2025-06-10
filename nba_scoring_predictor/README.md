@@ -278,9 +278,10 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 ## 📞 Support
 
-- 📧 Email: [your-email]
-- 🐛 Issues: [GitHub Issues Page]
-- 📖 Documentation: [Documentation Link]
+Claude AI is here to help! 
+If you have any questions or need assistance, 
+feel free to reach out via the project's 
+GitHub Issues page or contact us directly at https://claude.ai/
 
 ---
 
