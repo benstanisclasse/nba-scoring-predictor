@@ -8,7 +8,7 @@ from typing import Dict, List, Optional
 import traceback
 import threading
 from datetime import datetime
-
+from src.player_search_widget import PlayerSearchWidget
 # Add project root to path
 project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, project_root)
@@ -38,6 +38,7 @@ except ImportError:
     print("qdarkstyle not available, using default theme")
 
 try:
+    from src.player_search_widget import PlayerSearchWidget
     from src.predictor import EnhancedNBAPredictor
     from utils.logger import main_logger as logger
     from utils.nba_player_fetcher import NBAPlayerFetcher
@@ -949,12 +950,104 @@ NBA Data Management Instructions:
         layout.addWidget(log_group)
        
         self.tab_widget.addTab(training_widget, "🏋️ Training")
-   
+    def on_player_search_selected(self, player_name: str):
+        """Handle player selection from search widget."""
+        self.selected_player_name = player_name
+    
+        # Update the dropdown to match the search selection
+        index = self.player_combo.findText(player_name)
+        if index >= 0:
+            self.player_combo.setCurrentIndex(index)
+    
+        # Enable predict button if model is loaded
+        if self.is_model_loaded:
+            self.predict_button.setEnabled(True)
+
+    def on_dropdown_selection_changed(self, player_name: str):
+        """Handle player selection from dropdown."""
+        if player_name and player_name not in ["Load model first...", "No players found"]:
+            self.selected_player_name = player_name
+        
+            # Update search widget to match dropdown selection
+            self.player_search_widget.set_selected_player(player_name)
+        
+            # Enable predict button if model is loaded
+            if self.is_model_loaded:
+                self.predict_button.setEnabled(True)
+
+    def refresh_players(self):
+        """Enhanced refresh players method with search widget support."""
+        try:
+            if self.is_model_loaded:
+                players = self.predictor.get_available_players()
+            
+                # Update dropdown
+                self.player_combo.clear()
+                if players:
+                    self.player_combo.addItems(players)
+                    self.player_combo.setEnabled(True)
+                else:
+                    self.player_combo.addItem("No players found")
+                    self.player_combo.setEnabled(False)
+            
+                # Update search widget
+                self.player_search_widget.update_player_list(players)
+            
+            else:
+                self.player_combo.clear()
+                self.player_combo.addItem("Load model first...")
+                self.player_combo.setEnabled(False)
+                self.player_search_widget.update_player_list([])
+            
+        except Exception as e:
+            logger.error(f"Error refreshing players: {e}")
+            self.player_combo.clear()
+            self.player_combo.addItem("Error loading players")
+            self.player_combo.setEnabled(False)
+            self.player_search_widget.update_player_list([])
+
+    def predict_player_points(self):
+        """Enhanced predict player points method."""
+        if not self.is_model_loaded:
+            QMessageBox.warning(self, "Warning", "Please load a trained model first.")
+            return
+    
+        # Get player name from search widget or dropdown
+        player_name = getattr(self, 'selected_player_name', None)
+    
+        if not player_name:
+            # Fallback to dropdown selection
+            player_name = self.player_combo.currentText()
+    
+        if not player_name or player_name in ["Load model first...", "No players found", "Error loading players"]:
+            QMessageBox.warning(self, "Warning", "Please search for and select a valid player.")
+            return
+    
+        recent_games = self.recent_games_slider.value()
+    
+        try:
+            self.update_status(f"Predicting points for {player_name}...")
+            self.results_text.setPlainText("Generating predictions...\n")
+            QApplication.processEvents()
+        
+            # Make prediction
+            predictions = self.predictor.predict_player_points(player_name, recent_games)
+        
+            # Display results
+            self.display_prediction_results(predictions)
+            self.update_status("Prediction completed successfully!")
+        
+        except Exception as e:
+            error_msg = f"Error predicting for {player_name}: {str(e)}"
+            logger.error(error_msg)
+            self.results_text.setPlainText(f"Error: {error_msg}")
+            self.update_status("Prediction failed")
+
     def create_prediction_tab(self):
-        """Create the prediction tab (unchanged from original)."""
+        """Create the enhanced prediction tab with search functionality."""
         prediction_widget = QWidget()
         layout = QHBoxLayout(prediction_widget)
-       
+    
         # Left panel - Controls
         control_frame = QFrame()
         control_frame.setFrameStyle(QFrame.StyledPanel)
@@ -966,13 +1059,13 @@ NBA Data Management Instructions:
                 border-radius: 5px;
             }
         """)
-       
+    
         control_layout = QVBoxLayout(control_frame)
-       
-        # Player selection group
-        player_group = QGroupBox("Player Selection")
-        player_group.setFont(QFont("Arial", 11, QFont.Bold))
-        player_group.setStyleSheet("""
+    
+        # Player search group
+        search_group = QGroupBox("Player Search")
+        search_group.setFont(QFont("Arial", 11, QFont.Bold))
+        search_group.setStyleSheet("""
             QGroupBox {
                 color: white;
                 border: 2px solid #555;
@@ -986,15 +1079,31 @@ NBA Data Management Instructions:
                 padding: 0 5px 0 5px;
             }
         """)
-       
-        player_layout = QVBoxLayout(player_group)
-       
-        player_layout.addWidget(QLabel("Select Player:"))
-       
+    
+        search_layout = QVBoxLayout(search_group)
+    
+        # Add the search widget
+        self.player_search_widget = PlayerSearchWidget()
+        self.player_search_widget.player_selected.connect(self.on_player_search_selected)
+        search_layout.addWidget(self.player_search_widget)
+    
+        # Separator
+        separator = QFrame()
+        separator.setFrameShape(QFrame.HLine)
+        separator.setFrameShadow(QFrame.Sunken)
+        separator.setStyleSheet("color: #555;")
+        search_layout.addWidget(separator)
+    
+        # Traditional dropdown (as backup)
+        dropdown_label = QLabel("Or select from dropdown:")
+        dropdown_label.setStyleSheet("color: #95a5a6; font-size: 10px; margin-top: 10px;")
+        search_layout.addWidget(dropdown_label)
+    
         self.player_combo = QComboBox()
         self.player_combo.setMinimumHeight(30)
         self.player_combo.addItem("Load model first...")
         self.player_combo.setEnabled(False)
+        self.player_combo.currentTextChanged.connect(self.on_dropdown_selection_changed)
         self.player_combo.setStyleSheet("""
             QComboBox {
                 padding: 5px;
@@ -1012,28 +1121,16 @@ NBA Data Management Instructions:
                 border-right: 5px solid transparent;
                 border-top: 5px solid white;
             }
-        """)
-        player_layout.addWidget(self.player_combo)
-       
-        refresh_button = QPushButton("🔄 Refresh Players")
-        refresh_button.setMinimumHeight(35)
-        refresh_button.clicked.connect(self.refresh_players)
-        refresh_button.setStyleSheet("""
-            QPushButton {
-                background-color: #27ae60;
+            QComboBox QAbstractItemView {
+                background-color: #2c3e50;
                 color: white;
-                border: none;
-                border-radius: 3px;
-                padding: 8px;
-            }
-            QPushButton:hover {
-                background-color: #229954;
+                selection-background-color: #3498db;
             }
         """)
-        player_layout.addWidget(refresh_button)
-       
-        control_layout.addWidget(player_group)
-       
+        search_layout.addWidget(self.player_combo)
+    
+        control_layout.addWidget(search_group)
+    
         # Analysis settings group
         settings_group = QGroupBox("Analysis Settings")
         settings_group.setFont(QFont("Arial", 11, QFont.Bold))
@@ -1051,11 +1148,11 @@ NBA Data Management Instructions:
                 padding: 0 5px 0 5px;
             }
         """)
-       
+    
         settings_layout = QVBoxLayout(settings_group)
-       
+    
         settings_layout.addWidget(QLabel("Recent Games for Analysis:"))
-       
+    
         self.recent_games_slider = QSlider(Qt.Horizontal)
         self.recent_games_slider.setMinimum(5)
         self.recent_games_slider.setMaximum(20)
@@ -1078,14 +1175,14 @@ NBA Data Management Instructions:
             }
         """)
         settings_layout.addWidget(self.recent_games_slider)
-       
+    
         self.recent_games_label = QLabel("10 games")
         self.recent_games_label.setAlignment(Qt.AlignCenter)
         self.recent_games_label.setStyleSheet("color: white;")
         settings_layout.addWidget(self.recent_games_label)
-       
+    
         control_layout.addWidget(settings_group)
-       
+    
         # Predict button
         self.predict_button = QPushButton("🎯 PREDICT POINTS")
         self.predict_button.setMinimumHeight(50)
@@ -1106,11 +1203,11 @@ NBA Data Management Instructions:
         """)
         self.predict_button.clicked.connect(self.predict_player_points)
         self.predict_button.setEnabled(False)
-       
+    
         control_layout.addWidget(self.predict_button)
         control_layout.addStretch()
-       
-        # Right panel - Results
+    
+        # Right panel - Results (unchanged)
         results_frame = QFrame()
         results_frame.setFrameStyle(QFrame.StyledPanel)
         results_frame.setStyleSheet("""
@@ -1119,15 +1216,15 @@ NBA Data Management Instructions:
                 border-radius: 5px;
             }
         """)
-       
+    
         results_layout = QVBoxLayout(results_frame)
-       
+    
         results_header = QLabel("🔮 Prediction Results")
         results_header.setFont(QFont("Arial", 16, QFont.Bold))
         results_header.setAlignment(Qt.AlignCenter)
         results_header.setStyleSheet("color: #3498db; margin: 10px;")
         results_layout.addWidget(results_header)
-       
+    
         self.results_text = QTextEdit()
         self.results_text.setFont(QFont("Consolas", 10))
         self.results_text.setStyleSheet("""
@@ -1139,17 +1236,17 @@ NBA Data Management Instructions:
                 padding: 10px;
             }
         """)
-        self.results_text.setPlainText("Load a trained model and select a player to see predictions...")
+        self.results_text.setPlainText("Load a trained model and search for a player to see predictions...")
         results_layout.addWidget(self.results_text)
-       
+    
         # Add panels to splitter
         splitter = QSplitter(Qt.Horizontal)
         splitter.addWidget(control_frame)
         splitter.addWidget(results_frame)
         splitter.setSizes([350, 850])
-       
+    
         layout.addWidget(splitter)
-       
+    
         self.tab_widget.addTab(prediction_widget, "🎯 Predictions")
    
     def create_analysis_tab(self):
