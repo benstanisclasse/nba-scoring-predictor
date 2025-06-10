@@ -47,11 +47,11 @@ class PerformanceAnalyzer:
                 'best_model': {
                     'name': performance_df.loc[performance_df['Test MAE'].idxmin(), 'Model'],
                     'mae': performance_df['Test MAE'].min(),
-                    'r2': performance_df.loc[performance_df['Test MAE'].idxmin(), 'Test R²']
+                    'r2': performance_df.loc[performance_df['Test MAE'].idxmin(), 'Test R']
                 },
                 'ensemble_performance': {
                     'mae': performance_df[performance_df['Model'] == 'Ensemble']['Test MAE'].iloc[0] if 'Ensemble' in performance_df['Model'].values else None,
-                    'r2': performance_df[performance_df['Model'] == 'Ensemble']['Test R²'].iloc[0] if 'Ensemble' in performance_df['Model'].values else None
+                    'r2': performance_df[performance_df['Model'] == 'Ensemble']['Test R'].iloc[0] if 'Ensemble' in performance_df['Model'].values else None
                 },
                 'model_comparison': performance_df.to_dict('records')
             }
