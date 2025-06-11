@@ -1,6 +1,6 @@
 ﻿# -*- coding: utf-8 -*-
 """
-Enhanced Team Comparison Engine for NBA Game Predictions
+Enhanced Team Comparison Engine for NBA Game Predictions - FIXED VERSION
 """
 import pandas as pd
 import numpy as np
@@ -560,57 +560,6 @@ class EnhancedTeamComparison:
            'Player 6', 'Player 7', 'Player 8', 'Player 9', 'Player 10'
        ])
 
-    # Add missing methods for complete matchup analysis
-
-    def _compare_team_depth(self, team_a_metrics: Dict, team_b_metrics: Dict) -> Dict:
-       """Compare depth between two teams."""
-       depth_a = team_a_metrics['depth_score']
-       depth_b = team_b_metrics['depth_score']
-   
-       advantage = 'team_a' if depth_a > depth_b + 0.1 else 'team_b' if depth_b > depth_a + 0.1 else 'neutral'
-   
-       return {
-           'team_a_depth': depth_a,
-           'team_b_depth': depth_b,
-           'advantage': advantage,
-           'analysis': f"Team {'A' if advantage == 'team_a' else 'B' if advantage == 'team_b' else 'depth is relatively'} has {'superior' if advantage != 'neutral' else 'even'} bench depth"
-       }
-
-    def _analyze_style_matchup(self, team_a_data: Dict, team_b_data: Dict) -> Dict:
-       """Analyze playing style matchup."""
-       # Analyze team composition for style indicators
-       team_a_players = team_a_data['players']
-       team_b_players = team_b_data['players']
-   
-       # Calculate style indicators
-       team_a_guard_heavy = len([p for p in team_a_players.values() if p['position'] in ['PG', 'SG']]) / len(team_a_players)
-       team_b_guard_heavy = len([p for p in team_b_players.values() if p['position'] in ['PG', 'SG']]) / len(team_b_players)
-   
-       team_a_big_heavy = len([p for p in team_a_players.values() if p['position'] in ['PF', 'C']]) / len(team_a_players)
-       team_b_big_heavy = len([p for p in team_b_players.values() if p['position'] in ['PF', 'C']]) / len(team_b_players)
-   
-       # Determine styles
-       team_a_style = 'Guard-Heavy' if team_a_guard_heavy > 0.4 else 'Big-Heavy' if team_a_big_heavy > 0.35 else 'Balanced'
-       team_b_style = 'Guard-Heavy' if team_b_guard_heavy > 0.4 else 'Big-Heavy' if team_b_big_heavy > 0.35 else 'Balanced'
-   
-       # Style matchup analysis
-       if team_a_style == team_b_style:
-           matchup_type = 'Similar Styles'
-           analysis = f"Both teams prefer {team_a_style.lower()} approach - expect similar game flow"
-       elif (team_a_style == 'Guard-Heavy' and team_b_style == 'Big-Heavy') or (team_a_style == 'Big-Heavy' and team_b_style == 'Guard-Heavy'):
-           matchup_type = 'Contrasting Styles'
-           analysis = f"Style clash: {team_a_style} vs {team_b_style} - pace and spacing will be key"
-       else:
-           matchup_type = 'Complementary Styles'
-           analysis = f"One balanced team vs one specialized - adaptability will matter"
-   
-       return {
-           'team_a_style': team_a_style,
-           'team_b_style': team_b_style,
-           'matchup_type': matchup_type,
-           'analysis': analysis
-       }
-
 
 class AdvancedTeamAnalyzer:
     """Calculate advanced team-level metrics."""
@@ -651,8 +600,8 @@ class AdvancedTeamAnalyzer:
             'total_predicted_points': round(total_predicted_points, 1),
             'avg_prediction_confidence': round(avg_confidence, 2),
             'position_breakdown': position_breakdown,
-            'starter_points': round(starter_points, 1),
-            'bench_points': round(bench_points, 1),
+            'starter_strength': round(starter_points, 1),
+            'bench_strength': round(bench_points, 1),
             'depth_score': round(depth_score, 3),
             'estimated_pace': round(estimated_pace, 1),
             'offensive_rating': round(offensive_rating, 1),
@@ -665,45 +614,46 @@ class AdvancedTeamAnalyzer:
         # Simplified pace estimation
         pg_players = [p for p in players.values() if p['position'] == 'PG']
         avg_pg_score = np.mean([p['predicted_points'] for p in pg_players]) if pg_players else 15
-        
+       
         # Higher-scoring PGs often indicate faster pace
         base_pace = 98.0
         pace_adjustment = (avg_pg_score - 15) * 0.5
-        
+       
         return max(92, min(105, base_pace + pace_adjustment))
-    
+   
     def _estimate_offensive_rating(self, players: Dict, total_points: float) -> float:
         """Estimate offensive rating (points per 100 possessions)."""
         # Convert total points to per-100-possession metric
         # Average NBA team has ~98 possessions per game
         return (total_points / 98) * 100
-    
+   
     def _estimate_defensive_rating(self, players: Dict) -> float:
         """Estimate defensive rating based on player composition."""
         # Simplified defensive rating estimation
         # Better defensive players typically score less but contribute more defensively
-        
+       
         total_players = len(players)
         if total_players == 0:
             return 110.0  # League average
-        
+       
         # Rough estimation: teams with more balanced scoring have better defense
         point_values = [p['predicted_points'] for p in players.values()]
         scoring_variance = np.var(point_values) if point_values else 50
-        
+       
         # Lower variance (more balanced) = better defense
         base_def_rating = 110.0
         variance_adjustment = (scoring_variance - 50) * 0.1
-        
+       
         return max(100, min(120, base_def_rating + variance_adjustment))
 
+
 class MatchupAnalysisEngine:
-    """Analyze specific team matchups."""
-    
+    """Analyze specific team matchups - FIXED VERSION."""
+   
     def analyze_matchup(self, team_a_data: Dict, team_b_data: Dict,
-                       team_a_metrics: Dict, team_b_metrics: Dict) -> Dict:
+                        team_a_metrics: Dict, team_b_metrics: Dict) -> Dict:
         """Comprehensive matchup analysis."""
-        
+       
         return {
             'pace_matchup': self._analyze_pace_matchup(team_a_metrics, team_b_metrics),
             'positional_advantages': self._analyze_positional_matchups(team_a_data, team_b_data),
@@ -711,23 +661,23 @@ class MatchupAnalysisEngine:
             'style_matchup': self._analyze_style_matchup(team_a_data, team_b_data),
             'key_factors': self._identify_key_factors(team_a_data, team_b_data, team_a_metrics, team_b_metrics)
         }
-    
+   
     def _analyze_pace_matchup(self, team_a_metrics: Dict, team_b_metrics: Dict) -> Dict:
         """Analyze pace matchup between teams."""
         pace_a = team_a_metrics['estimated_pace']
         pace_b = team_b_metrics['estimated_pace']
-        
+       
         pace_diff = abs(pace_a - pace_b)
-        
+       
         if pace_diff < 2:
             pace_matchup = "Similar pace - expect typical game flow"
         elif pace_a > pace_b + 2:
             pace_matchup = "Team A prefers faster pace - may dictate tempo"
         else:
             pace_matchup = "Team B prefers faster pace - may dictate tempo"
-        
+       
         expected_pace = (pace_a + pace_b) / 2
-        
+       
         return {
             'team_a_pace': pace_a,
             'team_b_pace': pace_b,
@@ -735,96 +685,146 @@ class MatchupAnalysisEngine:
             'pace_advantage': 'team_a' if pace_a > pace_b + 2 else 'team_b' if pace_b > pace_a + 2 else 'neutral',
             'analysis': pace_matchup
         }
-    
+   
     def _analyze_positional_matchups(self, team_a_data: Dict, team_b_data: Dict) -> Dict:
         """Analyze position-by-position matchups."""
         positions = ['PG', 'SG', 'SF', 'PF', 'C']
         matchups = {}
-        
+       
         for pos in positions:
             team_a_players = [p for p in team_a_data['players'].values() if p['position'] == pos]
             team_b_players = [p for p in team_b_data['players'].values() if p['position'] == pos]
-            
+           
             team_a_score = sum(p['predicted_points'] for p in team_a_players)
             team_b_score = sum(p['predicted_points'] for p in team_b_players)
-            
+           
             advantage = 'team_a' if team_a_score > team_b_score + 2 else 'team_b' if team_b_score > team_a_score + 2 else 'neutral'
-            
+           
             matchups[pos] = {
                 'team_a_total': round(team_a_score, 1),
                 'team_b_total': round(team_b_score, 1),
                 'advantage': advantage,
                 'point_differential': round(team_a_score - team_b_score, 1)
             }
-        
+       
         return matchups
-    
+   
+    def _compare_team_depth(self, team_a_metrics: Dict, team_b_metrics: Dict) -> Dict:
+        """Compare depth between two teams - FIXED METHOD."""
+        depth_a = team_a_metrics.get('depth_score', 0)
+        depth_b = team_b_metrics.get('depth_score', 0)
+       
+        advantage = 'team_a' if depth_a > depth_b + 0.1 else 'team_b' if depth_b > depth_a + 0.1 else 'neutral'
+       
+        return {
+            'team_a_depth': depth_a,
+            'team_b_depth': depth_b,
+            'advantage': advantage,
+            'analysis': f"Team {'A' if advantage == 'team_a' else 'B' if advantage == 'team_b' else 'depth is relatively'} has {'superior' if advantage != 'neutral' else 'even'} bench depth"
+        }
+   
+    def _analyze_style_matchup(self, team_a_data: Dict, team_b_data: Dict) -> Dict:
+        """Analyze playing style matchup."""
+        # Analyze team composition for style indicators
+        team_a_players = team_a_data['players']
+        team_b_players = team_b_data['players']
+       
+        # Calculate style indicators
+        team_a_guard_heavy = len([p for p in team_a_players.values() if p['position'] in ['PG', 'SG']]) / len(team_a_players)
+        team_b_guard_heavy = len([p for p in team_b_players.values() if p['position'] in ['PG', 'SG']]) / len(team_b_players)
+       
+        team_a_big_heavy = len([p for p in team_a_players.values() if p['position'] in ['PF', 'C']]) / len(team_a_players)
+        team_b_big_heavy = len([p for p in team_b_players.values() if p['position'] in ['PF', 'C']]) / len(team_b_players)
+       
+        # Determine styles
+        team_a_style = 'Guard-Heavy' if team_a_guard_heavy > 0.4 else 'Big-Heavy' if team_a_big_heavy > 0.35 else 'Balanced'
+        team_b_style = 'Guard-Heavy' if team_b_guard_heavy > 0.4 else 'Big-Heavy' if team_b_big_heavy > 0.35 else 'Balanced'
+       
+        # Style matchup analysis
+        if team_a_style == team_b_style:
+            matchup_type = 'Similar Styles'
+            analysis = f"Both teams prefer {team_a_style.lower()} approach - expect similar game flow"
+        elif (team_a_style == 'Guard-Heavy' and team_b_style == 'Big-Heavy') or (team_a_style == 'Big-Heavy' and team_b_style == 'Guard-Heavy'):
+            matchup_type = 'Contrasting Styles'
+            analysis = f"Style clash: {team_a_style} vs {team_b_style} - pace and spacing will be key"
+        else:
+            matchup_type = 'Complementary Styles'
+            analysis = f"One balanced team vs one specialized - adaptability will matter"
+       
+        return {
+            'team_a_style': team_a_style,
+            'team_b_style': team_b_style,
+            'matchup_type': matchup_type,
+            'analysis': analysis
+        }
+   
     def _identify_key_factors(self, team_a_data: Dict, team_b_data: Dict,
-                           team_a_metrics: Dict, team_b_metrics: Dict) -> List[str]:
+                            team_a_metrics: Dict, team_b_metrics: Dict) -> List[str]:
         """Identify key factors that could determine the game."""
         factors = []
-        
+       
         # Scoring advantage
         total_a = team_a_metrics['total_predicted_points']
         total_b = team_b_metrics['total_predicted_points']
-        
+       
         if abs(total_a - total_b) > 5:
             leader = "Team A" if total_a > total_b else "Team B"
             factors.append(f"{leader} has significant scoring advantage ({abs(total_a - total_b):.1f} points)")
-        
+       
         # Depth advantage
         depth_a = team_a_metrics['depth_score']
         depth_b = team_b_metrics['depth_score']
-        
+       
         if abs(depth_a - depth_b) > 0.2:
             deeper_team = "Team A" if depth_a > depth_b else "Team B"
             factors.append(f"{deeper_team} has superior bench depth")
-        
+       
         # Pace factor
         pace_diff = abs(team_a_metrics['estimated_pace'] - team_b_metrics['estimated_pace'])
         if pace_diff > 3:
             factors.append(f"Significant pace differential ({pace_diff:.1f}) could affect game flow")
-        
+       
         # Star power
         team_a_stars = [p for p in team_a_data['players'].values() if p['predicted_points'] >= 20]
         team_b_stars = [p for p in team_b_data['players'].values() if p['predicted_points'] >= 20]
-        
+       
         if len(team_a_stars) != len(team_b_stars):
             star_advantage = "Team A" if len(team_a_stars) > len(team_b_stars) else "Team B"
             factors.append(f"{star_advantage} has more star-level scorers")
-        
+       
         return factors
+
 
 class MonteCarloSimulator:
     """Monte Carlo simulation for game outcomes."""
-    
+   
     def simulate_game(self, team_a_data: Dict, team_b_data: Dict,
-                     predictions: Dict, n_simulations: int = 10000) -> Dict:
+                    predictions: Dict, n_simulations: int = 10000) -> Dict:
         """Run Monte Carlo simulation of the game."""
-        
+       
         wins_a = 0
         scores_a = []
         scores_b = []
         margins = []
-        
+       
         # Base predictions
         base_a = predictions['ensemble']['team_a_score']
         base_b = predictions['ensemble']['team_b_score']
-        
+       
         for _ in range(n_simulations):
             # Add random variance
             score_a = np.random.normal(base_a, 8.0)  # ~8 point standard deviation
             score_b = np.random.normal(base_b, 8.0)
-            
+           
             scores_a.append(score_a)
             scores_b.append(score_b)
             margins.append(score_a - score_b)
-            
+           
             if score_a > score_b:
                 wins_a += 1
-        
+       
         win_prob_a = wins_a / n_simulations
-        
+       
         return {
             'simulations_run': n_simulations,
             'win_probability_a': round(win_prob_a, 4),
