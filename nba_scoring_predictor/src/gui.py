@@ -2201,6 +2201,264 @@ NBA Data Management Instructions:
         self.rest_combo.setCurrentIndex(random.randint(0, 4))
     
         self.update_status(f"Random matchup: {team_a} vs {team_b}")
+
+    def compare_teams(self):
+        """Enhanced team comparison method."""
+        if not self.is_model_loaded:
+            QMessageBox.warning(self, "Warning", "Please load or train a model first.")
+            return
+    
+        team_a = self.team_a_combo.currentText()
+        team_b = self.team_b_combo.currentText()
+    
+        if team_a == team_b:
+            QMessageBox.warning(self, "Warning", "Please select two different teams.")
+            return
+    
+        try:
+            self.update_status(f"Comparing teams: {team_a} vs {team_b}")
+            self.team_comparison_results.setPlainText("Generating comprehensive team comparison...\n")
+            QApplication.processEvents()
+        
+            # Get game context
+            game_context = {
+                'home_team': None,
+                'rest_differential': 0
+            }
+        
+            # Parse home team selection
+            home_selection = self.home_team_combo.currentText()
+            if home_selection == "Team A":
+                game_context['home_team'] = 'team_a'
+            elif home_selection == "Team B":
+                game_context['home_team'] = 'team_b'
+        
+            # Parse rest differential
+            rest_selection = self.rest_combo.currentText()
+            if "Team A" in rest_selection:
+                if "+1 day" in rest_selection:
+                    game_context['rest_differential'] = 1
+                elif "+2 days" in rest_selection:
+                    game_context['rest_differential'] = 2
+            elif "Team B" in rest_selection:
+                if "+1 day" in rest_selection:
+                    game_context['rest_differential'] = -1
+                elif "+2 days" in rest_selection:
+                    game_context['rest_differential'] = -2
+        
+            # Use enhanced team comparison
+            from src.team_comparison import EnhancedTeamComparison
+            team_comparator = EnhancedTeamComparison(self.predictor)
+        
+            # Get comprehensive comparison
+            comparison_results = team_comparator.compare_teams_comprehensive(
+                team_a, team_b, game_context
+            )
+        
+            # Display detailed results
+            self.display_team_comparison_results(comparison_results)
+            self.update_status("Team comparison completed successfully!")
+        
+        except Exception as e:
+            error_msg = f"Error comparing teams: {str(e)}"
+            logger.error(error_msg)
+            self.team_comparison_results.setPlainText(f"Error: {error_msg}")
+            self.update_status("Team comparison failed")
+
+    def display_team_comparison_results(self, results: Dict):
+        """Display comprehensive team comparison results."""
+        team_a = results['teams']['team_a']
+        team_b = results['teams']['team_b']
+    
+        # Build comprehensive result text
+        result_text = f"🏀 COMPREHENSIVE TEAM COMPARISON\n"
+        result_text += "=" * 80 + "\n"
+        result_text += f"🆚 {team_a.upper()} vs {team_b.upper()}\n"
+        result_text += "=" * 80 + "\n\n"
+    
+        # Main Predictions
+        ensemble = results['predictions']['ensemble']
+        result_text += f"🎯 FINAL PREDICTION:\n"
+        result_text += f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+        result_text += f"🏆 WINNER: {team_a if ensemble['win_probability_a'] > 0.5 else team_b}\n"
+        result_text += f"📊 Win Probability: {team_a} {ensemble['win_probability_a']:.1%} | {team_b} {ensemble['win_probability_b']:.1%}\n"
+        result_text += f"🏀 Predicted Score: {team_a} {ensemble['team_a_score']} - {ensemble['team_b_score']} {team_b}\n"
+        result_text += f"📈 Spread: {team_a} {ensemble['spread']:+.1f}\n"
+        result_text += f"🎯 Total Points: {ensemble['total']}\n\n"
+    
+        # Confidence Analysis
+        confidence = results['confidence_analysis']
+        result_text += f"📊 PREDICTION CONFIDENCE:\n"
+        result_text += f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+        result_text += f"Overall Confidence: {confidence['confidence_grade']} ({confidence['overall_confidence']:.1%})\n"
+        result_text += f"Model Uncertainty: ±{confidence['model_uncertainty']:.1f} points\n"
+        result_text += f"Prediction Consistency: {confidence['prediction_consistency']:.1%}\n\n"
+    
+        # Uncertainty Factors
+        result_text += f"⚠️  Key Uncertainty Factors:\n"
+        for factor in confidence['uncertainty_factors']:
+            result_text += f"   • {factor}\n"
+        result_text += "\n"
+    
+        # Multiple Prediction Methods
+        result_text += f"🤖 MULTIPLE PREDICTION METHODS:\n"
+        result_text += f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+    
+        predictions = results['predictions']
+        method_names = {
+            'direct_aggregation': 'Player Aggregation',
+            'possession_based': 'Possession Model',
+            'matchup_adjusted': 'Matchup Adjusted',
+            'context_adjusted': 'Context Adjusted',
+            'ensemble': 'Ensemble Average'
+        }
+    
+        for method, pred_data in predictions.items():
+            if method in method_names:
+                method_name = method_names[method]
+                score_a = pred_data['team_a_score']
+                score_b = pred_data['team_b_score']
+                win_prob = pred_data['win_probability_a']
+            
+                result_text += f"{method_name:18s}: {team_a} {score_a:5.1f} - {score_b:5.1f} {team_b} | Win%: {win_prob:.1%}\n"
+    
+        # Team Metrics Comparison
+        team_a_metrics = results['team_metrics']['team_a']
+        team_b_metrics = results['team_metrics']['team_b']
+    
+        result_text += f"\n📈 TEAM METRICS COMPARISON:\n"
+        result_text += f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+        result_text += f"{'Metric':<20s} | {team_a:<15s} | {team_b:<15s} | Advantage\n"
+        result_text += f"{'-'*20} | {'-'*15} | {'-'*15} | {'-'*15}\n"
+    
+        metrics_to_show = [
+            ('Total Predicted Pts', 'total_predicted_points'),
+            ('Starter Strength', 'starter_strength'),
+            ('Bench Strength', 'bench_strength'),
+            ('Depth Score', 'depth_score'),
+            ('Estimated Pace', 'estimated_pace'),
+            ('Offensive Rating', 'offensive_rating'),
+            ('Defensive Rating', 'defensive_rating')
+        ]
+    
+        for metric_name, metric_key in metrics_to_show:
+            val_a = team_a_metrics.get(metric_key, 0)
+            val_b = team_b_metrics.get(metric_key, 0)
+        
+            if metric_key == 'defensive_rating':  # Lower is better for defense
+                advantage = team_a if val_a < val_b else team_b if val_b < val_a else "Even"
+            else:  # Higher is better for other metrics
+                advantage = team_a if val_a > val_b else team_b if val_b > val_a else "Even"
+        
+            result_text += f"{metric_name:<20s} | {val_a:<15.1f} | {val_b:<15.1f} | {advantage}\n"
+    
+        # Matchup Analysis
+        matchup = results['matchup_analysis']
+        result_text += f"\n🥊 MATCHUP ANALYSIS:\n"
+        result_text += f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+    
+        # Positional matchups
+        result_text += f"Position-by-Position Breakdown:\n"
+        for pos, pos_data in matchup['positional_advantages'].items():
+            advantage = pos_data['advantage']
+            diff = pos_data['point_differential']
+        
+            if advantage == 'team_a':
+                result_text += f"   {pos}: {team_a} advantage (+{diff:.1f} pts)\n"
+            elif advantage == 'team_b':
+                result_text += f"   {pos}: {team_b} advantage (+{abs(diff):.1f} pts)\n"
+            else:
+                result_text += f"   {pos}: Even matchup\n"
+    
+        # Pace matchup
+        pace_info = matchup['pace_matchup']
+        result_text += f"\nPace Analysis:\n"
+        result_text += f"   Expected Game Pace: {pace_info['expected_game_pace']} possessions\n"
+        result_text += f"   {pace_info['analysis']}\n"
+    
+        # Key factors
+        result_text += f"\n🔑 KEY FACTORS:\n"
+        result_text += f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+        for factor in matchup['key_factors']:
+            result_text += f"   • {factor}\n"
+    
+        # Monte Carlo Simulation Results
+        monte_carlo = results['monte_carlo']
+        result_text += f"\n🎲 MONTE CARLO SIMULATION ({monte_carlo['simulations_run']:,} simulations):\n"
+        result_text += f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+    
+        # Score distributions
+        team_a_dist = monte_carlo['score_distributions']['team_a']
+        team_b_dist = monte_carlo['score_distributions']['team_b']
+    
+        result_text += f"{team_a} Score Distribution:\n"
+        result_text += f"   Mean: {team_a_dist['mean']} ± {team_a_dist['std']:.1f}\n"
+        result_text += f"   Range: {team_a_dist['percentiles']['10th']} - {team_a_dist['percentiles']['90th']} (80% confidence)\n"
+    
+        result_text += f"\n{team_b} Score Distribution:\n"
+        result_text += f"   Mean: {team_b_dist['mean']} ± {team_b_dist['std']:.1f}\n"
+        result_text += f"   Range: {team_b_dist['percentiles']['10th']} - {team_b_dist['percentiles']['90th']} (80% confidence)\n"
+    
+        # Game outcome probabilities
+        margin_analysis = monte_carlo['margin_analysis']
+        result_text += f"\nGame Outcome Probabilities:\n"
+        result_text += f"   Close Game (≤5 pts): {margin_analysis['close_game_probability']:.1%}\n"
+        result_text += f"   {team_a} Blowout (≥15 pts): {margin_analysis['blowout_probability_a']:.1%}\n"
+        result_text += f"   {team_b} Blowout (≥15 pts): {margin_analysis['blowout_probability_b']:.1%}\n"
+    
+        # Game Context (if provided)
+        context = results.get('game_context', {})
+        if context:
+            result_text += f"\n🏟️ GAME CONTEXT ADJUSTMENTS:\n"
+            result_text += f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+        
+            if context.get('home_team'):
+                home_team = team_a if context['home_team'] == 'team_a' else team_b
+                result_text += f"   🏠 Home Court: {home_team} (+3 pts typical advantage)\n"
+        
+            rest_diff = context.get('rest_differential', 0)
+            if rest_diff != 0:
+                rested_team = team_a if rest_diff > 0 else team_b
+                result_text += f"   😴 Rest Advantage: {rested_team} (+{abs(rest_diff)} days rest)\n"
+    
+        # Fantasy/Betting Insights
+        result_text += f"\n💰 FANTASY/BETTING INSIGHTS:\n"
+        result_text += f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+    
+        win_prob_diff = abs(ensemble['win_probability_a'] - 0.5)
+    
+        if confidence['confidence_grade'] == 'High' and win_prob_diff > 0.15:
+            favored_team = team_a if ensemble['win_probability_a'] > 0.5 else team_b
+            result_text += f"   🔥 STRONG PICK: {favored_team} (High confidence, clear favorite)\n"
+        elif confidence['confidence_grade'] == 'Low' or win_prob_diff < 0.05:
+            result_text += f"   ⚠️  HIGH VARIANCE: Very close game, small factors could decide\n"
+        else:
+            result_text += f"   ⚖️  MODERATE CONFIDENCE: Slight edge to predicted winner\n"
+    
+        # Point total recommendation
+        if ensemble['total'] > 220:
+            result_text += f"   📈 HIGH SCORING: Over {ensemble['total']:.0f} points expected\n"
+        elif ensemble['total'] < 200:
+            result_text += f"   📉 LOW SCORING: Under {ensemble['total']:.0f} points expected\n"
+        else:
+            result_text += f"   ➡️  AVERAGE SCORING: Around {ensemble['total']:.0f} points expected\n"
+    
+        # Model methodology
+        result_text += f"\nℹ️  METHODOLOGY:\n"
+        result_text += f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+        result_text += f"   • Uses ensemble of 4 prediction methods for robust analysis\n"
+        result_text += f"   • Individual player predictions aggregated to team level\n"
+        result_text += f"   • Advanced metrics: pace, efficiency, positional advantages\n"
+        result_text += f"   • Monte Carlo simulation for uncertainty quantification\n"
+        result_text += f"   • Game context adjustments (home court, rest, etc.)\n"
+    
+        # Disclaimer
+        result_text += f"\n⚠️  DISCLAIMER:\n"
+        result_text += f"Predictions based on current roster data and player performance models.\n"
+        result_text += f"Actual results may vary due to injuries, lineup changes, and other factors.\n"
+        result_text += f"Analysis generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n"
+    
+        self.team_comparison_results.setPlainText(result_text)
           
 def main():
     """Main function to run the enhanced PyQt5 GUI application."""
