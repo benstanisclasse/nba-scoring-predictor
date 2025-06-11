@@ -602,7 +602,7 @@ class EnhancedTeamComparison:
         # Adjust individual player predictions based on team context
         for player_name, player_data in team_a_data['players'].items():
             # Better teams get slight boost, worse teams get slight penalty
-            adjustment = quality_diff * 0.1  # Small adjustment factor
+            adjustment = quality_diff * 0.3  # Small adjustment factor
             player_data['predicted_points'] = max(5, player_data['predicted_points'] + adjustment)
 
         for player_name, player_data in team_b_data['players'].items():
