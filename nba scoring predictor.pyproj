@@ -29,6 +29,7 @@
     <Compile Include="nba_scoring_predictor\main.py" />
     <Compile Include="nba_scoring_predictor\scripts\generate_reports.py" />
     <Compile Include="nba_scoring_predictor\scripts\run_validation.py" />
+    <Compile Include="nba_scoring_predictor\src\advanced_features.py" />
     <Compile Include="nba_scoring_predictor\src\team_comparison.py" />
     <Compile Include="nba_scoring_predictor\scripts\update_nba_players.py" />
     <Compile Include="nba_scoring_predictor\src\data_collector.py" />

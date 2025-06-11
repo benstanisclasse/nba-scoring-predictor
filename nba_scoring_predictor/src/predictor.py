@@ -450,7 +450,88 @@ class EnhancedNBAPredictor:
     def predict_player_points(self, player_name: str, recent_games: int = 10) -> Dict:
         """Backward compatibility wrapper for predict_player_points_enhanced."""
         return self.predict_player_points_enhanced(player_name, recent_games)
+    
+    # Add this method to EnhancedNBAPredictor class
 
+    def get_prediction_confidence(self, player_name: str, prediction_data: Dict) -> Dict:
+        """Calculate sophisticated confidence metrics."""
+    
+        ensemble_pred = prediction_data.get('ensemble', {})
+        model_mae = ensemble_pred.get('model_mae', 5.0)
+        recent_avg = prediction_data.get('recent_average', 15.0)
+    
+        # Confidence factors
+        factors = {
+            'model_accuracy': max(0, 1 - model_mae / 10),  # Better MAE = higher confidence
+            'consistency': self._check_model_consistency(prediction_data),
+            'data_quality': self._assess_data_quality(player_name),
+            'volatility': self._calculate_player_volatility(player_name)
+        }
+    
+        # Weighted confidence score
+        confidence_score = (
+            factors['model_accuracy'] * 0.4 +
+            factors['consistency'] * 0.3 +
+            factors['data_quality'] * 0.2 +
+            (1 - factors['volatility']) * 0.1
+        )
+    
+        return {
+            'confidence_score': confidence_score,
+            'confidence_grade': self._grade_confidence(confidence_score),
+            'factors': factors,
+            'recommendation': self._get_betting_recommendation(confidence_score, ensemble_pred)
+        }
+
+    def _check_model_consistency(self, prediction_data: Dict) -> float:
+        """Check consistency across different models."""
+        predictions = []
+        for model_name in ['xgboost', 'lightgbm', 'random_forest', 'ensemble']:
+            if model_name in prediction_data:
+                predictions.append(prediction_data[model_name]['predicted_points'])
+    
+        if len(predictions) < 2:
+            return 0.5
+    
+        variance = np.var(predictions)
+        consistency = max(0, 1 - variance / 25)  # Lower variance = higher consistency
+        return consistency
+
+    def _assess_data_quality(self, player_name: str) -> float:
+        """Assess data quality for the player."""
+        # This would check recent games, missing data, etc.
+        # For now, return a reasonable default
+        return 0.8
+
+    def _calculate_player_volatility(self, player_name: str) -> float:
+        """Calculate player's scoring volatility."""
+        # This would analyze recent game variance
+        # For now, return a reasonable default
+        return 0.3
+
+    def _grade_confidence(self, score: float) -> str:
+        """Convert confidence score to grade."""
+        if score >= 0.8:
+            return "Very High"
+        elif score >= 0.65:
+            return "High"
+        elif score >= 0.5:
+            return "Medium"
+        elif score >= 0.35:
+            return "Low"
+        else:
+            return "Very Low"
+
+    def _get_betting_recommendation(self, confidence: float, prediction: Dict) -> str:
+        """Get betting recommendation based on confidence and prediction."""
+        if confidence >= 0.8:
+            return "Strong recommendation - High confidence play"
+        elif confidence >= 0.65:
+            return "Good recommendation - Solid play"
+        elif confidence >= 0.5:
+            return "Moderate recommendation - Proceed with caution"
+        else:
+            return "Avoid - Low confidence prediction"
 
 # TEAM PREDICTION SYSTEM (keep the existing team prediction classes...)
 class TeamGamePredictor:

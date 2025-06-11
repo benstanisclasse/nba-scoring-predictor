@@ -27,49 +27,52 @@ class EnhancedTeamComparison:
         self.monte_carlo = MonteCarloSimulator()
         
     def compare_teams_comprehensive(self, team_a: str, team_b: str, 
-                                  game_context: Dict = None) -> Dict:
+                              game_context: Dict = None) -> Dict:
         """
         Comprehensive team comparison with multiple methodologies.
-        
+    
         Args:
             team_a: First team name
             team_b: Second team name  
             game_context: Game context (home/away, rest, injuries, etc.)
-            
+        
         Returns:
             Comprehensive comparison results
         """
         logger.info(f"Running comprehensive team comparison: {team_a} vs {team_b}")
-        
+    
         # 1. Get team rosters and individual predictions
         team_a_data = self._get_enhanced_team_data(team_a)
         team_b_data = self._get_enhanced_team_data(team_b)
-        
+    
+        # ADD THIS LINE RIGHT HERE - After getting team data but before calculations
+        team_a_data, team_b_data = self._add_realistic_team_variance(team_a_data, team_b_data)
+    
         # 2. Calculate advanced team metrics
         team_a_metrics = self.team_analyzer.calculate_team_metrics(team_a_data)
         team_b_metrics = self.team_analyzer.calculate_team_metrics(team_b_data)
-        
+    
         # 3. Perform matchup analysis
         matchup_analysis = self.matchup_engine.analyze_matchup(
             team_a_data, team_b_data, team_a_metrics, team_b_metrics
         )
-        
+    
         # 4. Multiple prediction methods
         predictions = self._generate_ensemble_predictions(
             team_a_data, team_b_data, team_a_metrics, team_b_metrics, 
             matchup_analysis, game_context
         )
-        
+    
         # 5. Monte Carlo simulation
         monte_carlo_results = self.monte_carlo.simulate_game(
             team_a_data, team_b_data, predictions, n_simulations=10000
         )
-        
+    
         # 6. Confidence and uncertainty analysis
         confidence_analysis = self._analyze_prediction_confidence(
             team_a_data, team_b_data, predictions, monte_carlo_results
         )
-        
+    
         return {
             'teams': {
                 'team_a': team_a,
@@ -86,6 +89,8 @@ class EnhancedTeamComparison:
             'game_context': game_context or {},
             'timestamp': datetime.now().isoformat()
         }
+   
+        
     
     def _get_enhanced_team_data(self, team_name: str) -> Dict:
         """Get comprehensive team data including player predictions."""
@@ -575,13 +580,56 @@ class EnhancedTeamComparison:
                'DeAndre Jordan', 'Peyton Watson', 'Julian Strawther', 'Zeke Nnaji', 'Justin Holiday'
            ]
        }
-   
+       
        return fallback_rosters.get(team_name, [
            'Player 1', 'Player 2', 'Player 3', 'Player 4', 'Player 5',
            'Player 6', 'Player 7', 'Player 8', 'Player 9', 'Player 10'
        ])
 
+    def _add_realistic_team_variance(self, team_a_data: Dict, team_b_data: Dict) -> Tuple[Dict, Dict]:
+        """Add realistic variance between teams based on player quality."""
+    
+        # Calculate team quality scores
+        team_a_quality = self._calculate_team_quality(team_a_data)
+        team_b_quality = self._calculate_team_quality(team_b_data)
+    
+        # Apply quality-based adjustments
+        quality_diff = team_a_quality - team_b_quality
+    
+        # Adjust individual player predictions based on team context
+        for player_name, player_data in team_a_data['players'].items():
+            # Better teams get slight boost, worse teams get slight penalty
+            adjustment = quality_diff * 0.1  # Small adjustment factor
+            player_data['predicted_points'] = max(5, player_data['predicted_points'] + adjustment)
+    
+        for player_name, player_data in team_b_data['players'].items():
+            adjustment = -quality_diff * 0.1
+            player_data['predicted_points'] = max(5, player_data['predicted_points'] + adjustment)
+    
+        return team_a_data, team_b_data
 
+    def _calculate_team_quality(self, team_data: Dict) -> float:
+        """Calculate overall team quality score."""
+        players = team_data['players']
+    
+        if not players:
+            return 0.0
+    
+        # Quality metrics
+        star_players = sum(1 for p in players.values() if p['predicted_points'] >= 20)
+        avg_prediction = np.mean([p['predicted_points'] for p in players.values()])
+        depth_count = sum(1 for p in players.values() if p['predicted_points'] >= 12)
+    
+        # Composite quality score
+        quality_score = (
+            star_players * 5 +           # Star power
+            avg_prediction * 0.5 +       # Overall talent
+            depth_count * 1              # Depth
+        )
+    
+        return quality_score
+
+    
 class AdvancedTeamAnalyzer:
     """Calculate advanced team-level metrics."""
     
