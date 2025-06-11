@@ -169,6 +169,12 @@ class NBADataCollector:
         
         # Combine all data
         combined_data = pd.concat(all_data, ignore_index=True)
+
+        from utils.data_validator import NBADataValidator
+
+        # Validate and clean the data
+        validator = NBADataValidator()
+        combined_data = validator.validate_game_log(combined_data)
         
         # Final data validation and cleaning
         combined_data = self._final_data_validation(combined_data)

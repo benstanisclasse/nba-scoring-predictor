@@ -321,6 +321,9 @@ class EnhancedNBAPredictor:
             model = model_data['model']
             pred = model.predict(X_scaled)[0]
             
+            from utils.validation import validate_player_prediction
+            pred = validate_player_prediction(pred, player_name)
+
             # Calculate confidence interval
             test_mae = model_data['test_mae']
             predictions[model_name] = {

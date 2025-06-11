@@ -169,24 +169,34 @@ class EnhancedTeamComparison:
         predictions['ensemble'] = self._create_ensemble_prediction(predictions)
         
         return predictions
+
     
+
     def _predict_direct_aggregation(self, team_a_data: Dict, team_b_data: Dict) -> Dict:
-        """Simple aggregation of individual player predictions."""
-        
+        """Simple aggregation of individual player predictions - FIXED VERSION."""
+    
+        # FIXED: Remove playing time adjustment that was causing inflation
         team_a_total = sum(
-            player['predicted_points'] * (player['playing_time_estimate'] / 48)
+            player['predicted_points'] 
             for player in team_a_data['players'].values()
         )
-        
+    
         team_b_total = sum(
-            player['predicted_points'] * (player['playing_time_estimate'] / 48)
+            player['predicted_points'] 
             for player in team_b_data['players'].values()
         )
-        
+    
+        # ADD: Validation to ensure realistic totals
+        from utils.validation import validate_game_prediction
+        team_a_total, team_b_total = validate_game_prediction(
+            team_a_total, team_b_total, 
+            team_a_data['team_name'], team_b_data['team_name']
+        )
+    
         # Calculate win probability
         point_diff = team_a_total - team_b_total
         win_prob_a = self._calculate_win_probability(point_diff)
-        
+    
         return {
             'team_a_score': round(team_a_total, 1),
             'team_b_score': round(team_b_total, 1),
@@ -195,8 +205,8 @@ class EnhancedTeamComparison:
             'spread': round(point_diff, 1),
             'total': round(team_a_total + team_b_total, 1),
             'method': 'direct_aggregation'
-        }
-    
+        }    
+
     def _predict_possession_based(self, team_a_data: Dict, team_b_data: Dict,
                                 team_a_metrics: Dict, team_b_metrics: Dict) -> Dict:
         """Possession-based prediction model."""
@@ -226,6 +236,10 @@ class EnhancedTeamComparison:
         point_diff = team_a_score - team_b_score
         win_prob_a = self._calculate_win_probability(point_diff)
         
+        from utils.validation import validate_game_prediction
+        team_a_score, team_b_score = validate_game_prediction(team_a_score, team_b_score)
+
+
         return {
             'team_a_score': round(team_a_score, 1),
             'team_b_score': round(team_b_score, 1),
@@ -304,6 +318,9 @@ class EnhancedTeamComparison:
        # Recalculate win probability
        point_diff = team_a_score - team_b_score
        win_prob_a = self._calculate_win_probability(point_diff)
+
+       from utils.validation import validate_game_prediction
+       team_a_score, team_b_score = validate_game_prediction(team_a_score, team_b_score)
    
        return {
            'team_a_score': round(team_a_score, 1),
@@ -336,6 +353,10 @@ class EnhancedTeamComparison:
        # Recalculate win probability
        point_diff = team_a_score - team_b_score
        win_prob_a = self._calculate_win_probability(point_diff)
+
+       from utils.validation import validate_game_prediction
+       team_a_score, team_b_score = validate_game_prediction(team_a_score, team_b_score)
+        
    
        return {
            'team_a_score': round(team_a_score, 1),

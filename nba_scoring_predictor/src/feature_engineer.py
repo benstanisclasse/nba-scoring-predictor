@@ -312,8 +312,19 @@ class FeatureEngineer:
             logger.info(f"Final feature shape: {X_clean.shape}")
         
             self.feature_columns = final_features
+
+            # Validate feature matrix before returning
+            from utils.data_validator import NBADataValidator
+            validator = NBADataValidator()
+            X, final_features = validator.validate_feature_matrix(X_clean.values, final_features)
+
+            logger.info(f"Selected {len(final_features)} features from {len(feature_cols)} original")
+            logger.info(f"Final feature shape: {X.shape}")
+
+            self.feature_columns = final_features
+            return X, y, final_features
             return X_clean.values, y, final_features
-        
+            
         except Exception as e:
             logger.error(f"Feature preparation failed: {e}")
             raise

@@ -37,6 +37,8 @@
     <Compile Include="nba_scoring_predictor\src\model_trainer.py" />
     <Compile Include="nba_scoring_predictor\src\player_search_widget.py" />
     <Compile Include="nba_scoring_predictor\src\predictor.py" />
+    <Compile Include="nba_scoring_predictor\utils\data_validator.py" />
+    <Compile Include="nba_scoring_predictor\utils\validation.py" />
     <Compile Include="nba_scoring_predictor\src\widgets.py" />
     <Compile Include="nba_scoring_predictor\src\__init__.py" />
     <Compile Include="nba_scoring_predictor\tests\test_backtester.py" />

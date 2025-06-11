@@ -108,37 +108,51 @@ class ModelTrainer:
         
         return study.best_params
     
-    def train_models(self, X: np.ndarray, y: np.ndarray, feature_names: List[str],
-                    optimize: bool = True) -> Dict[str, Any]:
+    def train_models(self, X: np.ndarray, y: np.ndarray, feature_names: List[str],optimize: bool = True) -> Dict[str, Any]:
         """
         Train ensemble of models.
-        
+    
         Args:
             X: Feature matrix
             y: Target values
             feature_names: List of feature names
             optimize: Whether to optimize hyperparameters
-            
+        
         Returns:
             Dictionary with model results
         """
         logger.info("Training models...")
-        
+    
         self.feature_names = feature_names
-        
+    
         # Scale features
         self.scaler = RobustScaler()
         X_scaled = self.scaler.fit_transform(X)
-        
+    
+        # ADD VALIDATION HERE - After scaling but before splitting
+        # Validate target variable
+        y_valid_mask = (y >= 0) & (y <= 70)  # Reasonable scoring range
+        if not y_valid_mask.all():
+            invalid_count = (~y_valid_mask).sum()
+            logger.warning(f"Removing {invalid_count} samples with invalid target values")
+            X_scaled = X_scaled[y_valid_mask]
+            y = y[y_valid_mask]
+    
+        # Ensure we still have enough data
+        if len(y) < 100:
+            raise ValueError(f"Insufficient valid training data: {len(y)} samples")
+    
+        logger.info(f"Training with {len(y)} valid samples")
+    
         # Chronological split (80/20)
-        split_point = int(0.8 * len(X))
+        split_point = int(0.8 * len(X_scaled))  # Use X_scaled instead of X
         X_train, X_test = X_scaled[:split_point], X_scaled[split_point:]
         y_train, y_test = y[:split_point], y[split_point:]
-        
+    
         logger.info(f"Training set: {X_train.shape[0]} samples, Test set: {X_test.shape[0]} samples")
-        
+    
         results = {}
-        
+    
         # XGBoost
         if optimize:
             xgb_params = self.optimize_hyperparameters(X_train, y_train, 'xgboost', 30)
@@ -147,11 +161,11 @@ class ModelTrainer:
                 'n_estimators': 200, 'max_depth': 6, 'learning_rate': 0.1,
                 'subsample': 0.8, 'colsample_bytree': 0.8, 'random_state': 42, 'verbosity': 0
             }
-        
+    
         xgb_model = xgb.XGBRegressor(**xgb_params)
         xgb_model.fit(X_train, y_train)
         results['xgboost'] = self._evaluate_model(xgb_model, X_train, X_test, y_train, y_test)
-        
+    
         # LightGBM
         if optimize:
             lgb_params = self.optimize_hyperparameters(X_train, y_train, 'lightgbm', 30)
@@ -160,11 +174,11 @@ class ModelTrainer:
                 'n_estimators': 200, 'max_depth': 6, 'learning_rate': 0.1,
                 'num_leaves': 50, 'random_state': 42, 'verbose': -1
             }
-        
+    
         lgb_model = lgb.LGBMRegressor(**lgb_params)
         lgb_model.fit(X_train, y_train)
         results['lightgbm'] = self._evaluate_model(lgb_model, X_train, X_test, y_train, y_test)
-        
+    
         # Random Forest
         if optimize:
             rf_params = self.optimize_hyperparameters(X_train, y_train, 'random_forest', 20)
@@ -173,11 +187,11 @@ class ModelTrainer:
                 'n_estimators': 200, 'max_depth': 15, 'min_samples_split': 5,
                 'min_samples_leaf': 2, 'random_state': 42
             }
-        
+    
         rf_model = RandomForestRegressor(**rf_params)
         rf_model.fit(X_train, y_train)
         results['random_forest'] = self._evaluate_model(rf_model, X_train, X_test, y_train, y_test)
-        
+    
         # Neural Network
         nn_model = MLPRegressor(
             hidden_layer_sizes=(128, 64, 32),
@@ -189,7 +203,7 @@ class ModelTrainer:
         )
         nn_model.fit(X_train, y_train)
         results['neural_network'] = self._evaluate_model(nn_model, X_train, X_test, y_train, y_test)
-        
+    
         # Ensemble (Voting Regressor)
         ensemble_models = [
             ('xgboost', xgb_model),
@@ -199,7 +213,7 @@ class ModelTrainer:
         ensemble = VotingRegressor(ensemble_models)
         ensemble.fit(X_train, y_train)
         results['ensemble'] = self._evaluate_model(ensemble, X_train, X_test, y_train, y_test)
-        
+    
         self.models = results
         self.training_history = {
             'train_size': len(X_train),
@@ -207,10 +221,10 @@ class ModelTrainer:
             'n_features': len(feature_names),
             'optimization_used': optimize
         }
-        
+    
         # Log results
         self._log_results(results)
-        
+    
         return results
     
     def _evaluate_model(self, model, X_train, X_test, y_train, y_test) -> Dict[str, Any]:
