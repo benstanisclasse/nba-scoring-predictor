@@ -38,6 +38,7 @@ except ImportError:
     print("qdarkstyle not available, using default theme")
 
 try:
+    from src.team_comparison import EnhancedTeamComparison
     from src.player_search_widget import PlayerSearchWidget
     from src.predictor import EnhancedNBAPredictor
     from utils.logger import main_logger as logger
@@ -1878,8 +1879,329 @@ NBA Data Management Instructions:
                 event.ignore()
         else:
             event.accept()
+    
+    # Add this to the src/gui.py file, in the create_tabs method:
+
+    def create_tabs(self, layout):
+        """Create the enhanced main tab widget."""
+        self.tab_widget = QTabWidget()
+        self.tab_widget.setFont(QFont("Arial", 10))
+        self.tab_widget.setStyleSheet("""
+            QTabWidget::pane {
+                border: 1px solid #555;
+                background-color: #3c3c3c;
+            }
+            QTabBar::tab {
+                background-color: #404040;
+                color: white;
+                padding: 8px 16px;
+                margin-right: 2px;
+                border-top-left-radius: 5px;
+                border-top-right-radius: 5px;
+            }
+            QTabBar::tab:selected {
+                background-color: #3498db;
+            }
+        """)
+    
+        # Create tabs
+        self.create_prediction_tab()
+        self.create_analysis_tab()
+        self.create_training_tab()
+        self.create_team_comparison_tab()  # ADD THIS LINE
+        self.create_nba_data_tab()
+    
+        layout.addWidget(self.tab_widget)
 
 
+
+    def create_team_comparison_tab(self):
+        """Create the team comparison tab."""
+        team_comp_widget = QWidget()
+        layout = QVBoxLayout(team_comp_widget)
+    
+        # Header
+        header_label = QLabel("🏀 Team vs Team Comparison")
+        header_label.setFont(QFont("Arial", 16, QFont.Bold))
+        header_label.setAlignment(Qt.AlignCenter)
+        header_label.setStyleSheet("color: #3498db; margin: 10px;")
+        layout.addWidget(header_label)
+    
+        # Team selection section
+        selection_group = QGroupBox("Team Selection")
+        selection_group.setStyleSheet("""
+            QGroupBox {
+                color: white;
+                border: 2px solid #555;
+                border-radius: 5px;
+                margin: 10px;
+                padding-top: 10px;
+                font-weight: bold;
+            }
+            QGroupBox::title {
+                subcontrol-origin: margin;
+                left: 10px;
+                padding: 0 5px 0 5px;
+            }
+        """)
+    
+        selection_layout = QHBoxLayout(selection_group)
+    
+        # Complete list of all 30 NBA teams
+        all_nba_teams = [
+            "Atlanta Hawks", "Boston Celtics", "Brooklyn Nets", "Charlotte Hornets",
+            "Chicago Bulls", "Cleveland Cavaliers", "Dallas Mavericks", "Denver Nuggets",
+            "Detroit Pistons", "Golden State Warriors", "Houston Rockets", "Indiana Pacers",
+            "LA Clippers", "Los Angeles Lakers", "Memphis Grizzlies", "Miami Heat",
+            "Milwaukee Bucks", "Minnesota Timberwolves", "New Orleans Pelicans", "New York Knicks",
+            "Oklahoma City Thunder", "Orlando Magic", "Philadelphia 76ers", "Phoenix Suns",
+            "Portland Trail Blazers", "Sacramento Kings", "San Antonio Spurs", "Toronto Raptors",
+            "Utah Jazz", "Washington Wizards"
+        ]
+    
+        # Team A selection
+        team_a_layout = QVBoxLayout()
+        team_a_label = QLabel("Team A:")
+        team_a_label.setStyleSheet("color: white; font-weight: bold; margin-bottom: 5px;")
+        team_a_layout.addWidget(team_a_label)
+    
+        self.team_a_combo = QComboBox()
+        self.team_a_combo.addItems(all_nba_teams)
+        self.team_a_combo.setCurrentText("Los Angeles Lakers")  # Default selection
+        self.team_a_combo.setStyleSheet("""
+            QComboBox {
+                padding: 12px;
+                border: 2px solid #555;
+                border-radius: 5px;
+                background-color: #2c3e50;
+                color: white;
+                min-height: 25px;
+                font-size: 12px;
+                font-weight: bold;
+            }
+            QComboBox:hover {
+                border: 2px solid #3498db;
+            }
+            QComboBox::drop-down {
+                border: none;
+                width: 30px;
+            }
+            QComboBox::down-arrow {
+                image: none;
+                border-left: 6px solid transparent;
+                border-right: 6px solid transparent;
+                border-top: 6px solid white;
+                margin-right: 10px;
+            }
+            QComboBox QAbstractItemView {
+                background-color: #2c3e50;
+                color: white;
+                selection-background-color: #3498db;
+                selection-color: white;
+                border: 1px solid #555;
+                padding: 5px;
+            }
+            QComboBox QAbstractItemView::item {
+                padding: 8px;
+                border-bottom: 1px solid #555;
+            }
+            QComboBox QAbstractItemView::item:hover {
+                background-color: #34495e;
+            }
+        """)
+        team_a_layout.addWidget(self.team_a_combo)
+    
+        # VS label with better styling
+        vs_widget = QWidget()
+        vs_layout = QVBoxLayout(vs_widget)
+        vs_layout.setAlignment(Qt.AlignCenter)
+    
+        vs_label = QLabel("🆚")
+        vs_label.setFont(QFont("Arial", 32, QFont.Bold))
+        vs_label.setAlignment(Qt.AlignCenter)
+        vs_label.setStyleSheet("color: #e74c3c; margin: 10px 30px; padding: 10px;")
+    
+        vs_text = QLabel("VS")
+        vs_text.setFont(QFont("Arial", 12, QFont.Bold))
+        vs_text.setAlignment(Qt.AlignCenter)
+        vs_text.setStyleSheet("color: #e74c3c; margin: 0;")
+    
+        vs_layout.addWidget(vs_label)
+        vs_layout.addWidget(vs_text)
+    
+        # Team B selection
+        team_b_layout = QVBoxLayout()
+        team_b_label = QLabel("Team B:")
+        team_b_label.setStyleSheet("color: white; font-weight: bold; margin-bottom: 5px;")
+        team_b_layout.addWidget(team_b_label)
+    
+        self.team_b_combo = QComboBox()
+        self.team_b_combo.addItems(all_nba_teams)
+        self.team_b_combo.setCurrentText("Golden State Warriors")  # Default to different team
+        self.team_b_combo.setStyleSheet(self.team_a_combo.styleSheet())
+        team_b_layout.addWidget(self.team_b_combo)
+    
+        # Add random matchup button
+        random_matchup_layout = QVBoxLayout()
+        random_matchup_layout.addStretch()
+    
+        self.random_matchup_button = QPushButton("🎲 Random\nMatchup")
+        self.random_matchup_button.setMinimumSize(80, 60)
+        self.random_matchup_button.clicked.connect(self.generate_random_matchup)
+        self.random_matchup_button.setStyleSheet("""
+            QPushButton {
+                background-color: #9b59b6;
+                color: white;
+                border: none;
+                border-radius: 8px;
+                font-weight: bold;
+                font-size: 10px;
+            }
+            QPushButton:hover {
+                background-color: #8e44ad;
+            }
+        """)
+        random_matchup_layout.addWidget(self.random_matchup_button)
+        random_matchup_layout.addStretch()
+    
+        # Combine team selection layouts
+        selection_layout.addLayout(team_a_layout, 2)  # Give more space
+        selection_layout.addWidget(vs_widget, 0)      # Minimal space for VS
+        selection_layout.addLayout(team_b_layout, 2)  # Give more space
+        selection_layout.addLayout(random_matchup_layout, 0)  # Minimal space for button
+    
+        layout.addWidget(selection_group)
+    
+        # Rest of the method stays the same...
+        # Game context section
+        context_group = QGroupBox("Game Context (Optional)")
+        context_group.setStyleSheet(selection_group.styleSheet())
+        context_layout = QGridLayout(context_group)
+    
+        # Home team selection
+        home_label = QLabel("Home Team:")
+        home_label.setStyleSheet("color: white; font-weight: bold;")
+        context_layout.addWidget(home_label, 0, 0)
+    
+        self.home_team_combo = QComboBox()
+        self.home_team_combo.addItems(["Neutral Site", "Team A", "Team B"])
+        self.home_team_combo.setStyleSheet("""
+            QComboBox {
+                padding: 8px;
+                border: 1px solid #555;
+                border-radius: 3px;
+                background-color: #2c3e50;
+                color: white;
+                min-height: 20px;
+            }
+            QComboBox::drop-down { border: none; }
+            QComboBox::down-arrow {
+                image: none;
+                border-left: 5px solid transparent;
+                border-right: 5px solid transparent;
+                border-top: 5px solid white;
+            }
+            QComboBox QAbstractItemView {
+                background-color: #2c3e50;
+                color: white;
+                selection-background-color: #3498db;
+            }
+        """)
+        context_layout.addWidget(self.home_team_combo, 0, 1)
+    
+        # Rest differential
+        rest_label = QLabel("Rest Advantage:")
+        rest_label.setStyleSheet("color: white; font-weight: bold;")
+        context_layout.addWidget(rest_label, 0, 2)
+    
+        self.rest_combo = QComboBox()
+        self.rest_combo.addItems([
+            "Equal Rest", "Team A (+1 day)", "Team A (+2 days)",
+            "Team B (+1 day)", "Team B (+2 days)"
+        ])
+        self.rest_combo.setStyleSheet(self.home_team_combo.styleSheet())
+        context_layout.addWidget(self.rest_combo, 0, 3)
+    
+        layout.addWidget(context_group)
+    
+        # Compare button
+        self.compare_teams_button = QPushButton("🔥 COMPARE TEAMS")
+        self.compare_teams_button.setMinimumHeight(50)
+        self.compare_teams_button.setFont(QFont("Arial", 12, QFont.Bold))
+        self.compare_teams_button.clicked.connect(self.compare_teams)
+        self.compare_teams_button.setStyleSheet("""
+            QPushButton {
+                background-color: #e74c3c;
+                color: white;
+                border: none;
+                border-radius: 25px;
+                padding: 10px 30px;
+            }
+            QPushButton:hover {
+                background-color: #c0392b;
+            }
+            QPushButton:disabled {
+                background-color: #7f8c8d;
+            }
+        """)
+        layout.addWidget(self.compare_teams_button)
+    
+        # Results area (same as before)
+        results_group = QGroupBox("Comparison Results")
+        results_group.setStyleSheet(selection_group.styleSheet())
+        results_layout = QVBoxLayout(results_group)
+    
+        self.team_comparison_results = QTextEdit()
+        self.team_comparison_results.setFont(QFont("Consolas", 10))
+        self.team_comparison_results.setStyleSheet("""
+            QTextEdit {
+                background-color: #2c3e50;
+                color: white;
+                border: 1px solid #555;
+                border-radius: 3px;
+                padding: 10px;
+            }
+        """)
+        self.team_comparison_results.setPlainText(
+            "Select two teams and click 'COMPARE TEAMS' to see a detailed analysis...\n\n"
+            "🏀 Team Comparison Features:\n"
+            "• Individual player predictions for each team\n"
+            "• Team total scoring projections\n"
+            "• Win probability calculations\n"
+            "• Depth analysis and bench strength\n"
+            "• Positional matchup breakdowns\n"
+            "• Game context adjustments (home court, rest)\n"
+            "• Monte Carlo simulation results\n"
+            "• Confidence intervals and uncertainty analysis\n\n"
+            f"📊 Available Teams: {len(all_nba_teams)} NBA teams loaded"
+        )
+        results_layout.addWidget(self.team_comparison_results)
+    
+        layout.addWidget(results_group)
+    
+        self.tab_widget.addTab(team_comp_widget, "🏀 Team Comparison")
+
+        # Add this helper method for the random matchup button:
+    def generate_random_matchup(self):
+        """Generate a random team matchup."""
+        import random
+    
+        all_teams = [self.team_a_combo.itemText(i) for i in range(self.team_a_combo.count())]
+    
+        # Select two different random teams
+        team_a = random.choice(all_teams)
+        remaining_teams = [t for t in all_teams if t != team_a]
+        team_b = random.choice(remaining_teams)
+    
+        self.team_a_combo.setCurrentText(team_a)
+        self.team_b_combo.setCurrentText(team_b)
+    
+        # Also randomize game context for fun
+        self.home_team_combo.setCurrentIndex(random.randint(0, 2))
+        self.rest_combo.setCurrentIndex(random.randint(0, 4))
+    
+        self.update_status(f"Random matchup: {team_a} vs {team_b}")
+          
 def main():
     """Main function to run the enhanced PyQt5 GUI application."""
     app = QApplication(sys.argv)
