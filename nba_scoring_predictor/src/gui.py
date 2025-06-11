@@ -1,6 +1,6 @@
 ﻿# -*- coding: utf-8 -*-
 """
-Professional PyQt5 GUI for NBA Player Scoring Predictor - Enhanced with Live NBA Data
+Professional PyQt5 GUI for NBA Player Scoring Predictor - FIXED VERSION
 """
 import sys
 import os
@@ -8,7 +8,7 @@ from typing import Dict, List, Optional
 import traceback
 import threading
 from datetime import datetime
-from src.player_search_widget import PlayerSearchWidget
+
 # Add project root to path
 project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, project_root)
@@ -47,9 +47,11 @@ except ImportError as e:
     print(f"Import error: {e}")
     print("Make sure you're running from the project root directory")
     sys.exit(1)
+
 # Configure matplotlib
 plt.style.use('seaborn-v0_8-darkgrid')
 sns.set_palette("husl")
+
 
 class NBADataUpdateWorker(QThread):
     """Worker thread for updating NBA players data."""
@@ -89,6 +91,7 @@ class NBADataUpdateWorker(QThread):
             logger.error(traceback.format_exc())
             self.update_failed.emit(error_msg)
 
+
 class TrainingWorker(QThread):
     """Enhanced worker thread for model training with role support."""
     
@@ -107,32 +110,6 @@ class TrainingWorker(QThread):
         self.use_cache = use_cache
         self.role_based = role_based
     
-    def collect_data_by_roles(self, roles: List[str], max_per_role: int = 3, 
-                            seasons: List[str] = None, use_cache: bool = True) -> pd.DataFrame:
-        """Collect data for players by their roles/positions."""
-        all_players = []
-    
-        for role in roles:
-            role_players = self._get_players_by_category(role, max_per_role)
-            all_players.extend(role_players)
-    
-        return self.collect_data(
-            player_names=all_players,
-            seasons=seasons,
-            use_cache=use_cache
-        )
-
-    def train_with_roles(self, data: pd.DataFrame, optimize: bool = True) -> Dict:
-        """Train models with role-based data."""
-        return self.train(data, optimize=optimize)
-
-    def get_feature_importance(self, top_n: int = 15) -> pd.DataFrame:
-        """Get feature importance from trained models."""
-        if not self.is_trained:
-            return pd.DataFrame()
-    
-        return self.model_trainer.get_feature_importance('xgboost').head(top_n)
-
     def run(self):
         """Run training in background thread with role support."""
         try:
@@ -188,6 +165,7 @@ class TrainingWorker(QThread):
             logger.error(error_msg)
             logger.error(traceback.format_exc())
             self.training_failed.emit(error_msg)
+
 
 class MatplotlibWidget(QWidget):
     """Custom widget for embedding matplotlib plots."""
@@ -287,8 +265,9 @@ class MatplotlibWidget(QWidget):
         self.figure.tight_layout()
         self.canvas.draw()
 
+
 class NBAPlayerScoringGUI(QMainWindow):
-    """Enhanced Professional PyQt5 GUI application with category training and team predictions."""
+    """Enhanced Professional PyQt5 GUI application - FIXED VERSION."""
     
     def __init__(self):
         super().__init__()
@@ -296,19 +275,20 @@ class NBAPlayerScoringGUI(QMainWindow):
         self.is_model_loaded = False
         self.training_worker = None
         self.nba_update_worker = None
-    
+        self.selected_player_name = None
+        self.selected_players = []
+        
         # Initialize NBA data components
         self.player_fetcher = NBAPlayerFetcher()
         self.player_roles = PlayerRoles()
-    
+        
         self.init_ui()
-    
+        
         # Status update timer
         self.status_timer = QTimer()
         self.status_timer.timeout.connect(self.update_status_periodically)
         self.status_timer.start(5000)
-    
-    
+        
         self.ensure_nba_data_available()
     
     def init_ui(self):
@@ -407,43 +387,6 @@ class NBAPlayerScoringGUI(QMainWindow):
         
         layout.addWidget(header_frame)
     
-    def ensure_nba_data_available(self):
-        """Ensure NBA data is available for player search."""
-        try:
-            # Check if we have NBA data
-            nba_data = self.player_fetcher.load_players_data()
-        
-            if not nba_data:
-                logger.info("No NBA data found, fetching automatically...")
-            
-                # Show a progress dialog
-                from PyQt5.QtWidgets import QProgressDialog
-                progress = QProgressDialog("Loading NBA players data...", "Cancel", 0, 100, self)
-                progress.setWindowModality(Qt.WindowModal)
-                progress.show()
-                QApplication.processEvents()
-            
-                try:
-                    # Fetch NBA data
-                    nba_data = self.player_fetcher.fetch_all_active_players()
-                    progress.setValue(100)
-                    progress.close()
-                
-                    logger.info(f"Successfully loaded {nba_data['metadata']['total_players']} NBA players")
-                
-                    # Refresh the player lists
-                    self.refresh_players()
-                    self.check_nba_data_status()
-                
-                except Exception as e:
-                    progress.close()
-                    logger.error(f"Failed to fetch NBA data: {e}")
-                    # Continue with fallback players
-                
-        except Exception as e:
-            logger.error(f"Error ensuring NBA data: {e}")
-
-
     def create_tabs(self, layout):
         """Create the enhanced main tab widget."""
         self.tab_widget = QTabWidget()
@@ -474,28 +417,35 @@ class NBAPlayerScoringGUI(QMainWindow):
         
         layout.addWidget(self.tab_widget)
     
-    def create_nba_data_tab(self):
-        """Create the NBA data management tab."""
-        nba_data_widget = QWidget()
-        layout = QVBoxLayout(nba_data_widget)
+    def create_prediction_tab(self):
+        """Create the enhanced prediction tab with search functionality."""
+        prediction_widget = QWidget()
+        layout = QHBoxLayout(prediction_widget)
         
-        # Header
-        header_label = QLabel("🏀 NBA Data Management")
-        header_label.setFont(QFont("Arial", 16, QFont.Bold))
-        header_label.setAlignment(Qt.AlignCenter)
-        header_label.setStyleSheet("color: #3498db; margin: 10px;")
-        layout.addWidget(header_label)
+        # Left panel - Controls
+        control_frame = QFrame()
+        control_frame.setFrameStyle(QFrame.StyledPanel)
+        control_frame.setMaximumWidth(350)
+        control_frame.setMinimumWidth(300)
+        control_frame.setStyleSheet("""
+            QFrame {
+                background-color: #404040;
+                border-radius: 5px;
+            }
+        """)
         
-        # Data status section
-        status_group = QGroupBox("Current Data Status")
-        status_group.setStyleSheet("""
+        control_layout = QVBoxLayout(control_frame)
+        
+        # Player search group
+        search_group = QGroupBox("Player Search")
+        search_group.setFont(QFont("Arial", 11, QFont.Bold))
+        search_group.setStyleSheet("""
             QGroupBox {
                 color: white;
                 border: 2px solid #555;
                 border-radius: 5px;
                 margin: 10px;
                 padding-top: 10px;
-                font-weight: bold;
             }
             QGroupBox::title {
                 subcontrol-origin: margin;
@@ -504,28 +454,67 @@ class NBAPlayerScoringGUI(QMainWindow):
             }
         """)
         
-        status_layout = QVBoxLayout(status_group)
+        search_layout = QVBoxLayout(search_group)
         
-        self.nba_data_status_label = QLabel("Checking NBA data status...")
-        self.nba_data_status_label.setStyleSheet("color: white; font-size: 12px; margin: 10px;")
-        status_layout.addWidget(self.nba_data_status_label)
+        # Add the search widget
+        self.player_search_widget = PlayerSearchWidget()
+        self.player_search_widget.player_selected.connect(self.on_player_search_selected)
+        search_layout.addWidget(self.player_search_widget)
         
-        self.position_stats_label = QLabel("")
-        self.position_stats_label.setStyleSheet("color: #95a5a6; font-size: 10px; margin: 10px;")
-        status_layout.addWidget(self.position_stats_label)
+        # Separator
+        separator = QFrame()
+        separator.setFrameShape(QFrame.HLine)
+        separator.setFrameShadow(QFrame.Sunken)
+        separator.setStyleSheet("color: #555;")
+        search_layout.addWidget(separator)
         
-        layout.addWidget(status_group)
+        # Traditional dropdown (as backup)
+        dropdown_label = QLabel("Or select from dropdown:")
+        dropdown_label.setStyleSheet("color: #95a5a6; font-size: 10px; margin-top: 10px;")
+        search_layout.addWidget(dropdown_label)
         
-        # Update controls
-        controls_group = QGroupBox("Data Management")
-        controls_group.setStyleSheet("""
+        self.player_combo = QComboBox()
+        self.player_combo.setMinimumHeight(30)
+        self.player_combo.addItem("Load model first...")
+        self.player_combo.setEnabled(False)
+        self.player_combo.currentTextChanged.connect(self.on_dropdown_selection_changed)
+        self.player_combo.setStyleSheet("""
+            QComboBox {
+                padding: 5px;
+                border: 1px solid #555;
+                border-radius: 3px;
+                background-color: #2c3e50;
+                color: white;
+            }
+            QComboBox::drop-down {
+                border: none;
+            }
+            QComboBox::down-arrow {
+                image: none;
+                border-left: 5px solid transparent;
+                border-right: 5px solid transparent;
+                border-top: 5px solid white;
+            }
+            QComboBox QAbstractItemView {
+                background-color: #2c3e50;
+                color: white;
+                selection-background-color: #3498db;
+            }
+        """)
+        search_layout.addWidget(self.player_combo)
+        
+        control_layout.addWidget(search_group)
+        
+        # Analysis settings group
+        settings_group = QGroupBox("Analysis Settings")
+        settings_group.setFont(QFont("Arial", 11, QFont.Bold))
+        settings_group.setStyleSheet("""
             QGroupBox {
                 color: white;
                 border: 2px solid #555;
                 border-radius: 5px;
                 margin: 10px;
                 padding-top: 10px;
-                font-weight: bold;
             }
             QGroupBox::title {
                 subcontrol-origin: margin;
@@ -534,60 +523,85 @@ class NBAPlayerScoringGUI(QMainWindow):
             }
         """)
         
-        controls_layout = QVBoxLayout(controls_group)
+        settings_layout = QVBoxLayout(settings_group)
         
-        # Update button
-        self.update_nba_data_button = QPushButton("🔄 Update NBA Players Data")
-        self.update_nba_data_button.setMinimumHeight(50)
-        self.update_nba_data_button.setFont(QFont("Arial", 12, QFont.Bold))
-        self.update_nba_data_button.clicked.connect(self.update_nba_data)
-        self.update_nba_data_button.setStyleSheet("""
+        settings_layout.addWidget(QLabel("Recent Games for Analysis:"))
+        
+        self.recent_games_slider = QSlider(Qt.Horizontal)
+        self.recent_games_slider.setMinimum(5)
+        self.recent_games_slider.setMaximum(20)
+        self.recent_games_slider.setValue(10)
+        self.recent_games_slider.valueChanged.connect(self.update_recent_games_label)
+        self.recent_games_slider.setStyleSheet("""
+            QSlider::groove:horizontal {
+                border: 1px solid #999999;
+                height: 8px;
+                background: #555;
+                margin: 2px 0;
+                border-radius: 3px;
+            }
+            QSlider::handle:horizontal {
+                background: #3498db;
+                border: 1px solid #5c5c5c;
+                width: 18px;
+                margin: -2px 0;
+                border-radius: 3px;
+            }
+        """)
+        settings_layout.addWidget(self.recent_games_slider)
+        
+        self.recent_games_label = QLabel("10 games")
+        self.recent_games_label.setAlignment(Qt.AlignCenter)
+        self.recent_games_label.setStyleSheet("color: white;")
+        settings_layout.addWidget(self.recent_games_label)
+        
+        control_layout.addWidget(settings_group)
+        
+        # Predict button
+        self.predict_button = QPushButton("🎯 PREDICT POINTS")
+        self.predict_button.setMinimumHeight(50)
+        self.predict_button.setFont(QFont("Arial", 12, QFont.Bold))
+        self.predict_button.setStyleSheet("""
             QPushButton {
-                background-color: #27ae60;
+                background-color: #e74c3c;
                 color: white;
                 border: none;
                 border-radius: 25px;
-                padding: 10px 30px;
             }
             QPushButton:hover {
-                background-color: #229954;
+                background-color: #c0392b;
             }
             QPushButton:disabled {
                 background-color: #7f8c8d;
             }
         """)
-        controls_layout.addWidget(self.update_nba_data_button)
+        self.predict_button.clicked.connect(self.predict_player_points)
+        self.predict_button.setEnabled(False)
         
-        # Progress section
-        self.nba_update_progress_label = QLabel("Ready to update")
-        self.nba_update_progress_label.setAlignment(Qt.AlignCenter)
-        self.nba_update_progress_label.setStyleSheet("color: white; font-weight: bold; margin: 10px;")
-        controls_layout.addWidget(self.nba_update_progress_label)
+        control_layout.addWidget(self.predict_button)
+        control_layout.addStretch()
         
-        self.nba_update_progress_bar = QProgressBar()
-        self.nba_update_progress_bar.setMinimumHeight(25)
-        self.nba_update_progress_bar.setStyleSheet("""
-            QProgressBar {
-                border: 2px solid #555;
+        # Right panel - Results
+        results_frame = QFrame()
+        results_frame.setFrameStyle(QFrame.StyledPanel)
+        results_frame.setStyleSheet("""
+            QFrame {
+                background-color: #404040;
                 border-radius: 5px;
-                text-align: center;
-                color: white;
-                background-color: #2c3e50;
-            }
-            QProgressBar::chunk {
-                background-color: #27ae60;
-                border-radius: 3px;
             }
         """)
-        controls_layout.addWidget(self.nba_update_progress_bar)
         
-        layout.addWidget(controls_group)
+        results_layout = QVBoxLayout(results_frame)
         
-        # Instructions
-        instructions_text = QTextEdit()
-        instructions_text.setMaximumHeight(200)
-        instructions_text.setReadOnly(True)
-        instructions_text.setStyleSheet("""
+        results_header = QLabel("🔮 Prediction Results")
+        results_header.setFont(QFont("Arial", 16, QFont.Bold))
+        results_header.setAlignment(Qt.AlignCenter)
+        results_header.setStyleSheet("color: #3498db; margin: 10px;")
+        results_layout.addWidget(results_header)
+        
+        self.results_text = QTextEdit()
+        self.results_text.setFont(QFont("Consolas", 10))
+        self.results_text.setStyleSheet("""
             QTextEdit {
                 background-color: #2c3e50;
                 color: white;
@@ -596,895 +610,72 @@ class NBAPlayerScoringGUI(QMainWindow):
                 padding: 10px;
             }
         """)
-        instructions_text.setPlainText("""
-NBA Data Management Instructions:
-
-🔄 Update NBA Players Data:
-   • Fetches current roster data from NBA.com API
-   • Automatically categorizes players by position (PG, SG, SF, PF, C)
-   • Updates take 5-10 minutes depending on API response times
-   • Recommended to update weekly during the season
-
-📊 Data Usage:
-   • Updated data is used for role-based training
-   • Improves model accuracy by considering positional differences
-   • Enables selection of players by position in training
-
-⚠️  Notes:
-   • Requires internet connection
-   • NBA API rate limits apply
-   • Data is cached locally for faster access
-        """)
-        layout.addWidget(instructions_text)
+        self.results_text.setPlainText("Load a trained model and search for a player to see predictions...")
+        results_layout.addWidget(self.results_text)
         
-        layout.addStretch()
+        # Add panels to splitter
+        splitter = QSplitter(Qt.Horizontal)
+        splitter.addWidget(control_frame)
+        splitter.addWidget(results_frame)
+        splitter.setSizes([350, 850])
         
-        self.tab_widget.addTab(nba_data_widget, "🏀 NBA Data")
-
-    # Add this to your existing GUI class in src/gui.py
-
-def create_enhanced_team_comparison_tab(self):
-    """Create enhanced team vs team prediction tab with comprehensive analysis."""
-    team_widget = QWidget()
-    layout = QVBoxLayout(team_widget)
+        layout.addWidget(splitter)
+        
+        self.tab_widget.addTab(prediction_widget, "🎯 Predictions")
     
-    # Header
-    header_label = QLabel("🏀 Enhanced Team Comparison & Analysis")
-    header_label.setFont(QFont("Arial", 16, QFont.Bold))
-    header_label.setAlignment(Qt.AlignCenter)
-    header_label.setStyleSheet("color: #3498db; margin: 10px;")
-    layout.addWidget(header_label)
-    
-    # Main content in splitter
-    main_splitter = QSplitter(Qt.Horizontal)
-    
-    # Left panel - Controls
-    control_panel = self._create_team_comparison_controls()
-    main_splitter.addWidget(control_panel)
-    
-    # Right panel - Results
-    results_panel = self._create_team_comparison_results()
-    main_splitter.addWidget(results_panel)
-    
-    main_splitter.setSizes([400, 800])
-    layout.addWidget(main_splitter)
-    
-    self.tab_widget.addTab(team_widget, "⚔️ Team Analysis")
-
-def _create_team_comparison_controls(self):
-    """Create team comparison control panel."""
-    control_frame = QFrame()
-    control_frame.setFrameStyle(QFrame.StyledPanel)
-    control_frame.setMaximumWidth(400)
-    control_frame.setStyleSheet("""
-        QFrame {
-            background-color: #404040;
-            border-radius: 5px;
-        }
-    """)
-    
-    layout = QVBoxLayout(control_frame)
-    
-    # Team selection group
-    team_group = QGroupBox("Team Selection")
-    team_group.setStyleSheet(self._get_groupbox_style())
-    team_layout = QGridLayout(team_group)
-    
-    # Team A
-    team_layout.addWidget(QLabel("Team A:"), 0, 0)
-    self.team_a_combo = QComboBox()
-    self.team_a_combo.addItems(self._get_nba_teams())
-    self.team_a_combo.setStyleSheet(self._get_combo_style())
-    team_layout.addWidget(self.team_a_combo, 0, 1)
-    
-    # Team B
-    team_layout.addWidget(QLabel("Team B:"), 1, 0)
-    self.team_b_combo = QComboBox()
-    self.team_b_combo.addItems(self._get_nba_teams())
-    self.team_b_combo.setCurrentIndex(1)
-    self.team_b_combo.setStyleSheet(self._get_combo_style())
-    team_layout.addWidget(self.team_b_combo, 1, 1)
-    
-    layout.addWidget(team_group)
-    
-    # Game context group
-    context_group = QGroupBox("Game Context")
-    context_group.setStyleSheet(self._get_groupbox_style())
-    context_layout = QGridLayout(context_group)
-    
-    # Home team
-    context_layout.addWidget(QLabel("Home Team:"), 0, 0)
-    self.home_team_combo = QComboBox()
-    self.home_team_combo.addItems(["Team A", "Team B", "Neutral Site"])
-    self.home_team_combo.setStyleSheet(self._get_combo_style())
-    context_layout.addWidget(self.home_team_combo, 0, 1)
-    
-    # Rest differential
-    context_layout.addWidget(QLabel("Rest Advantage:"), 1, 0)
-    self.rest_combo = QComboBox()
-    self.rest_combo.addItems([
-        "Equal Rest", "Team A +1 Day", "Team A +2 Days", 
-        "Team B +1 Day", "Team B +2 Days"
-    ])
-    self.rest_combo.setStyleSheet(self._get_combo_style())
-    context_layout.addWidget(self.rest_combo, 1, 1)
-    
-    # Analysis depth
-    context_layout.addWidget(QLabel("Analysis Depth:"), 2, 0)
-    self.analysis_depth_combo = QComboBox()
-    self.analysis_depth_combo.addItems([
-        "Quick Analysis", "Standard Analysis", "Comprehensive Analysis"
-    ])
-    self.analysis_depth_combo.setCurrentIndex(1)
-    self.analysis_depth_combo.setStyleSheet(self._get_combo_style())
-    context_layout.addWidget(self.analysis_depth_combo, 2, 1)
-    
-    layout.addWidget(context_group)
-    
-    # Analysis buttons
-    button_layout = QVBoxLayout()
-    
-    self.analyze_teams_button = QPushButton("🔍 ANALYZE TEAMS")
-    self.analyze_teams_button.setMinimumHeight(50)
-    self.analyze_teams_button.setFont(QFont("Arial", 12, QFont.Bold))
-    self.analyze_teams_button.clicked.connect(self.analyze_teams_comprehensive)
-    self.analyze_teams_button.setStyleSheet("""
-        QPushButton {
-            background-color: #e74c3c;
-            color: white;
-            border: none;
-            border-radius: 25px;
-        }
-        QPushButton:hover {
-            background-color: #c0392b;
-        }
-        QPushButton:disabled {
-            background-color: #7f8c8d;
-        }
-    """)
-    
-    self.compare_lineups_button = QPushButton("👥 Compare Starting Lineups")
-    self.compare_lineups_button.setMinimumHeight(40)
-    self.compare_lineups_button.clicked.connect(self.compare_starting_lineups)
-    self.compare_lineups_button.setStyleSheet(self._get_secondary_button_style())
-    
-    self.monte_carlo_button = QPushButton("🎲 Run Monte Carlo Simulation")
-    self.monte_carlo_button.setMinimumHeight(40)
-    self.monte_carlo_button.clicked.connect(self.run_monte_carlo_simulation)
-    self.monte_carlo_button.setStyleSheet(self._get_secondary_button_style())
-   
-    button_layout.addWidget(self.analyze_teams_button)
-    button_layout.addWidget(self.compare_lineups_button)
-    button_layout.addWidget(self.monte_carlo_button)
-   
-    layout.addLayout(button_layout)
-   
-    # Quick stats display
-    stats_group = QGroupBox("Quick Stats")
-    stats_group.setStyleSheet(self._get_groupbox_style())
-    stats_layout = QVBoxLayout(stats_group)
-   
-    self.quick_stats_label = QLabel("Select teams to see quick comparison...")
-    self.quick_stats_label.setStyleSheet("color: white; font-size: 11px;")
-    self.quick_stats_label.setWordWrap(True)
-    stats_layout.addWidget(self.quick_stats_label)
-   
-    layout.addWidget(stats_group)
-    layout.addStretch()
-   
-    return control_frame
-
-def _create_team_comparison_results(self):
-    """Create team comparison results panel."""
-    results_frame = QFrame()
-    results_frame.setFrameStyle(QFrame.StyledPanel)
-    results_frame.setStyleSheet("""
-        QFrame {
-            background-color: #404040;
-            border-radius: 5px;
-        }
-    """)
-   
-    layout = QVBoxLayout(results_frame)
-   
-    # Results header
-    results_header = QLabel("📊 Team Analysis Results")
-    results_header.setFont(QFont("Arial", 16, QFont.Bold))
-    results_header.setAlignment(Qt.AlignCenter)
-    results_header.setStyleSheet("color: #3498db; margin: 10px;")
-    layout.addWidget(results_header)
-   
-    # Tab widget for different analysis views
-    self.analysis_tabs = QTabWidget()
-    self.analysis_tabs.setStyleSheet("""
-        QTabWidget::pane {
-            border: 1px solid #555;
-            background-color: #3c3c3c;
-        }
-        QTabBar::tab {
-            background-color: #404040;
-            color: white;
-            padding: 8px 16px;
-            margin-right: 2px;
-        }
-        QTabBar::tab:selected {
-            background-color: #3498db;
-        }
-    """)
-   
-    # Overview tab
-    self.overview_text = QTextEdit()
-    self.overview_text.setFont(QFont("Consolas", 10))
-    self.overview_text.setStyleSheet("""
-        QTextEdit {
-            background-color: #2c3e50;
-            color: white;
-            border: 1px solid #555;
-            border-radius: 3px;
-            padding: 10px;
-        }
-    """)
-    self.overview_text.setPlainText("Run team analysis to see comprehensive comparison...")
-    self.analysis_tabs.addTab(self.overview_text, "📊 Overview")
-   
-    # Matchup analysis tab
-    self.matchup_text = QTextEdit()
-    self.matchup_text.setFont(QFont("Consolas", 10))
-    self.matchup_text.setStyleSheet("""
-        QTextEdit {
-            background-color: #2c3e50;
-            color: white;
-            border: 1px solid #555;
-            border-radius: 3px;
-            padding: 10px;
-        }
-    """)
-    self.analysis_tabs.addTab(self.matchup_text, "⚔️ Matchups")
-   
-    # Monte Carlo tab
-    self.monte_carlo_text = QTextEdit()
-    self.monte_carlo_text.setFont(QFont("Consolas", 10))
-    self.monte_carlo_text.setStyleSheet("""
-        QTextEdit {
-            background-color: #2c3e50;
-            color: white;
-            border: 1px solid #555;
-            border-radius: 3px;
-            padding: 10px;
-        }
-    """)
-    self.analysis_tabs.addTab(self.monte_carlo_text, "🎲 Simulation")
-   
-    # Player breakdowns tab
-    self.player_breakdown_text = QTextEdit()
-    self.player_breakdown_text.setFont(QFont("Consolas", 9))
-    self.player_breakdown_text.setStyleSheet("""
-        QTextEdit {
-            background-color: #2c3e50;
-            color: white;
-            border: 1px solid #555;
-            border-radius: 3px;
-            padding: 10px;
-        }
-    """)
-    self.analysis_tabs.addTab(self.player_breakdown_text, "👥 Player Details")
-   
-    layout.addWidget(self.analysis_tabs)
-   
-    return results_frame
-
-def analyze_teams_comprehensive(self):
-    """Run comprehensive team analysis."""
-    if not self.is_model_loaded:
-        QMessageBox.warning(self, "Warning", "Please load or train a model first.")
-        return
-   
-    team_a = self.team_a_combo.currentText()
-    team_b = self.team_b_combo.currentText()
-   
-    if team_a == team_b:
-        QMessageBox.warning(self, "Warning", "Please select different teams.")
-        return
-   
-    try:
-        self.update_status(f"Analyzing teams: {team_a} vs {team_b}")
-        self.overview_text.setPlainText("Running comprehensive team analysis...\n")
-        QApplication.processEvents()
-       
-        # Get game context
-        game_context = self._build_game_context()
-       
-        # Initialize enhanced team comparison
-        from src.team_comparison import EnhancedTeamComparison
-        team_comparison = EnhancedTeamComparison(self.predictor)
-       
-        # Run comprehensive analysis
-        analysis_results = team_comparison.compare_teams_comprehensive(
-            team_a, team_b, game_context
-        )
-       
-        # Display results in different tabs
-        self._display_comprehensive_results(analysis_results)
-       
-        self.update_status("Team analysis completed successfully!")
-       
-    except Exception as e:
-        error_msg = f"Error analyzing teams {team_a} vs {team_b}: {str(e)}"
-        logger.error(error_msg)
-        self.overview_text.setPlainText(f"Error: {error_msg}")
-        self.update_status("Team analysis failed")
-
-def _build_game_context(self):
-    """Build game context from UI selections."""
-    context = {}
-   
-    # Home team advantage
-    home_selection = self.home_team_combo.currentText()
-    if home_selection == "Team A":
-        context['home_team'] = 'team_a'
-        context['home_court_advantage'] = 3.0
-    elif home_selection == "Team B":
-        context['home_team'] = 'team_b'
-        context['home_court_advantage'] = 3.0
-   
-    # Rest differential
-    rest_selection = self.rest_combo.currentText()
-    if "Team A" in rest_selection:
-        context['rest_differential'] = 1 if "+1" in rest_selection else 2
-    elif "Team B" in rest_selection:
-        context['rest_differential'] = -1 if "+1" in rest_selection else -2
-    else:
-        context['rest_differential'] = 0
-   
-    # Analysis depth
-    context['analysis_depth'] = self.analysis_depth_combo.currentText().lower()
-   
-    return context
-
-def _display_comprehensive_results(self, results: Dict):
-    """Display comprehensive analysis results across multiple tabs."""
-   
-    # Overview tab
-    self._display_overview_results(results)
-   
-    # Matchup analysis tab
-    self._display_matchup_results(results)
-   
-    # Monte Carlo tab
-    self._display_monte_carlo_results(results)
-   
-    # Player breakdown tab
-    self._display_player_breakdown_results(results)
-
-def _display_overview_results(self, results: Dict):
-    """Display overview analysis results."""
-    team_a = results['teams']['team_a']
-    team_b = results['teams']['team_b']
-   
-    predictions = results['predictions']['ensemble']
-    team_a_metrics = results['team_metrics']['team_a']
-    team_b_metrics = results['team_metrics']['team_b']
-   
-    overview_text = f"""🏀 COMPREHENSIVE TEAM ANALYSIS: {team_a.upper()} vs {team_b.upper()}
-{'='*80}
-
-📊 GAME PREDICTION:
-Win Probability:
-- {team_a}: {predictions['win_probability_a']:.1%}
-- {team_b}: {predictions['win_probability_b']:.1%}
-
-Predicted Final Score:
-- {team_a}: {predictions['team_a_score']} points
-- {team_b}: {predictions['team_b_score']} points
-
-Spread: {team_a} {predictions['spread']:+.1f}
-Total Points (O/U): {predictions['total']:.1f}
-
-⚡ TEAM METRICS COMPARISON:
-                            {team_a:<15} {team_b:<15}
-Total Predicted Points:   {team_a_metrics['total_predicted_points']:<15.1f} {team_b_metrics['total_predicted_points']:<15.1f}
-Starter Points:          {team_a_metrics['starter_points']:<15.1f} {team_b_metrics['starter_points']:<15.1f}
-Bench Points:            {team_a_metrics['bench_points']:<15.1f} {team_b_metrics['bench_points']:<15.1f}
-Depth Score:             {team_a_metrics['depth_score']:<15.3f} {team_b_metrics['depth_score']:<15.3f}
-Estimated Pace:          {team_a_metrics['estimated_pace']:<15.1f} {team_b_metrics['estimated_pace']:<15.1f}
-Offensive Rating:        {team_a_metrics['offensive_rating']:<15.1f} {team_b_metrics['offensive_rating']:<15.1f}
-Defensive Rating:        {team_a_metrics['defensive_rating']:<15.1f} {team_b_metrics['defensive_rating']:<15.1f}
-Net Rating:              {team_a_metrics['net_rating']:<15.1f} {team_b_metrics['net_rating']:<15.1f}
-
-🔑 KEY INSIGHTS:
-"""
-   
-    # Add key factors
-    key_factors = results['matchup_analysis']['key_factors']
-    for i, factor in enumerate(key_factors, 1):
-        overview_text += f"{i}. {factor}\n"
-   
-    # Add confidence analysis
-    confidence = results['confidence_analysis']
-    overview_text += f"""
-📈 PREDICTION CONFIDENCE:
-Overall Confidence: {confidence['overall_confidence']:.1%}
-Model Uncertainty: {confidence['model_uncertainty']:.2f}
-Key Uncertainty Factors:
-"""
-   
-    for factor in confidence['uncertainty_factors']:
-        overview_text += f"• {factor}\n"
-   
-    # Add recommendation
-    if predictions['win_probability_a'] > 0.6:
-        recommendation = f"🔥 LEAN: {team_a} (Confident)"
-    elif predictions['win_probability_b'] > 0.6:
-        recommendation = f"🔥 LEAN: {team_b} (Confident)"
-    else:
-        recommendation = "⚖️ NEUTRAL: Too close to call"
-   
-    overview_text += f"\n💡 BETTING RECOMMENDATION: {recommendation}\n"
-   
-    # Add methodology note
-    overview_text += f"""
-ℹ️ METHODOLOGY:
-- Individual player predictions aggregated with playing time weights
-- Advanced team metrics calculated from roster composition
-- Multiple prediction models ensembled for final result
-- Monte Carlo simulation provides uncertainty quantification
-- Game context adjustments applied for home court and rest
-
-📅 Analysis generated: {results['timestamp'][:19]}
-"""
-   
-    self.overview_text.setPlainText(overview_text)
-
-def _display_matchup_results(self, results: Dict):
-    """Display detailed matchup analysis."""
-    team_a = results['teams']['team_a']
-    team_b = results['teams']['team_b']
-   
-    matchup_analysis = results['matchup_analysis']
-    pace_matchup = matchup_analysis['pace_matchup']
-    positional_advantages = matchup_analysis['positional_advantages']
-   
-    matchup_text = f"""⚔️ DETAILED MATCHUP ANALYSIS: {team_a.upper()} vs {team_b.upper()}
-{'='*80}
-
-🏃 PACE & TEMPO ANALYSIS:
-Expected Game Pace: {pace_matchup['expected_game_pace']} possessions
-- {team_a} Preferred Pace: {pace_matchup['team_a_pace']:.1f}
-- {team_b} Preferred Pace: {pace_matchup['team_b_pace']:.1f}
-- Pace Advantage: {pace_matchup['pace_advantage'].replace('_', ' ').title()}
-
-Analysis: {pace_matchup['analysis']}
-
-🏀 POSITION-BY-POSITION BREAKDOWN:
-Position    {team_a:<12} {team_b:<12} Advantage
-"""
-   
-    for pos, matchup in positional_advantages.items():
-        advantage_symbol = "🔥" if matchup['advantage'] == 'team_a' else "❄️" if matchup['advantage'] == 'team_b' else "⚖️"
-        advantage_text = team_a if matchup['advantage'] == 'team_a' else team_b if matchup['advantage'] == 'team_b' else "Even"
-       
-        matchup_text += f"{pos:<8}    {matchup['team_a_total']:<12.1f} {matchup['team_b_total']:<12.1f} {advantage_symbol} {advantage_text}\n"
-   
-    # Add style analysis
-    matchup_text += f"""
-🎯 PLAYING STYLE ANALYSIS:
-{matchup_analysis.get('style_matchup', {}).get('analysis', 'Style analysis not available')}
-
-🏋️ DEPTH COMPARISON:
-{matchup_analysis.get('depth_comparison', {}).get('analysis', 'Depth analysis not available')}
-
-📊 PREDICTION METHOD COMPARISON:
-"""
-   
-    # Show different prediction methods
-    predictions = results['predictions']
-    for method, pred in predictions.items():
-        if method != 'ensemble':
-            method_name = method.replace('_', ' ').title()
-            matchup_text += f"{method_name}:\n"
-            matchup_text += f"  • {team_a}: {pred['team_a_score']:.1f} points\n"
-            matchup_text += f"  • {team_b}: {pred['team_b_score']:.1f} points\n"
-            matchup_text += f"  • Win Prob: {pred['win_probability_a']:.1%} / {pred['win_probability_b']:.1%}\n\n"
-   
-    self.matchup_text.setPlainText(matchup_text)
-
-def _display_monte_carlo_results(self, results: Dict):
-    """Display Monte Carlo simulation results."""
-    team_a = results['teams']['team_a']
-    team_b = results['teams']['team_b']
-   
-    monte_carlo = results['monte_carlo']
-    score_dist = monte_carlo['score_distributions']
-    margin_analysis = monte_carlo['margin_analysis']
-   
-    monte_carlo_text = f"""🎲 MONTE CARLO SIMULATION RESULTS: {team_a.upper()} vs {team_b.upper()}
-{'='*80}
-
-📈 SIMULATION SUMMARY:
-Simulations Run: {monte_carlo['simulations_run']:,}
-{team_a} Win Probability: {monte_carlo['win_probability_a']:.2%}
-{team_b} Win Probability: {monte_carlo['win_probability_b']:.2%}
-
-📊 SCORE DISTRIBUTION ANALYSIS:
-
-{team_a.upper()} SCORING:
-Mean Score: {score_dist['team_a']['mean']:.1f} points
-Standard Deviation: {score_dist['team_a']['std']:.1f} points
-Score Ranges:
-- 10th Percentile: {score_dist['team_a']['percentiles']['10th']:.1f} points
-- 25th Percentile: {score_dist['team_a']['percentiles']['25th']:.1f} points
-- 50th Percentile: {score_dist['team_a']['percentiles']['50th']:.1f} points
-- 75th Percentile: {score_dist['team_a']['percentiles']['75th']:.1f} points
-- 90th Percentile: {score_dist['team_a']['percentiles']['90th']:.1f} points
-
-{team_b.upper()} SCORING:
-Mean Score: {score_dist['team_b']['mean']:.1f} points
-Standard Deviation: {score_dist['team_b']['std']:.1f} points
-Score Ranges:
-- 10th Percentile: {score_dist['team_b']['percentiles']['10th']:.1f} points
-- 25th Percentile: {score_dist['team_b']['percentiles']['25th']:.1f} points
-- 50th Percentile: {score_dist['team_b']['percentiles']['50th']:.1f} points
-- 75th Percentile: {score_dist['team_b']['percentiles']['75th']:.1f} points
-- 90th Percentile: {score_dist['team_b']['percentiles']['90th']:.1f} points
-
-🎯 GAME OUTCOME PROBABILITIES:
-Close Game (≤5 points): {margin_analysis['close_game_probability']:.1%}
-{team_a} Blowout Win (≥15 points): {margin_analysis['blowout_probability_a']:.1%}
-{team_b} Blowout Win (≥15 points): {margin_analysis['blowout_probability_b']:.1%}
-
-Average Margin: {margin_analysis['avg_margin']:+.1f} points
-Margin Standard Deviation: {margin_analysis['margin_std']:.1f} points
-
-💰 BETTING INSIGHTS:
-Based on the simulation results:
-
-SPREAD BETTING:
-- Current Model Spread: {results['predictions']['ensemble']['spread']:+.1f}
-- Confidence in Spread: {'High' if abs(margin_analysis['avg_margin']) > margin_analysis['margin_std'] else 'Medium' if abs(margin_analysis['avg_margin']) > margin_analysis['margin_std']/2 else 'Low'}
-
-TOTAL BETTING:
-- Predicted Total: {results['predictions']['ensemble']['total']:.1f}
-- Total Range (80% confidence): {score_dist['team_a']['percentiles']['10th'] + score_dist['team_b']['percentiles']['10th']:.1f} - {score_dist['team_a']['percentiles']['90th'] + score_dist['team_b']['percentiles']['90th']:.1f}
-
-MONEYLINE VALUE:
-- Model implies {team_a} should be {'favorite' if monte_carlo['win_probability_a'] > 0.5 else 'underdog'}
-- Win probability edge: {abs(monte_carlo['win_probability_a'] - 0.5)*200:.1f}% over 50/50
-
-🎯 RISK ASSESSMENT:
-Game Volatility: {'High' if margin_analysis['margin_std'] > 12 else 'Medium' if margin_analysis['margin_std'] > 8 else 'Low'} 
-(Std Dev: {margin_analysis['margin_std']:.1f})
-Upset Potential: {(1 - max(monte_carlo['win_probability_a'], monte_carlo['win_probability_b']))*100:.1f}%
-"""
-   
-    self.monte_carlo_text.setPlainText(monte_carlo_text)
-
-def _display_player_breakdown_results(self, results: Dict):
-    """Display detailed player breakdown."""
-    team_a = results['teams']['team_a']
-    team_b = results['teams']['team_b']
-   
-    # Get team data from the results
-    team_a_data = results.get('team_data', {}).get('team_a', {})
-    team_b_data = results.get('team_data', {}).get('team_b', {})
-   
-    # If team data not available in results, create simplified version
-    if not team_a_data:
-        player_text = f"""👥 PLAYER BREAKDOWN: {team_a.upper()} vs {team_b.upper()}
-{'='*80}
-
-⚠️ Detailed player breakdown not available in this analysis.
-   
-To get individual player predictions:
-1. Use the 'Predictions' tab to analyze specific players
-2. Run individual player analysis for each team member
-3. Use the 'Training' tab to ensure all team players are in the model
-
-💡 This feature requires the enhanced team comparison engine to be fully integrated.
-"""
-        self.player_breakdown_text.setPlainText(player_text)
-        return
-   
-    player_text = f"""👥 DETAILED PLAYER BREAKDOWN: {team_a.upper()} vs {team_b.upper()}
-{'='*80}
-
-🔥 {team_a.upper()} ROSTER ANALYSIS:
-"""
-   
-    # Sort players by predicted points for team A
-    team_a_players = sorted(
-        team_a_data.get('players', {}).items(),
-        key=lambda x: x[1]['predicted_points'],
-        reverse=True
-    )
-   
-    for player_name, player_data in team_a_players:
-        pos = player_data['position']
-        pts = player_data['predicted_points']
-        ci_low, ci_high = player_data['confidence_interval']
-        tier = player_data['usage_tier']
-        minutes = player_data['playing_time_estimate']
-       
-        player_text += f"{player_name} ({pos}) - {tier.title()}:\n"
-        player_text += f"  • Predicted: {pts:.1f} points (Range: {ci_low:.1f}-{ci_high:.1f})\n"
-        player_text += f"  • Est. Minutes: {minutes:.0f} | Confidence: ±{player_data['model_mae']:.1f}\n\n"
-   
-    player_text += f"""
-❄️ {team_b.upper()} ROSTER ANALYSIS:
-"""
-   
-    # Sort players by predicted points for team B
-    team_b_players = sorted(
-        team_b_data.get('players', {}).items(),
-        key=lambda x: x[1]['predicted_points'],
-        reverse=True
-    )
-   
-    for player_name, player_data in team_b_players:
-        pos = player_data['position']
-        pts = player_data['predicted_points']
-        ci_low, ci_high = player_data['confidence_interval']
-        tier = player_data['usage_tier']
-        minutes = player_data['playing_time_estimate']
-       
-        player_text += f"{player_name} ({pos}) - {tier.title()}:\n"
-        player_text += f"  • Predicted: {pts:.1f} points (Range: {ci_low:.1f}-{ci_high:.1f})\n"
-        player_text += f"  • Est. Minutes: {minutes:.0f} | Confidence: ±{player_data['model_mae']:.1f}\n\n"
-   
-    # Add head-to-head comparisons
-    player_text += """🥊 POSITION-BY-POSITION HEAD-TO-HEAD:
-"""
-   
-    positions = ['PG', 'SG', 'SF', 'PF', 'C']
-    for pos in positions:
-        team_a_pos_players = [p for name, p in team_a_players if p['position'] == pos]
-        team_b_pos_players = [p for name, p in team_b_players if p['position'] == pos]
-       
-        if team_a_pos_players and team_b_pos_players:
-            team_a_top = max(team_a_pos_players, key=lambda x: x['predicted_points'])
-            team_b_top = max(team_b_pos_players, key=lambda x: x['predicted_points'])
-           
-            advantage = "🔥" if team_a_top['predicted_points'] > team_b_top['predicted_points'] else "❄️"
-           
-            player_text += f"{pos}: {team_a_top['predicted_points']:.1f} vs {team_b_top['predicted_points']:.1f} {advantage}\n"
-   
-    self.player_breakdown_text.setPlainText(player_text)
-
-def compare_starting_lineups(self):
-    """Compare starting lineups of selected teams."""
-    if not self.is_model_loaded:
-        QMessageBox.warning(self, "Warning", "Please load or train a model first.")
-        return
-   
-    team_a = self.team_a_combo.currentText()
-    team_b = self.team_b_combo.currentText()
-   
-    if team_a == team_b:
-        QMessageBox.warning(self, "Warning", "Please select different teams.")
-        return
-   
-    try:
-        # This would integrate with your existing team prediction system
-        # For now, show a simplified comparison
-       
-        lineup_text = f"""👥 STARTING LINEUP COMPARISON: {team_a} vs {team_b}
-{'='*60}
-
-⚠️ Starting lineup analysis coming soon!
-
-This feature will provide:
-- Position-by-position starter comparisons
-- Combined starting 5 predictions
-- Bench vs bench analysis
-- Rotation depth evaluation
-
-💡 Use the full team analysis for comprehensive comparison.
-"""
-       
-        self.matchup_text.setPlainText(lineup_text)
-        self.analysis_tabs.setCurrentIndex(1)  # Switch to matchup tab
-       
-    except Exception as e:
-        logger.error(f"Error comparing lineups: {e}")
-
-def run_monte_carlo_simulation(self):
-    """Run dedicated Monte Carlo simulation."""
-    if not self.is_model_loaded:
-        QMessageBox.warning(self, "Warning", "Please load or train a model first.")
-        return
-   
-    team_a = self.team_a_combo.currentText()
-    team_b = self.team_b_combo.currentText()
-   
-    if team_a == team_b:
-        QMessageBox.warning(self, "Warning", "Please select different teams.")
-        return
-   
-    try:
-        self.monte_carlo_text.setPlainText(f"Running Monte Carlo simulation for {team_a} vs {team_b}...\n")
-        QApplication.processEvents()
-       
-        # This would run the Monte Carlo simulation
-        simulation_text = f"""🎲 MONTE CARLO SIMULATION: {team_a} vs {team_b}
-{'='*60}
-
-⚠️ Dedicated Monte Carlo simulation coming soon!
-
-This feature will provide:
-- 10,000+ game simulations
-- Win probability distributions
-- Score range analysis
-- Betting value identification
-- Risk assessment metrics
-
-💡 Use the full team analysis to see Monte Carlo results.
-"""
-       
-        self.monte_carlo_text.setPlainText(simulation_text)
-        self.analysis_tabs.setCurrentIndex(2)  # Switch to Monte Carlo tab
-       
-    except Exception as e:
-        logger.error(f"Error running simulation: {e}")
-
-def _get_nba_teams(self):
-    """Get list of NBA teams."""
-    return [
-        "Atlanta Hawks", "Boston Celtics", "Brooklyn Nets", "Charlotte Hornets",
-        "Chicago Bulls", "Cleveland Cavaliers", "Dallas Mavericks", "Denver Nuggets",
-        "Detroit Pistons", "Golden State Warriors", "Houston Rockets", "Indiana Pacers",
-        "LA Clippers", "Los Angeles Lakers", "Memphis Grizzlies", "Miami Heat",
-        "Milwaukee Bucks", "Minnesota Timberwolves", "New Orleans Pelicans", "New York Knicks",
-        "Oklahoma City Thunder", "Orlando Magic", "Philadelphia 76ers", "Phoenix Suns",
-        "Portland Trail Blazers", "Sacramento Kings", "San Antonio Spurs", "Toronto Raptors",
-        "Utah Jazz", "Washington Wizards"
-    ]
-
-def _get_groupbox_style(self):
-    """Get consistent GroupBox styling."""
-    return """
-        QGroupBox {
-            color: white;
-            border: 2px solid #555;
-            border-radius: 5px;
-            margin: 10px;
-            padding-top: 10px;
-            font-weight: bold;
-        }
-        QGroupBox::title {
-            subcontrol-origin: margin;
-            left: 10px;
-            padding: 0 5px 0 5px;
-        }
-    """
-
-def _get_combo_style(self):
-    """Get consistent ComboBox styling."""
-    return """
-        QComboBox {
-            padding: 8px;
-            border: 1px solid #555;
-            border-radius: 3px;
-            background-color: #2c3e50;
-            color: white;
-            min-height: 20px;
-        }
-        QComboBox::drop-down {
-            border: none;
-        }
-        QComboBox::down-arrow {
-            image: none;
-            border-left: 5px solid transparent;
-            border-right: 5px solid transparent;
-            border-top: 5px solid white;
-        }
-        QComboBox QAbstractItemView {
-            background-color: #2c3e50;
-            color: white;
-            selection-background-color: #3498db;
-        }
-    """
-
-def _get_secondary_button_style(self):
-    """Get secondary button styling."""
-    return """
-        QPushButton {
-            background-color: #3498db;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            padding: 8px 16px;
-            font-weight: bold;
-        }
-        QPushButton:hover {
-            background-color: #2980b9;
-        }
-        QPushButton:disabled {
-            background-color: #7f8c8d;
-        }
-    """
-
-    def create_tabs(self, layout):
-        """Create the enhanced main tab widget."""
-        self.tab_widget = QTabWidget()
-        self.tab_widget.setFont(QFont("Arial", 10))
-        self.tab_widget.setStyleSheet("""
-            QTabWidget::pane {
-                border: 1px solid #555;
-                background-color: #3c3c3c;
-            }
-            QTabBar::tab {
-                background-color: #404040;
-                color: white;
-                padding: 8px 16px;
-                margin-right: 2px;
-                border-top-left-radius: 5px;
-                border-top-right-radius: 5px;
-            }
-            QTabBar::tab:selected {
+    def create_analysis_tab(self):
+        """Create the analysis tab."""
+        analysis_widget = QWidget()
+        layout = QVBoxLayout(analysis_widget)
+        
+        # Control buttons
+        button_layout = QHBoxLayout()
+        
+        performance_button = QPushButton("📊 Model Performance")
+        performance_button.setMinimumHeight(40)
+        performance_button.clicked.connect(self.show_model_performance)
+        performance_button.setStyleSheet("""
+            QPushButton {
                 background-color: #3498db;
+                color: white;
+                border: none;
+                border-radius: 5px;
+                padding: 10px 20px;
+                font-weight: bold;
+            }
+            QPushButton:hover {
+                background-color: #2980b9;
             }
         """)
-    
-        # Create tabs
-        self.create_prediction_tab()
-        self.create_analysis_tab()
-        self.create_enhanced_team_comparison_tab()  # Add this line
-        self.create_training_tab()
-        self.create_nba_data_tab()
-    
-        layout.addWidget(self.tab_widget)
-
-   
-
-    def update_ui_state(self):
-        """Update UI state based on model status."""
-        self.predict_button.setEnabled(self.is_model_loaded)
-        self.save_button.setEnabled(self.is_model_loaded)
-        self.player_combo.setEnabled(self.is_model_loaded)
-    
-        # Enable team comparison when model is loaded
-        if hasattr(self, 'analyze_teams_button'):
-            self.analyze_teams_button.setEnabled(self.is_model_loaded)
-        if hasattr(self, 'compare_lineups_button'):
-            self.compare_lineups_button.setEnabled(self.is_model_loaded)
-        if hasattr(self, 'monte_carlo_button'):
-            self.monte_carlo_button.setEnabled(self.is_model_loaded)
-    
-        if self.is_model_loaded:
-            self.model_status_label.setText("Model: Loaded ✓")
-            self.model_status_label.setStyleSheet("color: #27ae60;")
         
-            # Update quick stats when teams are selected
-            if hasattr(self, 'team_a_combo') and hasattr(self, 'team_b_combo'):
-                self._update_quick_team_stats()
-        else:
-            self.model_status_label.setText("Model: Not Loaded")
-            self.model_status_label.setStyleSheet("color: #e74c3c;")
-
-    def _update_quick_team_stats(self):
-        """Update quick team comparison stats."""
-        try:
-            team_a = self.team_a_combo.currentText()
-            team_b = self.team_b_combo.currentText()
+        importance_button = QPushButton("🎯 Feature Importance")
+        importance_button.setMinimumHeight(40)
+        importance_button.clicked.connect(self.show_feature_importance)
+        importance_button.setStyleSheet("""
+            QPushButton {
+                background-color: #3498db;
+                color: white;
+                border: none;
+                border-radius: 5px;
+                padding: 10px 20px;
+                font-weight: bold;
+            }
+            QPushButton:hover {
+                background-color: #2980b9;
+            }
+        """)
         
-            if team_a != team_b and self.is_model_loaded:
-                # Show basic team info
-                quick_stats = f"""📊 Quick Comparison:
-    🔥 {team_a}
-    ❄️ {team_b}
-
-    💡 Select 'Analyze Teams' for comprehensive comparison including:
-    - Win probability prediction
-    - Individual player breakdowns  
-    - Positional matchup analysis
-    - Monte Carlo simulation
-    - Betting insights & recommendations
-    """
-                self.quick_stats_label.setText(quick_stats)
-            else:
-                self.quick_stats_label.setText("Select different teams to see comparison...")
-            
-        except Exception as e:
-            logger.error(f"Error updating quick stats: {e}")
+        button_layout.addWidget(performance_button)
+        button_layout.addWidget(importance_button)
+        button_layout.addStretch()
+        
+        layout.addLayout(button_layout)
+        
+        # Plot area
+        self.plot_widget = MatplotlibWidget()
+        layout.addWidget(self.plot_widget)
+        
+        self.tab_widget.addTab(analysis_widget, "📈 Analysis")
     
     def create_training_tab(self):
         """Create the enhanced training tab with role-based features."""
@@ -1594,119 +785,30 @@ def _get_secondary_button_style(self):
                 border-radius: 3px;
             }
         """)
-        
+       
         self.players_per_role_label = QLabel("3 players")
         self.players_per_role_label.setStyleSheet("color: white; font-weight: bold;")
-        
+       
         players_per_role_layout.addWidget(self.players_per_role_slider)
         players_per_role_layout.addWidget(self.players_per_role_label)
         role_selection_layout.addLayout(players_per_role_layout)
-        
+       
         config_layout.addWidget(self.role_selection_widget, 1, 1)
-        
-        # Player selection (for specific player training)
-        config_layout.addWidget(QLabel("Select Players:"), 2, 0)
-        
-        self.player_selection_widget = QWidget()
-        player_selection_layout = QVBoxLayout(self.player_selection_widget)
-        player_selection_layout.setContentsMargins(0, 0, 0, 0)
-        
-        self.available_players_combo = QComboBox()
-        self.available_players_combo.setStyleSheet("""
-            QComboBox {
+       
+        # Custom player entry
+        config_layout.addWidget(QLabel("Custom Players:"), 2, 0)
+        self.training_players_entry = QLineEdit()
+        self.training_players_entry.setPlaceholderText("e.g., LeBron James, Stephen Curry, Luka Dončić")
+        self.training_players_entry.setStyleSheet("""
+            QLineEdit {
                 padding: 8px;
                 border: 1px solid #555;
                 border-radius: 3px;
                 background-color: #2c3e50;
                 color: white;
-                min-height: 20px;
-            }
-            QComboBox QAbstractItemView {
-                background-color: #2c3e50;
-                color: white;
-                selection-background-color: #3498db;
             }
         """)
-        self.refresh_available_players()
-        player_selection_layout.addWidget(self.available_players_combo)
-        
-        # Player management buttons
-        player_buttons_layout = QHBoxLayout()
-        
-        self.add_player_button = QPushButton("➕ Add Selected")
-        self.add_player_button.clicked.connect(self.add_selected_player)
-        self.add_player_button.setStyleSheet("""
-            QPushButton {
-                background-color: #27ae60;
-                color: white;
-                border: none;
-                border-radius: 3px;
-                padding: 5px 10px;
-            }
-            QPushButton:hover {
-                background-color: #229954;
-            }
-        """)
-        
-        self.clear_players_button = QPushButton("🗑️ Clear All")
-        self.clear_players_button.clicked.connect(self.clear_selected_players)
-        self.clear_players_button.setStyleSheet("""
-            QPushButton {
-                background-color: #e74c3c;
-                color: white;
-                border: none;
-                border-radius: 3px;
-                padding: 5px 10px;
-            }
-            QPushButton:hover {
-                background-color: #c0392b;
-            }
-        """)
-        
-        self.refresh_players_button = QPushButton("🔄 Refresh")
-        self.refresh_players_button.clicked.connect(self.refresh_available_players)
-        self.refresh_players_button.setStyleSheet("""
-            QPushButton {
-                background-color: #3498db;
-                color: white;
-                border: none;
-                border-radius: 3px;
-                padding: 5px 10px;
-            }
-            QPushButton:hover {
-                background-color: #2980b9;
-            }
-        """)
-        
-        player_buttons_layout.addWidget(self.add_player_button)
-        player_buttons_layout.addWidget(self.clear_players_button)
-        player_buttons_layout.addWidget(self.refresh_players_button)
-        player_buttons_layout.addStretch()
-        
-        player_selection_layout.addLayout(player_buttons_layout)
-        
-        # Selected players display
-        self.selected_players_label = QLabel("Selected Players: None")
-        self.selected_players_label.setStyleSheet("color: #3498db; font-weight: bold;")
-        self.selected_players_label.setWordWrap(True)
-        player_selection_layout.addWidget(self.selected_players_label)
-        
-        config_layout.addWidget(self.player_selection_widget, 2, 1)
-        
-        # Custom player entry
-        config_layout.addWidget(QLabel("Custom Players:"), 3, 0)
-        self.training_players_entry = QLineEdit()
-        self.training_players_entry.setPlaceholderText("e.g., LeBron James, Stephen Curry, Luka Dončić")
-        self.training_players_entry.setStyleSheet("""
-           QLineEdit {
-               padding: 8px;
-               border: 1px solid #555;
-               border-radius: 3px;
-               background-color: #2c3e50;
-               color: white;
-           }
-       """)
-        config_layout.addWidget(self.training_players_entry, 3, 1)
+        config_layout.addWidget(self.training_players_entry, 2, 1)
        
         # Training options
         self.optimize_checkbox = QCheckBox("Optimize hyperparameters (slower but better)")
@@ -1715,13 +817,10 @@ def _get_secondary_button_style(self):
         self.use_cache_checkbox.setChecked(True)
         self.use_cache_checkbox.setStyleSheet("color: white;")
        
-        config_layout.addWidget(self.optimize_checkbox, 4, 0, 1, 2)
-        config_layout.addWidget(self.use_cache_checkbox, 5, 0, 1, 2)
+        config_layout.addWidget(self.optimize_checkbox, 3, 0, 1, 2)
+        config_layout.addWidget(self.use_cache_checkbox, 4, 0, 1, 2)
        
         layout.addWidget(config_group)
-       
-        # Initialize selected players list
-        self.selected_players = []
        
         # Set initial state
         self.on_training_method_changed()
@@ -1855,128 +954,29 @@ def _get_secondary_button_style(self):
         layout.addWidget(log_group)
        
         self.tab_widget.addTab(training_widget, "🏋️ Training")
-    def on_player_search_selected(self, player_name: str):
-        """Handle player selection from search widget."""
-        self.selected_player_name = player_name
-    
-        # Update the dropdown to match the search selection
-        index = self.player_combo.findText(player_name)
-        if index >= 0:
-            self.player_combo.setCurrentIndex(index)
-    
-        # Enable predict button if model is loaded
-        if self.is_model_loaded:
-            self.predict_button.setEnabled(True)
-
-    def on_dropdown_selection_changed(self, player_name: str):
-        """Handle player selection from dropdown."""
-        if player_name and player_name not in ["Load model first...", "No players found"]:
-            self.selected_player_name = player_name
-        
-            # Update search widget to match dropdown selection
-            self.player_search_widget.set_selected_player(player_name)
-        
-            # Enable predict button if model is loaded
-            if self.is_model_loaded:
-                self.predict_button.setEnabled(True)
-
-    def refresh_players(self):
-        """Enhanced refresh players method with search widget support."""
-        try:
-            if self.is_model_loaded:
-                players = self.predictor.get_available_players()
-            
-                # Update dropdown
-                self.player_combo.clear()
-                if players:
-                    self.player_combo.addItems(players)
-                    self.player_combo.setEnabled(True)
-                else:
-                    self.player_combo.addItem("No players found")
-                    self.player_combo.setEnabled(False)
-            
-                # Update search widget
-                self.player_search_widget.update_player_list(players)
-            
-            else:
-                self.player_combo.clear()
-                self.player_combo.addItem("Load model first...")
-                self.player_combo.setEnabled(False)
-                self.player_search_widget.update_player_list([])
-            
-        except Exception as e:
-            logger.error(f"Error refreshing players: {e}")
-            self.player_combo.clear()
-            self.player_combo.addItem("Error loading players")
-            self.player_combo.setEnabled(False)
-            self.player_search_widget.update_player_list([])
-
-    def predict_player_points(self):
-        """Enhanced predict player points method."""
-        if not self.is_model_loaded:
-            QMessageBox.warning(self, "Warning", "Please load a trained model first.")
-            return
-    
-        # Get player name from search widget or dropdown
-        player_name = getattr(self, 'selected_player_name', None)
-    
-        if not player_name:
-            # Fallback to dropdown selection
-            player_name = self.player_combo.currentText()
-    
-        if not player_name or player_name in ["Load model first...", "No players found", "Error loading players"]:
-            QMessageBox.warning(self, "Warning", "Please search for and select a valid player.")
-            return
-    
-        recent_games = self.recent_games_slider.value()
-    
-        try:
-            self.update_status(f"Predicting points for {player_name}...")
-            self.results_text.setPlainText("Generating predictions...\n")
-            QApplication.processEvents()
-        
-            # Make prediction
-            predictions = self.predictor.predict_player_points(player_name, recent_games)
-        
-            # Display results
-            self.display_prediction_results(predictions)
-            self.update_status("Prediction completed successfully!")
-        
-        except Exception as e:
-            error_msg = f"Error predicting for {player_name}: {str(e)}"
-            logger.error(error_msg)
-            self.results_text.setPlainText(f"Error: {error_msg}")
-            self.update_status("Prediction failed")
-
-    def create_prediction_tab(self):
-        """Create the enhanced prediction tab with search functionality."""
-        prediction_widget = QWidget()
-        layout = QHBoxLayout(prediction_widget)
-    
-        # Left panel - Controls
-        control_frame = QFrame()
-        control_frame.setFrameStyle(QFrame.StyledPanel)
-        control_frame.setMaximumWidth(350)
-        control_frame.setMinimumWidth(300)
-        control_frame.setStyleSheet("""
-            QFrame {
-                background-color: #404040;
-                border-radius: 5px;
-            }
-        """)
-    
-        control_layout = QVBoxLayout(control_frame)
-    
-        # Player search group
-        search_group = QGroupBox("Player Search")
-        search_group.setFont(QFont("Arial", 11, QFont.Bold))
-        search_group.setStyleSheet("""
+   
+    def create_nba_data_tab(self):
+        """Create the NBA data management tab."""
+        nba_data_widget = QWidget()
+        layout = QVBoxLayout(nba_data_widget)
+       
+        # Header
+        header_label = QLabel("🏀 NBA Data Management")
+        header_label.setFont(QFont("Arial", 16, QFont.Bold))
+        header_label.setAlignment(Qt.AlignCenter)
+        header_label.setStyleSheet("color: #3498db; margin: 10px;")
+        layout.addWidget(header_label)
+       
+        # Data status section
+        status_group = QGroupBox("Current Data Status")
+        status_group.setStyleSheet("""
             QGroupBox {
                 color: white;
                 border: 2px solid #555;
                 border-radius: 5px;
                 margin: 10px;
                 padding-top: 10px;
+                font-weight: bold;
             }
             QGroupBox::title {
                 subcontrol-origin: margin;
@@ -1984,68 +984,29 @@ def _get_secondary_button_style(self):
                 padding: 0 5px 0 5px;
             }
         """)
-    
-        search_layout = QVBoxLayout(search_group)
-    
-        # Add the search widget
-        self.player_search_widget = PlayerSearchWidget()
-        self.player_search_widget.player_selected.connect(self.on_player_search_selected)
-        search_layout.addWidget(self.player_search_widget)
-    
-        # Separator
-        separator = QFrame()
-        separator.setFrameShape(QFrame.HLine)
-        separator.setFrameShadow(QFrame.Sunken)
-        separator.setStyleSheet("color: #555;")
-        search_layout.addWidget(separator)
-    
-        # Traditional dropdown (as backup)
-        dropdown_label = QLabel("Or select from dropdown:")
-        dropdown_label.setStyleSheet("color: #95a5a6; font-size: 10px; margin-top: 10px;")
-        search_layout.addWidget(dropdown_label)
-    
-        self.player_combo = QComboBox()
-        self.player_combo.setMinimumHeight(30)
-        self.player_combo.addItem("Load model first...")
-        self.player_combo.setEnabled(False)
-        self.player_combo.currentTextChanged.connect(self.on_dropdown_selection_changed)
-        self.player_combo.setStyleSheet("""
-            QComboBox {
-                padding: 5px;
-                border: 1px solid #555;
-                border-radius: 3px;
-                background-color: #2c3e50;
-                color: white;
-            }
-            QComboBox::drop-down {
-                border: none;
-            }
-            QComboBox::down-arrow {
-                image: none;
-                border-left: 5px solid transparent;
-                border-right: 5px solid transparent;
-                border-top: 5px solid white;
-            }
-            QComboBox QAbstractItemView {
-                background-color: #2c3e50;
-                color: white;
-                selection-background-color: #3498db;
-            }
-        """)
-        search_layout.addWidget(self.player_combo)
-    
-        control_layout.addWidget(search_group)
-    
-        # Analysis settings group
-        settings_group = QGroupBox("Analysis Settings")
-        settings_group.setFont(QFont("Arial", 11, QFont.Bold))
-        settings_group.setStyleSheet("""
+       
+        status_layout = QVBoxLayout(status_group)
+       
+        self.nba_data_status_label = QLabel("Checking NBA data status...")
+        self.nba_data_status_label.setStyleSheet("color: white; font-size: 12px; margin: 10px;")
+        status_layout.addWidget(self.nba_data_status_label)
+       
+        self.position_stats_label = QLabel("")
+        self.position_stats_label.setStyleSheet("color: #95a5a6; font-size: 10px; margin: 10px;")
+        status_layout.addWidget(self.position_stats_label)
+       
+        layout.addWidget(status_group)
+       
+        # Update controls
+        controls_group = QGroupBox("Data Management")
+        controls_group.setStyleSheet("""
             QGroupBox {
                 color: white;
                 border: 2px solid #555;
                 border-radius: 5px;
                 margin: 10px;
                 padding-top: 10px;
+                font-weight: bold;
             }
             QGroupBox::title {
                 subcontrol-origin: margin;
@@ -2053,86 +1014,61 @@ def _get_secondary_button_style(self):
                 padding: 0 5px 0 5px;
             }
         """)
-    
-        settings_layout = QVBoxLayout(settings_group)
-    
-        settings_layout.addWidget(QLabel("Recent Games for Analysis:"))
-    
-        self.recent_games_slider = QSlider(Qt.Horizontal)
-        self.recent_games_slider.setMinimum(5)
-        self.recent_games_slider.setMaximum(20)
-        self.recent_games_slider.setValue(10)
-        self.recent_games_slider.valueChanged.connect(self.update_recent_games_label)
-        self.recent_games_slider.setStyleSheet("""
-            QSlider::groove:horizontal {
-                border: 1px solid #999999;
-                height: 8px;
-                background: #555;
-                margin: 2px 0;
-                border-radius: 3px;
-            }
-            QSlider::handle:horizontal {
-                background: #3498db;
-                border: 1px solid #5c5c5c;
-                width: 18px;
-                margin: -2px 0;
-                border-radius: 3px;
-            }
-        """)
-        settings_layout.addWidget(self.recent_games_slider)
-    
-        self.recent_games_label = QLabel("10 games")
-        self.recent_games_label.setAlignment(Qt.AlignCenter)
-        self.recent_games_label.setStyleSheet("color: white;")
-        settings_layout.addWidget(self.recent_games_label)
-    
-        control_layout.addWidget(settings_group)
-    
-        # Predict button
-        self.predict_button = QPushButton("🎯 PREDICT POINTS")
-        self.predict_button.setMinimumHeight(50)
-        self.predict_button.setFont(QFont("Arial", 12, QFont.Bold))
-        self.predict_button.setStyleSheet("""
+       
+        controls_layout = QVBoxLayout(controls_group)
+       
+        # Update button
+        self.update_nba_data_button = QPushButton("🔄 Update NBA Players Data")
+        self.update_nba_data_button.setMinimumHeight(50)
+        self.update_nba_data_button.setFont(QFont("Arial", 12, QFont.Bold))
+        self.update_nba_data_button.clicked.connect(self.update_nba_data)
+        self.update_nba_data_button.setStyleSheet("""
             QPushButton {
-                background-color: #e74c3c;
+                background-color: #27ae60;
                 color: white;
                 border: none;
                 border-radius: 25px;
+                padding: 10px 30px;
             }
             QPushButton:hover {
-                background-color: #c0392b;
+                background-color: #229954;
             }
             QPushButton:disabled {
                 background-color: #7f8c8d;
             }
         """)
-        self.predict_button.clicked.connect(self.predict_player_points)
-        self.predict_button.setEnabled(False)
-    
-        control_layout.addWidget(self.predict_button)
-        control_layout.addStretch()
-    
-        # Right panel - Results (unchanged)
-        results_frame = QFrame()
-        results_frame.setFrameStyle(QFrame.StyledPanel)
-        results_frame.setStyleSheet("""
-            QFrame {
-                background-color: #404040;
+        controls_layout.addWidget(self.update_nba_data_button)
+       
+        # Progress section
+        self.nba_update_progress_label = QLabel("Ready to update")
+        self.nba_update_progress_label.setAlignment(Qt.AlignCenter)
+        self.nba_update_progress_label.setStyleSheet("color: white; font-weight: bold; margin: 10px;")
+        controls_layout.addWidget(self.nba_update_progress_label)
+       
+        self.nba_update_progress_bar = QProgressBar()
+        self.nba_update_progress_bar.setMinimumHeight(25)
+        self.nba_update_progress_bar.setStyleSheet("""
+            QProgressBar {
+                border: 2px solid #555;
                 border-radius: 5px;
+                text-align: center;
+                color: white;
+                background-color: #2c3e50;
+            }
+            QProgressBar::chunk {
+                background-color: #27ae60;
+                border-radius: 3px;
             }
         """)
-    
-        results_layout = QVBoxLayout(results_frame)
-    
-        results_header = QLabel("🔮 Prediction Results")
-        results_header.setFont(QFont("Arial", 16, QFont.Bold))
-        results_header.setAlignment(Qt.AlignCenter)
-        results_header.setStyleSheet("color: #3498db; margin: 10px;")
-        results_layout.addWidget(results_header)
-    
-        self.results_text = QTextEdit()
-        self.results_text.setFont(QFont("Consolas", 10))
-        self.results_text.setStyleSheet("""
+        controls_layout.addWidget(self.nba_update_progress_bar)
+       
+        layout.addWidget(controls_group)
+       
+        # Instructions
+        instructions_text = QTextEdit()
+        instructions_text.setMaximumHeight(200)
+        instructions_text.setReadOnly(True)
+        instructions_text.setStyleSheet("""
             QTextEdit {
                 background-color: #2c3e50;
                 color: white;
@@ -2141,72 +1077,30 @@ def _get_secondary_button_style(self):
                 padding: 10px;
             }
         """)
-        self.results_text.setPlainText("Load a trained model and search for a player to see predictions...")
-        results_layout.addWidget(self.results_text)
-    
-        # Add panels to splitter
-        splitter = QSplitter(Qt.Horizontal)
-        splitter.addWidget(control_frame)
-        splitter.addWidget(results_frame)
-        splitter.setSizes([350, 850])
-    
-        layout.addWidget(splitter)
-    
-        self.tab_widget.addTab(prediction_widget, "🎯 Predictions")
-   
-    def create_analysis_tab(self):
-        """Create the analysis tab (unchanged from original)."""
-        analysis_widget = QWidget()
-        layout = QVBoxLayout(analysis_widget)
-       
-        # Control buttons
-        button_layout = QHBoxLayout()
-       
-        performance_button = QPushButton("📊 Model Performance")
-        performance_button.setMinimumHeight(40)
-        performance_button.clicked.connect(self.show_model_performance)
-        performance_button.setStyleSheet("""
-            QPushButton {
-                background-color: #3498db;
-                color: white;
-                border: none;
-                border-radius: 5px;
-                padding: 10px 20px;
-                font-weight: bold;
-            }
-            QPushButton:hover {
-                background-color: #2980b9;
-            }
+        instructions_text.setPlainText("""
+NBA Data Management Instructions:
+
+🔄 Update NBA Players Data:
+    • Fetches current roster data from NBA.com API
+    • Automatically categorizes players by position (PG, SG, SF, PF, C)
+    • Updates take 5-10 minutes depending on API response times
+    • Recommended to update weekly during the season
+
+📊 Data Usage:
+    • Updated data is used for role-based training
+    • Improves model accuracy by considering positional differences
+    • Enables selection of players by position in training
+
+⚠️  Notes:
+    • Requires internet connection
+    • NBA API rate limits apply
+    • Data is cached locally for faster access
         """)
+        layout.addWidget(instructions_text)
        
-        importance_button = QPushButton("🎯 Feature Importance")
-        importance_button.setMinimumHeight(40)
-        importance_button.clicked.connect(self.show_feature_importance)
-        importance_button.setStyleSheet("""
-            QPushButton {
-                background-color: #3498db;
-                color: white;
-                border: none;
-                border-radius: 5px;
-                padding: 10px 20px;
-                font-weight: bold;
-            }
-            QPushButton:hover {
-                background-color: #2980b9;
-            }
-        """)
+        layout.addStretch()
        
-        button_layout.addWidget(performance_button)
-        button_layout.addWidget(importance_button)
-        button_layout.addStretch()
-       
-        layout.addLayout(button_layout)
-       
-        # Plot area
-        self.plot_widget = MatplotlibWidget()
-        layout.addWidget(self.plot_widget)
-       
-        self.tab_widget.addTab(analysis_widget, "📈 Analysis")
+        self.tab_widget.addTab(nba_data_widget, "🏀 NBA Data")
    
     def create_status_bar(self):
         """Create the enhanced status bar."""
@@ -2229,7 +1123,95 @@ def _get_secondary_button_style(self):
        
         self.update_status("Ready - Enhanced with NBA data integration")
    
-    # Enhanced methods for NBA data integration
+    # EVENT HANDLERS AND CORE METHODS
+    def on_player_search_selected(self, player_name: str):
+        """Handle player selection from search widget."""
+        self.selected_player_name = player_name
+       
+        # Update the dropdown to match the search selection
+        index = self.player_combo.findText(player_name)
+        if index >= 0:
+            self.player_combo.setCurrentIndex(index)
+       
+        # Enable predict button if model is loaded
+        if self.is_model_loaded:
+            self.predict_button.setEnabled(True)
+   
+    def on_dropdown_selection_changed(self, player_name: str):
+        """Handle player selection from dropdown."""
+        if player_name and player_name not in ["Load model first...", "No players found"]:
+            self.selected_player_name = player_name
+           
+            # Update search widget to match dropdown selection
+            self.player_search_widget.set_selected_player(player_name)
+           
+            # Enable predict button if model is loaded
+            if self.is_model_loaded:
+                self.predict_button.setEnabled(True)
+   
+    def on_training_method_changed(self):
+        """Handle training method selection change with role support."""
+        method = self.training_method_combo.currentText()
+       
+        if method == "Role-Based Training (Recommended)":
+            self.role_selection_widget.setVisible(True)
+            self.training_players_entry.setVisible(False)
+        elif method == "Enter Custom Players":
+            self.role_selection_widget.setVisible(False)
+            self.training_players_entry.setVisible(True)
+        else:  # Train All Available Players
+            self.role_selection_widget.setVisible(False)
+            self.training_players_entry.setVisible(False)
+   
+    def update_players_per_role_label(self, value):
+        """Update players per role label."""
+        self.players_per_role_label.setText(f"{value} players")
+   
+    def update_recent_games_label(self, value):
+        """Update recent games label."""
+        self.recent_games_label.setText(f"{value} games")
+   
+    def show_training_tab(self):
+        """Switch to training tab."""
+        self.tab_widget.setCurrentIndex(2)
+   
+    # NBA DATA MANAGEMENT METHODS
+    def ensure_nba_data_available(self):
+        """Ensure NBA data is available for player search."""
+        try:
+            # Check if we have NBA data
+            nba_data = self.player_fetcher.load_players_data()
+           
+            if not nba_data:
+                logger.info("No NBA data found, fetching automatically...")
+               
+                # Show a progress dialog
+                from PyQt5.QtWidgets import QProgressDialog
+                progress = QProgressDialog("Loading NBA players data...", "Cancel", 0, 100, self)
+                progress.setWindowModality(Qt.WindowModal)
+                progress.show()
+                QApplication.processEvents()
+               
+                try:
+                    # Fetch NBA data
+                    nba_data = self.player_fetcher.fetch_all_active_players()
+                    progress.setValue(100)
+                    progress.close()
+                   
+                    logger.info(f"Successfully loaded {nba_data['metadata']['total_players']} NBA players")
+                   
+                    # Refresh the player lists
+                    self.refresh_players()
+                    self.check_nba_data_status()
+                   
+                except Exception as e:
+                    progress.close()
+                    logger.error(f"Failed to fetch NBA data: {e}")
+                    # Continue with fallback players
+                   
+        except Exception as e:
+            logger.error(f"Error ensuring NBA data: {e}")
+   
     def check_nba_data_status(self):
         """Check the status of NBA players data."""
         try:
@@ -2309,7 +1291,7 @@ def _get_secondary_button_style(self):
        
         # Update status displays
         self.check_nba_data_status()
-        self.refresh_available_players()
+        self.refresh_players()
        
         # Clear role mapping cache
         self.player_roles._cached_role_mapping = None
@@ -2337,88 +1319,57 @@ def _get_secondary_button_style(self):
        
         QMessageBox.critical(self, "Update Failed", f"Failed to update NBA players data:\n\n{error_message}")
    
-    # Enhanced training methods
-    def on_training_method_changed(self):
-        """Handle training method selection change with role support."""
-        method = self.training_method_combo.currentText()
+    # MODEL MANAGEMENT METHODS
+    def load_model(self):
+        """Load a trained model."""
+        file_path, _ = QFileDialog.getOpenFileName(
+            self, "Load Trained Model", "", "Pickle files (*.pkl);;All files (*.*)"
+        )
        
-        if method == "Role-Based Training (Recommended)":
-            self.role_selection_widget.setVisible(True)
-            self.player_selection_widget.setVisible(False)
-            self.training_players_entry.setVisible(False)
-        elif method == "Select Specific Players":
-            self.role_selection_widget.setVisible(False)
-            self.player_selection_widget.setVisible(True)
-            self.training_players_entry.setVisible(False)
-        elif method == "Enter Custom Players":
-            self.role_selection_widget.setVisible(False)
-            self.player_selection_widget.setVisible(False)
-            self.training_players_entry.setVisible(True)
-        else:  # Train All Available Players
-            self.role_selection_widget.setVisible(False)
-            self.player_selection_widget.setVisible(False)
-            self.training_players_entry.setVisible(False)
+        if file_path:
+            try:
+                self.update_status("Loading model...")
+                QApplication.processEvents()
+               
+                self.predictor.load_model(file_path)
+                self.is_model_loaded = True
+               
+                self.update_ui_state()
+                self.refresh_players()
+               
+                self.update_status("Model loaded successfully!")
+                QMessageBox.information(self, "Success", "Model loaded successfully!")
+               
+            except Exception as e:
+                logger.error(f"Error loading model: {e}")
+                QMessageBox.critical(self, "Error", f"Failed to load model:\n{str(e)}")
+                self.update_status("Error loading model")
    
-    def refresh_available_players(self):
-        """Refresh the available players dropdown with NBA data."""
-        try:
-            self.available_players_combo.clear()
-           
-            # Try to get players from NBA data first
-            nba_data = self.player_fetcher.load_players_data()
-           
-            if nba_data:
-                # Add players by position
-                all_players = nba_data['all_players']
+    def save_model(self):
+        """Save the current trained model."""
+        if not self.is_model_loaded:
+            QMessageBox.warning(self, "Warning", "No trained model to save.")
+            return
+       
+        file_path, _ = QFileDialog.getSaveFileName(
+            self, "Save Trained Model", "nba_model.pkl", "Pickle files (*.pkl);;All files (*.*)"
+        )
+       
+        if file_path:
+            try:
+                self.update_status("Saving model...")
+                QApplication.processEvents()
                
-                self.available_players_combo.addItem("--- By Position ---")
+                self.predictor.save_model(file_path)
+                self.update_status("Model saved successfully!")
+                QMessageBox.information(self, "Success", f"Model saved to {file_path}")
                
-                for position in ['PG', 'SG', 'SF', 'PF', 'C']:
-                    position_players = [p for p in all_players if p['position'] == position]
-                    if position_players:
-                        self.available_players_combo.addItem(f"--- {position} ({len(position_players)} players) ---")
-                        for player in sorted(position_players, key=lambda x: x['name'])[:10]:  # Limit to top 10
-                            self.available_players_combo.addItem(f"  {player['name']} ({player['team_abbrev']})")
-               
-                # Add recent/popular players
-                from utils.player_storage import PlayerStorage
-                storage = PlayerStorage()
-                trained_players = set(storage.get_trained_players())
-               
-                if trained_players:
-                    self.available_players_combo.addItem("--- Previously Trained ---")
-                    for player in sorted(trained_players):
-                        self.available_players_combo.addItem(f"✓ {player}")
-           
-            else:
-                # Fallback to original method
-                from utils.player_storage import PlayerStorage
-                storage = PlayerStorage()
-               
-                trained_players = storage.get_trained_players()
-                popular_players = storage.get_popular_players()
-               
-                if trained_players:
-                    self.available_players_combo.addItem("--- Previously Trained ---")
-                    for player in trained_players:
-                        self.available_players_combo.addItem(f"✓ {player}")
-               
-                self.available_players_combo.addItem("--- Popular Players ---")
-                for player in popular_players:
-                    if player not in trained_players:
-                        self.available_players_combo.addItem(f"⭐ {player}")
-           
-            if self.available_players_combo.count() > 1:
-                self.available_players_combo.setCurrentIndex(1)
-               
-        except Exception as e:
-            logger.error(f"Error refreshing players: {e}")
-            self.available_players_combo.addItem("Error loading players")
+            except Exception as e:
+                logger.error(f"Error saving model: {e}")
+                QMessageBox.critical(self, "Error", f"Failed to save model:\n{str(e)}")
+                self.update_status("Error saving model")
    
-    def update_players_per_role_label(self, value):
-        """Update players per role label."""
-        self.players_per_role_label.setText(f"{value} players")
-   
+    # TRAINING METHODS
     def start_training(self):
         """Enhanced start training with role support."""
         if self.training_worker and self.training_worker.isRunning():
@@ -2456,12 +1407,6 @@ def _get_secondary_button_style(self):
            
             roles = selected_roles
             role_based = True
-           
-        elif method == "Select Specific Players":
-            if not self.selected_players:
-                QMessageBox.warning(self, "Warning", "Please select at least one player for training.")
-                return
-            player_names = self.selected_players.copy()
            
         elif method == "Enter Custom Players":
             players_text = self.training_players_entry.text().strip()
@@ -2517,6 +1462,20 @@ def _get_secondary_button_style(self):
         else:
             self.update_status("Training started...")
    
+    def stop_training(self):
+        """Stop model training."""
+        if self.training_worker and self.training_worker.isRunning():
+            reply = QMessageBox.question(
+                self, "Confirm Stop",
+                "Are you sure you want to stop training?\nProgress will be lost.",
+                QMessageBox.Yes | QMessageBox.No
+            )
+           
+            if reply == QMessageBox.Yes:
+                self.training_worker.terminate()
+                self.training_worker.wait()
+                self.on_training_stopped()
+   
     def on_training_completed(self, results):
         """Enhanced training completion handler."""
         self.is_model_loaded = True
@@ -2528,7 +1487,6 @@ def _get_secondary_button_style(self):
             from utils.player_storage import PlayerStorage
             storage = PlayerStorage()
             storage.add_trained_players(self.current_training_players)
-            self.refresh_available_players()
        
         # Reset training UI
         self.start_training_button.setEnabled(True)
@@ -2550,128 +1508,38 @@ def _get_secondary_button_style(self):
             f"The model is now ready for predictions."
         )
    
-    # Keep all existing methods from the original GUI
-    def add_selected_player(self):
-        """Add the selected player to the training list."""
-        current_text = self.available_players_combo.currentText()
+    def on_training_failed(self, error_message):
+        """Handle training failure."""
+        self.start_training_button.setEnabled(True)
+        self.stop_training_button.setEnabled(False)
        
-        # Skip section headers
-        if current_text.startswith("---"):
-            return
-       
-        # Extract player name (remove prefix symbols and team info)
-        player_name = current_text.replace("✓ ", "").replace("⭐ ", "").replace("  ", "")
-        if "(" in player_name:
-            player_name = player_name.split("(")[0].strip()
-       
-        if player_name and player_name not in self.selected_players:
-           self.selected_players.append(player_name)
-           self.update_selected_players_display()
+        self.update_status("Training failed")
+        QMessageBox.critical(self, "Training Failed", f"Training failed:\n{error_message}")
+   
+    def on_training_stopped(self):
+        """Handle training stop."""
+        self.start_training_button.setEnabled(True)
+        self.stop_training_button.setEnabled(False)
+        self.progress_label.setText("Training stopped")
+        self.update_status("Training stopped by user")
 
-    def clear_selected_players(self):
-        """Clear all selected players."""
-        self.selected_players = []
-        self.update_selected_players_display()
-
-    def update_selected_players_display(self):
-        """Update the selected players display."""
-        if self.selected_players:
-            display_text = f"Selected Players ({len(self.selected_players)}): " + ", ".join(self.selected_players)
-        else:
-            display_text = "Selected Players: None"
+    def add_training_log(self, message):
+       """Add message to training log."""
+       timestamp = datetime.now().strftime("%H:%M:%S")
+       self.training_log.append(f"[{timestamp}] {message}")
        
-        self.selected_players_label.setText(display_text)
-
-    def update_status(self, message):
-        """Update status bar message."""
-        self.status_bar.showMessage(f"Status: {message}")
+       # Auto-scroll to bottom
+       cursor = self.training_log.textCursor()
+       cursor.movePosition(cursor.End)
+       self.training_log.setTextCursor(cursor)
    
-    def update_status_periodically(self):
-        """Periodic status updates."""
-        if hasattr(self, 'predictor') and self.predictor:
-            try:
-                # Update data status
-                players = self.predictor.get_available_players()
-                self.data_status_label.setText(f"Data: {len(players)} players cached")
-            except:
-                self.data_status_label.setText("Data: Ready")
-   
-    def update_ui_state(self):
-        """Update UI state based on model status."""
-        self.predict_button.setEnabled(self.is_model_loaded)
-        self.save_button.setEnabled(self.is_model_loaded)
-        self.player_combo.setEnabled(self.is_model_loaded)
-       
-        if self.is_model_loaded:
-            self.model_status_label.setText("Model: Loaded ✓")
-            self.model_status_label.setStyleSheet("color: #27ae60;")
-        else:
-            self.model_status_label.setText("Model: Not Loaded")
-            self.model_status_label.setStyleSheet("color: #e74c3c;")
-   
-    def update_recent_games_label(self, value):
-        """Update recent games label."""
-        self.recent_games_label.setText(f"{value} games")
-   
-    def show_training_tab(self):
-        """Switch to training tab."""
-        self.tab_widget.setCurrentIndex(2)
-   
-    def load_model(self):
-        """Load a trained model."""
-        file_path, _ = QFileDialog.getOpenFileName(
-            self, "Load Trained Model", "", "Pickle files (*.pkl);;All files (*.*)"
-        )
-       
-        if file_path:
-            try:
-                self.update_status("Loading model...")
-                QApplication.processEvents()
-               
-                self.predictor.load_model(file_path)
-                self.is_model_loaded = True
-               
-                self.update_ui_state()
-                self.refresh_players()
-               
-                self.update_status("Model loaded successfully!")
-                QMessageBox.information(self, "Success", "Model loaded successfully!")
-               
-            except Exception as e:
-                logger.error(f"Error loading model: {e}")
-                QMessageBox.critical(self, "Error", f"Failed to load model:\n{str(e)}")
-                self.update_status("Error loading model")
-   
-    def save_model(self):
-        """Save the current trained model."""
-        if not self.is_model_loaded:
-            QMessageBox.warning(self, "Warning", "No trained model to save.")
-            return
-       
-        file_path, _ = QFileDialog.getSaveFileName(
-            self, "Save Trained Model", "nba_model.pkl", "Pickle files (*.pkl);;All files (*.*)"
-        )
-       
-        if file_path:
-            try:
-                self.update_status("Saving model...")
-                QApplication.processEvents()
-               
-                self.predictor.save_model(file_path)
-                self.update_status("Model saved successfully!")
-                QMessageBox.information(self, "Success", f"Model saved to {file_path}")
-               
-            except Exception as e:
-                logger.error(f"Error saving model: {e}")
-                QMessageBox.critical(self, "Error", f"Failed to save model:\n{str(e)}")
-                self.update_status("Error saving model")
-   
+    # PREDICTION METHODS
     def refresh_players(self):
         """Enhanced refresh players method with search widget support."""
         try:
             # Get players from multiple sources
             all_available_players = []
-        
+           
             # 1. Try to get trained players (if model is loaded)
             if self.is_model_loaded:
                 try:
@@ -2680,7 +1548,7 @@ def _get_secondary_button_style(self):
                     logger.info(f"Found {len(trained_players)} trained players")
                 except Exception as e:
                     logger.warning(f"Could not get trained players: {e}")
-        
+           
             # 2. Get players from NBA data (this is the key addition)
             try:
                 nba_data = self.player_fetcher.load_players_data()
@@ -2698,7 +1566,7 @@ def _get_secondary_button_style(self):
                     logger.info(f"Using {len(popular_players)} popular players as fallback")
             except Exception as e:
                 logger.warning(f"Could not get NBA players: {e}")
-        
+           
             # 3. Remove duplicates while preserving order
             unique_players = []
             seen = set()
@@ -2706,7 +1574,7 @@ def _get_secondary_button_style(self):
                 if player not in seen:
                     unique_players.append(player)
                     seen.add(player)
-        
+           
             # 4. Update the dropdown (traditional method)
             self.player_combo.clear()
             if unique_players:
@@ -2714,7 +1582,7 @@ def _get_secondary_button_style(self):
                 if self.is_model_loaded:
                     trained_players = []
                     other_players = []
-                
+                   
                     try:
                         cached_players = set(self.predictor.get_available_players())
                         for player in unique_players:
@@ -2722,24 +1590,24 @@ def _get_secondary_button_style(self):
                                 trained_players.append(player)
                             else:
                                 other_players.append(player)
-                    
+                       
                         # Add trained players first, then others
                         self.player_combo.addItems(trained_players + other_players)
                     except:
                         self.player_combo.addItems(unique_players)
                 else:
                     self.player_combo.addItems(unique_players)
-            
+               
                 self.player_combo.setEnabled(True)
             else:
                 self.player_combo.addItem("No players available")
                 self.player_combo.setEnabled(False)
-        
+           
             # 5. Update search widget (this is the most important part)
             self.player_search_widget.update_player_list(unique_players)
-        
+           
             logger.info(f"Refreshed player list with {len(unique_players)} total players")
-        
+           
         except Exception as e:
             logger.error(f"Error refreshing players: {e}")
             self.player_combo.clear()
@@ -2748,14 +1616,20 @@ def _get_secondary_button_style(self):
             self.player_search_widget.update_player_list([])
    
     def predict_player_points(self):
-        """Predict points for the selected player."""
+        """Enhanced predict player points method."""
         if not self.is_model_loaded:
             QMessageBox.warning(self, "Warning", "Please load a trained model first.")
             return
        
-        player_name = self.player_combo.currentText()
-        if not player_name or player_name in ["Load model first...", "No players found"]:
-            QMessageBox.warning(self, "Warning", "Please select a valid player.")
+        # Get player name from search widget or dropdown
+        player_name = getattr(self, 'selected_player_name', None)
+       
+        if not player_name:
+            # Fallback to dropdown selection
+            player_name = self.player_combo.currentText()
+       
+        if not player_name or player_name in ["Load model first...", "No players found", "Error loading players"]:
+            QMessageBox.warning(self, "Warning", "Please search for and select a valid player.")
             return
        
         recent_games = self.recent_games_slider.value()
@@ -2907,58 +1781,20 @@ def _get_secondary_button_style(self):
        
         self.results_text.setPlainText(result_text)
    
-    def stop_training(self):
-        """Stop model training."""
-        if self.training_worker and self.training_worker.isRunning():
-            reply = QMessageBox.question(
-                self, "Confirm Stop",
-                "Are you sure you want to stop training?\nProgress will be lost.",
-                QMessageBox.Yes | QMessageBox.No
-            )
-           
-            if reply == QMessageBox.Yes:
-                self.training_worker.terminate()
-                self.training_worker.wait()
-                self.on_training_stopped()
-   
-    def on_training_failed(self, error_message):
-        """Handle training failure."""
-        self.start_training_button.setEnabled(True)
-        self.stop_training_button.setEnabled(False)
-       
-        self.update_status("Training failed")
-        QMessageBox.critical(self, "Training Failed", f"Training failed:\n{error_message}")
-   
-    def on_training_stopped(self):
-        """Handle training stop."""
-        self.start_training_button.setEnabled(True)
-        self.stop_training_button.setEnabled(False)
-        self.progress_label.setText("Training stopped")
-        self.update_status("Training stopped by user")
-   
-    def add_training_log(self, message):
-        """Add message to training log."""
-        timestamp = datetime.now().strftime("%H:%M:%S")
-        self.training_log.append(f"[{timestamp}] {message}")
-       
-        # Auto-scroll to bottom
-        cursor = self.training_log.textCursor()
-        cursor.movePosition(cursor.End)
-        self.training_log.setTextCursor(cursor)
-   
+    # ANALYSIS METHODS
     def show_model_performance(self):
         """Show model performance analysis."""
         if not self.is_model_loaded:
             QMessageBox.warning(self, "Warning", "Please load or train a model first.")
             return
-    
+       
         try:
             performance_df = self.predictor.get_model_performance()
             # Fix column name reference
             performance_df = performance_df.rename(columns={'Test R-squared': 'Test R'})
             self.plot_widget.plot_model_performance(performance_df)
             self.tab_widget.setCurrentIndex(1)
-        
+           
         except Exception as e:
             logger.error(f"Error showing model performance: {e}")
             QMessageBox.critical(self, "Error", f"Failed to show performance:\n{str(e)}")
@@ -2983,6 +1819,35 @@ def _get_secondary_button_style(self):
             logger.error(f"Error showing feature importance: {e}")
             QMessageBox.critical(self, "Error", f"Failed to show feature importance:\n{str(e)}")
    
+    # UI STATE MANAGEMENT
+    def update_ui_state(self):
+        """Update UI state based on model status."""
+        self.predict_button.setEnabled(self.is_model_loaded)
+        self.save_button.setEnabled(self.is_model_loaded)
+        self.player_combo.setEnabled(self.is_model_loaded)
+       
+        if self.is_model_loaded:
+            self.model_status_label.setText("Model: Loaded ✓")
+            self.model_status_label.setStyleSheet("color: #27ae60;")
+        else:
+            self.model_status_label.setText("Model: Not Loaded")
+            self.model_status_label.setStyleSheet("color: #e74c3c;")
+   
+    def update_status(self, message):
+        """Update status bar message."""
+        self.status_bar.showMessage(f"Status: {message}")
+   
+    def update_status_periodically(self):
+        """Periodic status updates."""
+        if hasattr(self, 'predictor') and self.predictor:
+            try:
+                # Update data status
+                players = self.predictor.get_available_players()
+                self.data_status_label.setText(f"Data: {len(players)} players cached")
+            except:
+                self.data_status_label.setText("Data: Ready")
+   
+    # WINDOW MANAGEMENT
     def closeEvent(self, event):
         """Handle application close event."""
         if self.training_worker and self.training_worker.isRunning():
@@ -3013,703 +1878,7 @@ def _get_secondary_button_style(self):
                 event.ignore()
         else:
             event.accept()
-    # Add these methods to your existing GUI class in src/gui.py
 
-def create_enhanced_training_tab(self):
-    """Create enhanced training tab with category support."""
-    training_widget = QWidget()
-    layout = QVBoxLayout(training_widget)
-    
-    # Training configuration
-    config_group = QGroupBox("Enhanced Training Configuration")
-    config_group.setFont(QFont("Arial", 12, QFont.Bold))
-    config_group.setStyleSheet("""
-        QGroupBox {
-            color: white;
-            border: 2px solid #555;
-            border-radius: 5px;
-            margin: 10px;
-            padding-top: 10px;
-        }
-        QGroupBox::title {
-            subcontrol-origin: margin;
-            left: 10px;
-            padding: 0 5px 0 5px;
-        }
-    """)
-    
-    config_layout = QGridLayout(config_group)
-    
-    # Category selection
-    config_layout.addWidget(QLabel("Training Category:"), 0, 0)
-    
-    self.category_combo = QComboBox()
-    self.category_combo.addItems([
-        "All Players",
-        "Point Guards (PG)", 
-        "Shooting Guards (SG)",
-        "Small Forwards (SF)",
-        "Power Forwards (PF)",
-        "Centers (C)",
-        "All Guards",
-        "All Forwards", 
-        "All Bigs (PF + C)",
-        "Custom Player List"
-    ])
-    self.category_combo.setStyleSheet("""
-        QComboBox {
-            padding: 8px;
-            border: 1px solid #555;
-            border-radius: 3px;
-            background-color: #2c3e50;
-            color: white;
-            min-height: 20px;
-        }
-        QComboBox QAbstractItemView {
-            background-color: #2c3e50;
-            color: white;
-            selection-background-color: #3498db;
-        }
-    """)
-    config_layout.addWidget(self.category_combo, 0, 1)
-    
-    # Max players per position
-    config_layout.addWidget(QLabel("Max Players (0 = All):"), 1, 0)
-    
-    self.max_players_spinbox = QSpinBox()
-    self.max_players_spinbox.setMinimum(0)
-    self.max_players_spinbox.setMaximum(100)
-    self.max_players_spinbox.setValue(0)
-    self.max_players_spinbox.setStyleSheet("""
-        QSpinBox {
-            padding: 8px;
-            border: 1px solid #555;
-            border-radius: 3px;
-            background-color: #2c3e50;
-            color: white;
-        }
-    """)
-    config_layout.addWidget(self.max_players_spinbox, 1, 1)
-    
-    # Training options
-    self.optimize_checkbox = QCheckBox("Optimize hyperparameters (slower but better)")
-    self.optimize_checkbox.setStyleSheet("color: white;")
-    self.use_cache_checkbox = QCheckBox("Use cached data when available")
-    self.use_cache_checkbox.setChecked(True)
-    self.use_cache_checkbox.setStyleSheet("color: white;")
-    
-    config_layout.addWidget(self.optimize_checkbox, 2, 0, 1, 2)
-    config_layout.addWidget(self.use_cache_checkbox, 3, 0, 1, 2)
-    
-    layout.addWidget(config_group)
-    
-    # Training control
-    control_layout = QHBoxLayout()
-    
-    self.start_category_training_button = QPushButton("🚀 START CATEGORY TRAINING")
-    self.start_category_training_button.setMinimumHeight(50)
-    self.start_category_training_button.setFont(QFont("Arial", 12, QFont.Bold))
-    self.start_category_training_button.setStyleSheet("""
-        QPushButton {
-            background-color: #27ae60;
-            color: white;
-            border: none;
-            border-radius: 25px;
-            padding: 10px 30px;
-        }
-        QPushButton:hover {
-            background-color: #229954;
-        }
-        QPushButton:disabled {
-            background-color: #7f8c8d;
-        }
-    """)
-    self.start_category_training_button.clicked.connect(self.start_category_training)
-   
-    self.stop_training_button = QPushButton("⏹️ STOP TRAINING")
-    self.stop_training_button.setMinimumHeight(50)
-    self.stop_training_button.setFont(QFont("Arial", 12, QFont.Bold))
-    self.stop_training_button.setEnabled(False)
-    self.stop_training_button.clicked.connect(self.stop_training)
-    self.stop_training_button.setStyleSheet("""
-        QPushButton {
-            background-color: #e74c3c;
-            color: white;
-            border: none;
-            border-radius: 25px;
-            padding: 10px 30px;
-        }
-        QPushButton:hover {
-            background-color: #c0392b;
-        }
-        QPushButton:disabled {
-            background-color: #7f8c8d;
-        }
-    """)
-   
-    control_layout.addWidget(self.start_category_training_button)
-    control_layout.addWidget(self.stop_training_button)
-    control_layout.addStretch()
-   
-    layout.addLayout(control_layout)
-   
-    # Progress section
-    progress_group = QGroupBox("Training Progress")
-    progress_group.setStyleSheet("""
-        QGroupBox {
-            color: white;
-            border: 2px solid #555;
-            border-radius: 5px;
-            margin: 10px;
-            padding-top: 10px;
-        }
-        QGroupBox::title {
-            subcontrol-origin: margin;
-            left: 10px;
-            padding: 0 5px 0 5px;
-        }
-    """)
-   
-    progress_layout = QVBoxLayout(progress_group)
-   
-    self.progress_label = QLabel("Ready to train")
-    self.progress_label.setAlignment(Qt.AlignCenter)
-    self.progress_label.setStyleSheet("color: white; font-weight: bold;")
-    progress_layout.addWidget(self.progress_label)
-   
-    self.progress_bar = QProgressBar()
-    self.progress_bar.setMinimumHeight(25)
-    self.progress_bar.setStyleSheet("""
-        QProgressBar {
-            border: 2px solid #555;
-            border-radius: 5px;
-            text-align: center;
-            color: white;
-            background-color: #2c3e50;
-        }
-        QProgressBar::chunk {
-            background-color: #3498db;
-            border-radius: 3px;
-        }
-    """)
-    progress_layout.addWidget(self.progress_bar)
-   
-    layout.addWidget(progress_group)
-   
-    # Training log
-    log_group = QGroupBox("Training Log")
-    log_group.setStyleSheet("""
-        QGroupBox {
-            color: white;
-            border: 2px solid #555;
-            border-radius: 5px;
-            margin: 10px;
-            padding-top: 10px;
-        }
-        QGroupBox::title {
-            subcontrol-origin: margin;
-            left: 10px;
-            padding: 0 5px 0 5px;
-        }
-    """)
-   
-    log_layout = QVBoxLayout(log_group)
-   
-    self.training_log = QTextEdit()
-    self.training_log.setFont(QFont("Consolas", 9))
-    self.training_log.setMaximumHeight(200)
-    self.training_log.setStyleSheet("""
-        QTextEdit {
-            background-color: #2c3e50;
-            color: white;
-            border: 1px solid #555;
-            border-radius: 3px;
-            padding: 5px;
-        }
-    """)
-    log_layout.addWidget(self.training_log)
-   
-    layout.addWidget(log_group)
-   
-    self.tab_widget.addTab(training_widget, "🏋️ Category Training")
-
-def create_team_prediction_tab(self):
-    """Create team vs team prediction tab."""
-    team_widget = QWidget()
-    layout = QVBoxLayout(team_widget)
-   
-    # Header
-    header_label = QLabel("🏀 Team vs Team Prediction")
-    header_label.setFont(QFont("Arial", 16, QFont.Bold))
-    header_label.setAlignment(Qt.AlignCenter)
-    header_label.setStyleSheet("color: #3498db; margin: 10px;")
-    layout.addWidget(header_label)
-   
-    # Team selection
-    teams_group = QGroupBox("Select Teams")
-    teams_group.setStyleSheet("""
-        QGroupBox {
-            color: white;
-            border: 2px solid #555;
-            border-radius: 5px;
-            margin: 10px;
-            padding-top: 10px;
-            font-weight: bold;
-        }
-        QGroupBox::title {
-            subcontrol-origin: margin;
-            left: 10px;
-            padding: 0 5px 0 5px;
-        }
-    """)
-   
-    teams_layout = QGridLayout(teams_group)
-   
-    # Team A selection
-    teams_layout.addWidget(QLabel("Team A:"), 0, 0)
-    self.team_a_combo = QComboBox()
-    self.team_a_combo.addItems([
-        "Los Angeles Lakers", "Golden State Warriors", "Boston Celtics",
-        "Miami Heat", "Milwaukee Bucks", "Phoenix Suns", "Dallas Mavericks",
-        "Denver Nuggets", "Philadelphia 76ers", "Brooklyn Nets",
-        "Chicago Bulls", "New York Knicks", "Toronto Raptors"
-    ])
-    self.team_a_combo.setStyleSheet("""
-        QComboBox {
-            padding: 8px;
-            border: 1px solid #555;
-            border-radius: 3px;
-            background-color: #2c3e50;
-            color: white;
-            min-height: 20px;
-        }
-        QComboBox QAbstractItemView {
-            background-color: #2c3e50;
-            color: white;
-            selection-background-color: #3498db;
-        }
-    """)
-    teams_layout.addWidget(self.team_a_combo, 0, 1)
-   
-    # Team B selection
-    teams_layout.addWidget(QLabel("Team B:"), 1, 0)
-    self.team_b_combo = QComboBox()
-    self.team_b_combo.addItems([
-        "Los Angeles Lakers", "Golden State Warriors", "Boston Celtics",
-        "Miami Heat", "Milwaukee Bucks", "Phoenix Suns", "Dallas Mavericks",
-        "Denver Nuggets", "Philadelphia 76ers", "Brooklyn Nets",
-        "Chicago Bulls", "New York Knicks", "Toronto Raptors"
-    ])
-    self.team_b_combo.setCurrentIndex(1)  # Default to different team
-    self.team_b_combo.setStyleSheet("""
-        QComboBox {
-            padding: 8px;
-            border: 1px solid #555;
-            border-radius: 3px;
-            background-color: #2c3e50;
-            color: white;
-            min-height: 20px;
-        }
-        QComboBox QAbstractItemView {
-            background-color: #2c3e50;
-            color: white;
-            selection-background-color: #3498db;
-        }
-    """)
-    teams_layout.addWidget(self.team_b_combo, 1, 1)
-   
-    # Home team selection
-    teams_layout.addWidget(QLabel("Home Team:"), 2, 0)
-    self.home_team_combo = QComboBox()
-    self.home_team_combo.addItems(["Team A", "Team B", "Neutral"])
-    self.home_team_combo.setStyleSheet("""
-        QComboBox {
-            padding: 8px;
-            border: 1px solid #555;
-            border-radius: 3px;
-            background-color: #2c3e50;
-            color: white;
-            min-height: 20px;
-        }
-        QComboBox QAbstractItemView {
-            background-color: #2c3e50;
-            color: white;
-            selection-background-color: #3498db;
-        }
-    """)
-    teams_layout.addWidget(self.home_team_combo, 2, 1)
-   
-    layout.addWidget(teams_group)
-   
-    # Prediction button
-    self.predict_game_button = QPushButton("🎯 PREDICT GAME OUTCOME")
-    self.predict_game_button.setMinimumHeight(50)
-    self.predict_game_button.setFont(QFont("Arial", 12, QFont.Bold))
-    self.predict_game_button.setStyleSheet("""
-        QPushButton {
-            background-color: #e74c3c;
-            color: white;
-            border: none;
-            border-radius: 25px;
-        }
-        QPushButton:hover {
-            background-color: #c0392b;
-        }
-        QPushButton:disabled {
-            background-color: #7f8c8d;
-        }
-    """)
-    self.predict_game_button.clicked.connect(self.predict_team_game)
-    self.predict_game_button.setEnabled(False)  # Enable when model is loaded
-   
-    layout.addWidget(self.predict_game_button)
-   
-    # Results display
-    results_group = QGroupBox("Game Prediction Results")
-    results_group.setStyleSheet("""
-        QGroupBox {
-            color: white;
-            border: 2px solid #555;
-            border-radius: 5px;
-            margin: 10px;
-            padding-top: 10px;
-            font-weight: bold;
-        }
-        QGroupBox::title {
-            subcontrol-origin: margin;
-            left: 10px;
-            padding: 0 5px 0 5px;
-        }
-    """)
-   
-    results_layout = QVBoxLayout(results_group)
-   
-    self.team_results_text = QTextEdit()
-    self.team_results_text.setFont(QFont("Consolas", 10))
-    self.team_results_text.setStyleSheet("""
-        QTextEdit {
-            background-color: #2c3e50;
-            color: white;
-            border: 1px solid #555;
-            border-radius: 3px;
-            padding: 10px;
-        }
-    """)
-    self.team_results_text.setPlainText("Load a trained model and select teams to see game predictions...")
-    results_layout.addWidget(self.team_results_text)
-   
-    layout.addWidget(results_group)
-   
-    self.tab_widget.addTab(team_widget, "⚔️ Team vs Team")
-
-def start_category_training(self):
-    """Start category-based training."""
-    if self.training_worker and self.training_worker.isRunning():
-        QMessageBox.warning(self, "Warning", "Training is already in progress.")
-        return
-   
-    # Get training parameters
-    category_text = self.category_combo.currentText()
-    max_players = self.max_players_spinbox.value() if self.max_players_spinbox.value() > 0 else None
-    optimize = self.optimize_checkbox.isChecked()
-    use_cache = self.use_cache_checkbox.isChecked()
-   
-    # Map GUI text to category codes
-    category_mapping = {
-        "All Players": "All",
-        "Point Guards (PG)": "PG",
-        "Shooting Guards (SG)": "SG", 
-        "Small Forwards (SF)": "SF",
-        "Power Forwards (PF)": "PF",
-        "Centers (C)": "C",
-        "All Guards": "Guards",
-        "All Forwards": "Forwards",
-        "All Bigs (PF + C)": "Bigs",
-        "Custom Player List": "Custom"
-    }
-   
-    category = category_mapping.get(category_text, "All")
-   
-    if category == "Custom":
-        QMessageBox.information(self, "Not Implemented", 
-                                "Custom player list training will be available in the next update.")
-        return
-   
-    # Confirm training start
-    if optimize:
-        reply = QMessageBox.question(
-            self, "Confirm Training",
-            f"Starting {category} training with hyperparameter optimization.\n"
-            f"This may take 30+ minutes.\n\n"
-            f"Do you want to continue?",
-            QMessageBox.Yes | QMessageBox.No
-        )
-        if reply != QMessageBox.Yes:
-            return
-   
-    # Update UI
-    self.start_category_training_button.setEnabled(False)
-    self.stop_training_button.setEnabled(True)
-    self.progress_bar.setValue(0)
-    self.training_log.clear()
-   
-    # Create and start worker
-    self.training_worker = CategoryTrainingWorker(
-        self.predictor, category, max_players, optimize, use_cache
-    )
-   
-    # Connect signals
-    self.training_worker.progress_updated.connect(self.progress_bar.setValue)
-    self.training_worker.status_updated.connect(self.progress_label.setText)
-    self.training_worker.log_updated.connect(self.add_training_log)
-    self.training_worker.training_completed.connect(self.on_category_training_completed)
-    self.training_worker.training_failed.connect(self.on_training_failed)
-   
-    # Start training
-    self.training_worker.start()
-   
-    self.update_status(f"Category training started for: {category}")
-
-# In GUI or other places where team prediction is used:
-def predict_team_game(self):
-    """Predict team vs team game outcome."""
-    if not self.is_model_loaded:
-        QMessageBox.warning(self, "Warning", "Please load or train a model first.")
-        return
-    
-    team_a = self.team_a_combo.currentText()
-    team_b = self.team_b_combo.currentText()
-    
-    if team_a == team_b:
-        QMessageBox.warning(self, "Warning", "Please select different teams.")
-        return
-    
-    # Get home team context
-    home_selection = self.home_team_combo.currentText()
-    game_context = {}
-    
-    if home_selection == "Team A":
-        game_context['home_team'] = 'team_a'
-    elif home_selection == "Team B":
-        game_context['home_team'] = 'team_b'
-    
-    try:
-        self.update_status(f"Predicting game: {team_a} vs {team_b}")
-        self.team_results_text.setPlainText("Generating team predictions...\n")
-        QApplication.processEvents()
-        
-        # Use get_team_predictor() instead of direct access
-        team_predictor = self.predictor.get_team_predictor()
-        prediction = team_predictor.predict_game(team_a, team_b, game_context)
-        
-        # Display results
-        self.display_team_prediction_results(prediction)
-        self.update_status("Team prediction completed successfully!")
-        
-    except Exception as e:
-        error_msg = f"Error predicting game {team_a} vs {team_b}: {str(e)}"
-        logger.error(error_msg)
-        self.team_results_text.setPlainText(f"Error: {error_msg}")
-        self.update_status("Team prediction failed")
-
-def display_team_prediction_results(self, prediction: Dict):
-    """Display team vs team prediction results."""
-   
-    team_a = prediction['team_a']
-    team_b = prediction['team_b']
-   
-    # Build result text
-    result_text = f"🏀 GAME PREDICTION: {team_a.upper()} vs {team_b.upper()}\n"
-    result_text += "=" * 70 + "\n\n"
-   
-    # Win probability
-    win_prob_a = prediction['winner_probability']['team_a']
-    win_prob_b = prediction['winner_probability']['team_b']
-   
-    result_text += "🏆 WIN PROBABILITY:\n"
-    result_text += f"{team_a}: {win_prob_a:.1%}\n"
-    result_text += f"{team_b}: {win_prob_b:.1%}\n\n"
-   
-    # Predicted scores
-    score_a = prediction['predicted_score']['team_a']
-    score_b = prediction['predicted_score']['team_b']
-   
-    result_text += "📊 PREDICTED FINAL SCORE:\n"
-    result_text += f"{team_a}: {score_a}\n"
-    result_text += f"{team_b}: {score_b}\n\n"
-   
-    # Spread and totals
-    spread = prediction['spread']
-    total = prediction['total_points']
-   
-    result_text += "💰 BETTING INFORMATION:\n"
-    if spread > 0:
-        result_text += f"Spread: {team_a} -{abs(spread):.1f}\n"
-    else:
-        result_text += f"Spread: {team_b} -{abs(spread):.1f}\n"
-   
-    result_text += f"Total Points (O/U): {total:.1f}\n\n"
-   
-    # Key factors
-    result_text += "🔑 KEY FACTORS:\n"
-    for factor in prediction['key_factors']:
-        result_text += f"• {factor}\n"
-   
-    result_text += "\n"
-   
-    # Team breakdowns if available
-    if 'team_breakdowns' in prediction:
-        result_text += "👥 TEAM BREAKDOWNS:\n"
-        result_text += "-" * 50 + "\n"
-       
-        for team_key, team_name in [('team_a', team_a), ('team_b', team_b)]:
-            if team_key in prediction['team_breakdowns']:
-                result_text += f"\n{team_name}:\n"
-                breakdown = prediction['team_breakdowns'][team_key]
-               
-                # Sort players by predicted points
-                sorted_players = sorted(breakdown.items(), 
-                                        key=lambda x: x[1]['predicted_points'], 
-                                        reverse=True)
-               
-                for player, stats in sorted_players[:5]:  # Top 5 players
-                    points = stats['predicted_points']
-                    position = stats.get('position', 'N/A')
-                    result_text += f"  {player} ({position}): {points:.1f} pts\n"
-   
-    # Confidence and disclaimer
-    confidence = prediction.get('confidence', 0.5)
-    result_text += f"\n📈 PREDICTION CONFIDENCE: {confidence:.1%}\n"
-   
-    result_text += "\n" + "⚠️  DISCLAIMER:\n"
-    result_text += "Predictions based on individual player models and team composition.\n"
-    result_text += "Actual results may vary due to injuries, coaching decisions, and game flow.\n"
-    result_text += "Use for entertainment and analysis purposes only.\n"
-   
-    self.team_results_text.setPlainText(result_text)
-
-def on_category_training_completed(self, results):
-    """Handle category training completion."""
-    self.is_model_loaded = True
-    self.update_ui_state()
-    self.refresh_players()
-   
-    # Enable team prediction
-    self.predict_game_button.setEnabled(True)
-   
-    # Reset training UI
-    self.start_category_training_button.setEnabled(True)
-    self.stop_training_button.setEnabled(False)
-   
-    self.update_status("Category training completed successfully!")
-   
-    # Show results
-    best_model = min(results.keys(), key=lambda k: results[k]['test_mae'])
-    best_mae = results[best_model]['test_mae']
-   
-    QMessageBox.information(
-        self, "Training Complete",
-        f"Category model training completed successfully!\n\n"
-        f"Best Model: {best_model.title()}\n"
-        f"Best MAE: {best_mae:.3f} points\n\n"
-        f"The model is now ready for individual and team predictions."
-    )
-
-def _simple_team_prediction(self, team_a: str, team_b: str, context: Dict) -> Dict:
-    """Simple fallback team prediction when team predictor unavailable."""
-   
-    # This is a simplified version for when the full team predictor isn't available
-    # You could enhance this by aggregating individual player predictions
-   
-    import random
-   
-    # Simulate team strength (in a real implementation, this would use actual data)
-    team_a_strength = random.uniform(105, 120)
-    team_b_strength = random.uniform(105, 120)
-   
-    # Apply home court advantage
-    if context.get('home_team') == 'team_a':
-        team_a_strength += 3
-    elif context.get('home_team') == 'team_b':
-        team_b_strength += 3
-   
-    # Calculate win probability
-    diff = team_a_strength - team_b_strength
-    win_prob_a = 1 / (1 + np.exp(-diff / 5))
-   
-    return {
-        'team_a': team_a,
-        'team_b': team_b,
-        'winner_probability': {
-            'team_a': win_prob_a,
-            'team_b': 1 - win_prob_a
-        },
-        'predicted_score': {
-            'team_a': team_a_strength,
-            'team_b': team_b_strength
-        },
-        'spread': diff,
-        'total_points': team_a_strength + team_b_strength,
-        'confidence': 0.6,
-        'key_factors': [
-            f"Predicted as close matchup with {abs(diff):.1f} point differential",
-            "Prediction based on simplified team model"
-        ]
-    }
-
-
-# Category Training Worker Thread
-class CategoryTrainingWorker(QThread):
-    """Worker thread for category-based model training."""
-   
-    progress_updated = pyqtSignal(int)
-    status_updated = pyqtSignal(str)
-    log_updated = pyqtSignal(str)
-    training_completed = pyqtSignal(dict)
-    training_failed = pyqtSignal(str)
-   
-    def __init__(self, predictor, category, max_players, optimize, use_cache):
-        super().__init__()
-        self.predictor = predictor
-        self.category = category
-        self.max_players = max_players
-        self.optimize = optimize
-        self.use_cache = use_cache
-   
-    def run(self):
-        """Run category training in background thread."""
-        try:
-            self.status_updated.emit(f"Starting {self.category} training...")
-            self.progress_updated.emit(10)
-            self.log_updated.emit(f"Training category: {self.category}")
-           
-            if self.max_players:
-                self.log_updated.emit(f"Max players per position: {self.max_players}")
-           
-            # Use the enhanced predictor's category training method
-            results = self.predictor.train_by_category(
-                category=self.category,
-                max_players_per_position=self.max_players,
-                optimize=self.optimize,
-                use_cache=self.use_cache
-            )
-           
-            self.progress_updated.emit(100)
-            self.status_updated.emit("Training completed!")
-           
-            # Log results
-            for model_name, metrics in results.items():
-                self.log_updated.emit(
-                    f"{model_name}: MAE={metrics['test_mae']:.3f}, R={metrics['test_r2']:.3f}"
-                )
-           
-            self.training_completed.emit(results)
-           
-        except Exception as e:
-            error_msg = f"Category training failed: {str(e)}"
-            logger.error(error_msg)
-            logger.error(traceback.format_exc())
-            self.training_failed.emit(error_msg)
 
 def main():
     """Main function to run the enhanced PyQt5 GUI application."""
@@ -3766,6 +1935,7 @@ def main():
    
     # Run application
     sys.exit(app.exec_())
+
 
 if __name__ == "__main__":
     main()
