@@ -620,6 +620,871 @@ NBA Data Management Instructions:
         layout.addStretch()
         
         self.tab_widget.addTab(nba_data_widget, "🏀 NBA Data")
+
+    # Add this to your existing GUI class in src/gui.py
+
+def create_enhanced_team_comparison_tab(self):
+    """Create enhanced team vs team prediction tab with comprehensive analysis."""
+    team_widget = QWidget()
+    layout = QVBoxLayout(team_widget)
+    
+    # Header
+    header_label = QLabel("🏀 Enhanced Team Comparison & Analysis")
+    header_label.setFont(QFont("Arial", 16, QFont.Bold))
+    header_label.setAlignment(Qt.AlignCenter)
+    header_label.setStyleSheet("color: #3498db; margin: 10px;")
+    layout.addWidget(header_label)
+    
+    # Main content in splitter
+    main_splitter = QSplitter(Qt.Horizontal)
+    
+    # Left panel - Controls
+    control_panel = self._create_team_comparison_controls()
+    main_splitter.addWidget(control_panel)
+    
+    # Right panel - Results
+    results_panel = self._create_team_comparison_results()
+    main_splitter.addWidget(results_panel)
+    
+    main_splitter.setSizes([400, 800])
+    layout.addWidget(main_splitter)
+    
+    self.tab_widget.addTab(team_widget, "⚔️ Team Analysis")
+
+def _create_team_comparison_controls(self):
+    """Create team comparison control panel."""
+    control_frame = QFrame()
+    control_frame.setFrameStyle(QFrame.StyledPanel)
+    control_frame.setMaximumWidth(400)
+    control_frame.setStyleSheet("""
+        QFrame {
+            background-color: #404040;
+            border-radius: 5px;
+        }
+    """)
+    
+    layout = QVBoxLayout(control_frame)
+    
+    # Team selection group
+    team_group = QGroupBox("Team Selection")
+    team_group.setStyleSheet(self._get_groupbox_style())
+    team_layout = QGridLayout(team_group)
+    
+    # Team A
+    team_layout.addWidget(QLabel("Team A:"), 0, 0)
+    self.team_a_combo = QComboBox()
+    self.team_a_combo.addItems(self._get_nba_teams())
+    self.team_a_combo.setStyleSheet(self._get_combo_style())
+    team_layout.addWidget(self.team_a_combo, 0, 1)
+    
+    # Team B
+    team_layout.addWidget(QLabel("Team B:"), 1, 0)
+    self.team_b_combo = QComboBox()
+    self.team_b_combo.addItems(self._get_nba_teams())
+    self.team_b_combo.setCurrentIndex(1)
+    self.team_b_combo.setStyleSheet(self._get_combo_style())
+    team_layout.addWidget(self.team_b_combo, 1, 1)
+    
+    layout.addWidget(team_group)
+    
+    # Game context group
+    context_group = QGroupBox("Game Context")
+    context_group.setStyleSheet(self._get_groupbox_style())
+    context_layout = QGridLayout(context_group)
+    
+    # Home team
+    context_layout.addWidget(QLabel("Home Team:"), 0, 0)
+    self.home_team_combo = QComboBox()
+    self.home_team_combo.addItems(["Team A", "Team B", "Neutral Site"])
+    self.home_team_combo.setStyleSheet(self._get_combo_style())
+    context_layout.addWidget(self.home_team_combo, 0, 1)
+    
+    # Rest differential
+    context_layout.addWidget(QLabel("Rest Advantage:"), 1, 0)
+    self.rest_combo = QComboBox()
+    self.rest_combo.addItems([
+        "Equal Rest", "Team A +1 Day", "Team A +2 Days", 
+        "Team B +1 Day", "Team B +2 Days"
+    ])
+    self.rest_combo.setStyleSheet(self._get_combo_style())
+    context_layout.addWidget(self.rest_combo, 1, 1)
+    
+    # Analysis depth
+    context_layout.addWidget(QLabel("Analysis Depth:"), 2, 0)
+    self.analysis_depth_combo = QComboBox()
+    self.analysis_depth_combo.addItems([
+        "Quick Analysis", "Standard Analysis", "Comprehensive Analysis"
+    ])
+    self.analysis_depth_combo.setCurrentIndex(1)
+    self.analysis_depth_combo.setStyleSheet(self._get_combo_style())
+    context_layout.addWidget(self.analysis_depth_combo, 2, 1)
+    
+    layout.addWidget(context_group)
+    
+    # Analysis buttons
+    button_layout = QVBoxLayout()
+    
+    self.analyze_teams_button = QPushButton("🔍 ANALYZE TEAMS")
+    self.analyze_teams_button.setMinimumHeight(50)
+    self.analyze_teams_button.setFont(QFont("Arial", 12, QFont.Bold))
+    self.analyze_teams_button.clicked.connect(self.analyze_teams_comprehensive)
+    self.analyze_teams_button.setStyleSheet("""
+        QPushButton {
+            background-color: #e74c3c;
+            color: white;
+            border: none;
+            border-radius: 25px;
+        }
+        QPushButton:hover {
+            background-color: #c0392b;
+        }
+        QPushButton:disabled {
+            background-color: #7f8c8d;
+        }
+    """)
+    
+    self.compare_lineups_button = QPushButton("👥 Compare Starting Lineups")
+    self.compare_lineups_button.setMinimumHeight(40)
+    self.compare_lineups_button.clicked.connect(self.compare_starting_lineups)
+    self.compare_lineups_button.setStyleSheet(self._get_secondary_button_style())
+    
+    self.monte_carlo_button = QPushButton("🎲 Run Monte Carlo Simulation")
+    self.monte_carlo_button.setMinimumHeight(40)
+    self.monte_carlo_button.clicked.connect(self.run_monte_carlo_simulation)
+    self.monte_carlo_button.setStyleSheet(self._get_secondary_button_style())
+   
+    button_layout.addWidget(self.analyze_teams_button)
+    button_layout.addWidget(self.compare_lineups_button)
+    button_layout.addWidget(self.monte_carlo_button)
+   
+    layout.addLayout(button_layout)
+   
+    # Quick stats display
+    stats_group = QGroupBox("Quick Stats")
+    stats_group.setStyleSheet(self._get_groupbox_style())
+    stats_layout = QVBoxLayout(stats_group)
+   
+    self.quick_stats_label = QLabel("Select teams to see quick comparison...")
+    self.quick_stats_label.setStyleSheet("color: white; font-size: 11px;")
+    self.quick_stats_label.setWordWrap(True)
+    stats_layout.addWidget(self.quick_stats_label)
+   
+    layout.addWidget(stats_group)
+    layout.addStretch()
+   
+    return control_frame
+
+def _create_team_comparison_results(self):
+    """Create team comparison results panel."""
+    results_frame = QFrame()
+    results_frame.setFrameStyle(QFrame.StyledPanel)
+    results_frame.setStyleSheet("""
+        QFrame {
+            background-color: #404040;
+            border-radius: 5px;
+        }
+    """)
+   
+    layout = QVBoxLayout(results_frame)
+   
+    # Results header
+    results_header = QLabel("📊 Team Analysis Results")
+    results_header.setFont(QFont("Arial", 16, QFont.Bold))
+    results_header.setAlignment(Qt.AlignCenter)
+    results_header.setStyleSheet("color: #3498db; margin: 10px;")
+    layout.addWidget(results_header)
+   
+    # Tab widget for different analysis views
+    self.analysis_tabs = QTabWidget()
+    self.analysis_tabs.setStyleSheet("""
+        QTabWidget::pane {
+            border: 1px solid #555;
+            background-color: #3c3c3c;
+        }
+        QTabBar::tab {
+            background-color: #404040;
+            color: white;
+            padding: 8px 16px;
+            margin-right: 2px;
+        }
+        QTabBar::tab:selected {
+            background-color: #3498db;
+        }
+    """)
+   
+    # Overview tab
+    self.overview_text = QTextEdit()
+    self.overview_text.setFont(QFont("Consolas", 10))
+    self.overview_text.setStyleSheet("""
+        QTextEdit {
+            background-color: #2c3e50;
+            color: white;
+            border: 1px solid #555;
+            border-radius: 3px;
+            padding: 10px;
+        }
+    """)
+    self.overview_text.setPlainText("Run team analysis to see comprehensive comparison...")
+    self.analysis_tabs.addTab(self.overview_text, "📊 Overview")
+   
+    # Matchup analysis tab
+    self.matchup_text = QTextEdit()
+    self.matchup_text.setFont(QFont("Consolas", 10))
+    self.matchup_text.setStyleSheet("""
+        QTextEdit {
+            background-color: #2c3e50;
+            color: white;
+            border: 1px solid #555;
+            border-radius: 3px;
+            padding: 10px;
+        }
+    """)
+    self.analysis_tabs.addTab(self.matchup_text, "⚔️ Matchups")
+   
+    # Monte Carlo tab
+    self.monte_carlo_text = QTextEdit()
+    self.monte_carlo_text.setFont(QFont("Consolas", 10))
+    self.monte_carlo_text.setStyleSheet("""
+        QTextEdit {
+            background-color: #2c3e50;
+            color: white;
+            border: 1px solid #555;
+            border-radius: 3px;
+            padding: 10px;
+        }
+    """)
+    self.analysis_tabs.addTab(self.monte_carlo_text, "🎲 Simulation")
+   
+    # Player breakdowns tab
+    self.player_breakdown_text = QTextEdit()
+    self.player_breakdown_text.setFont(QFont("Consolas", 9))
+    self.player_breakdown_text.setStyleSheet("""
+        QTextEdit {
+            background-color: #2c3e50;
+            color: white;
+            border: 1px solid #555;
+            border-radius: 3px;
+            padding: 10px;
+        }
+    """)
+    self.analysis_tabs.addTab(self.player_breakdown_text, "👥 Player Details")
+   
+    layout.addWidget(self.analysis_tabs)
+   
+    return results_frame
+
+def analyze_teams_comprehensive(self):
+    """Run comprehensive team analysis."""
+    if not self.is_model_loaded:
+        QMessageBox.warning(self, "Warning", "Please load or train a model first.")
+        return
+   
+    team_a = self.team_a_combo.currentText()
+    team_b = self.team_b_combo.currentText()
+   
+    if team_a == team_b:
+        QMessageBox.warning(self, "Warning", "Please select different teams.")
+        return
+   
+    try:
+        self.update_status(f"Analyzing teams: {team_a} vs {team_b}")
+        self.overview_text.setPlainText("Running comprehensive team analysis...\n")
+        QApplication.processEvents()
+       
+        # Get game context
+        game_context = self._build_game_context()
+       
+        # Initialize enhanced team comparison
+        from src.team_comparison import EnhancedTeamComparison
+        team_comparison = EnhancedTeamComparison(self.predictor)
+       
+        # Run comprehensive analysis
+        analysis_results = team_comparison.compare_teams_comprehensive(
+            team_a, team_b, game_context
+        )
+       
+        # Display results in different tabs
+        self._display_comprehensive_results(analysis_results)
+       
+        self.update_status("Team analysis completed successfully!")
+       
+    except Exception as e:
+        error_msg = f"Error analyzing teams {team_a} vs {team_b}: {str(e)}"
+        logger.error(error_msg)
+        self.overview_text.setPlainText(f"Error: {error_msg}")
+        self.update_status("Team analysis failed")
+
+def _build_game_context(self):
+    """Build game context from UI selections."""
+    context = {}
+   
+    # Home team advantage
+    home_selection = self.home_team_combo.currentText()
+    if home_selection == "Team A":
+        context['home_team'] = 'team_a'
+        context['home_court_advantage'] = 3.0
+    elif home_selection == "Team B":
+        context['home_team'] = 'team_b'
+        context['home_court_advantage'] = 3.0
+   
+    # Rest differential
+    rest_selection = self.rest_combo.currentText()
+    if "Team A" in rest_selection:
+        context['rest_differential'] = 1 if "+1" in rest_selection else 2
+    elif "Team B" in rest_selection:
+        context['rest_differential'] = -1 if "+1" in rest_selection else -2
+    else:
+        context['rest_differential'] = 0
+   
+    # Analysis depth
+    context['analysis_depth'] = self.analysis_depth_combo.currentText().lower()
+   
+    return context
+
+def _display_comprehensive_results(self, results: Dict):
+    """Display comprehensive analysis results across multiple tabs."""
+   
+    # Overview tab
+    self._display_overview_results(results)
+   
+    # Matchup analysis tab
+    self._display_matchup_results(results)
+   
+    # Monte Carlo tab
+    self._display_monte_carlo_results(results)
+   
+    # Player breakdown tab
+    self._display_player_breakdown_results(results)
+
+def _display_overview_results(self, results: Dict):
+    """Display overview analysis results."""
+    team_a = results['teams']['team_a']
+    team_b = results['teams']['team_b']
+   
+    predictions = results['predictions']['ensemble']
+    team_a_metrics = results['team_metrics']['team_a']
+    team_b_metrics = results['team_metrics']['team_b']
+   
+    overview_text = f"""🏀 COMPREHENSIVE TEAM ANALYSIS: {team_a.upper()} vs {team_b.upper()}
+{'='*80}
+
+📊 GAME PREDICTION:
+Win Probability:
+- {team_a}: {predictions['win_probability_a']:.1%}
+- {team_b}: {predictions['win_probability_b']:.1%}
+
+Predicted Final Score:
+- {team_a}: {predictions['team_a_score']} points
+- {team_b}: {predictions['team_b_score']} points
+
+Spread: {team_a} {predictions['spread']:+.1f}
+Total Points (O/U): {predictions['total']:.1f}
+
+⚡ TEAM METRICS COMPARISON:
+                            {team_a:<15} {team_b:<15}
+Total Predicted Points:   {team_a_metrics['total_predicted_points']:<15.1f} {team_b_metrics['total_predicted_points']:<15.1f}
+Starter Points:          {team_a_metrics['starter_points']:<15.1f} {team_b_metrics['starter_points']:<15.1f}
+Bench Points:            {team_a_metrics['bench_points']:<15.1f} {team_b_metrics['bench_points']:<15.1f}
+Depth Score:             {team_a_metrics['depth_score']:<15.3f} {team_b_metrics['depth_score']:<15.3f}
+Estimated Pace:          {team_a_metrics['estimated_pace']:<15.1f} {team_b_metrics['estimated_pace']:<15.1f}
+Offensive Rating:        {team_a_metrics['offensive_rating']:<15.1f} {team_b_metrics['offensive_rating']:<15.1f}
+Defensive Rating:        {team_a_metrics['defensive_rating']:<15.1f} {team_b_metrics['defensive_rating']:<15.1f}
+Net Rating:              {team_a_metrics['net_rating']:<15.1f} {team_b_metrics['net_rating']:<15.1f}
+
+🔑 KEY INSIGHTS:
+"""
+   
+    # Add key factors
+    key_factors = results['matchup_analysis']['key_factors']
+    for i, factor in enumerate(key_factors, 1):
+        overview_text += f"{i}. {factor}\n"
+   
+    # Add confidence analysis
+    confidence = results['confidence_analysis']
+    overview_text += f"""
+📈 PREDICTION CONFIDENCE:
+Overall Confidence: {confidence['overall_confidence']:.1%}
+Model Uncertainty: {confidence['model_uncertainty']:.2f}
+Key Uncertainty Factors:
+"""
+   
+    for factor in confidence['uncertainty_factors']:
+        overview_text += f"• {factor}\n"
+   
+    # Add recommendation
+    if predictions['win_probability_a'] > 0.6:
+        recommendation = f"🔥 LEAN: {team_a} (Confident)"
+    elif predictions['win_probability_b'] > 0.6:
+        recommendation = f"🔥 LEAN: {team_b} (Confident)"
+    else:
+        recommendation = "⚖️ NEUTRAL: Too close to call"
+   
+    overview_text += f"\n💡 BETTING RECOMMENDATION: {recommendation}\n"
+   
+    # Add methodology note
+    overview_text += f"""
+ℹ️ METHODOLOGY:
+- Individual player predictions aggregated with playing time weights
+- Advanced team metrics calculated from roster composition
+- Multiple prediction models ensembled for final result
+- Monte Carlo simulation provides uncertainty quantification
+- Game context adjustments applied for home court and rest
+
+📅 Analysis generated: {results['timestamp'][:19]}
+"""
+   
+    self.overview_text.setPlainText(overview_text)
+
+def _display_matchup_results(self, results: Dict):
+    """Display detailed matchup analysis."""
+    team_a = results['teams']['team_a']
+    team_b = results['teams']['team_b']
+   
+    matchup_analysis = results['matchup_analysis']
+    pace_matchup = matchup_analysis['pace_matchup']
+    positional_advantages = matchup_analysis['positional_advantages']
+   
+    matchup_text = f"""⚔️ DETAILED MATCHUP ANALYSIS: {team_a.upper()} vs {team_b.upper()}
+{'='*80}
+
+🏃 PACE & TEMPO ANALYSIS:
+Expected Game Pace: {pace_matchup['expected_game_pace']} possessions
+- {team_a} Preferred Pace: {pace_matchup['team_a_pace']:.1f}
+- {team_b} Preferred Pace: {pace_matchup['team_b_pace']:.1f}
+- Pace Advantage: {pace_matchup['pace_advantage'].replace('_', ' ').title()}
+
+Analysis: {pace_matchup['analysis']}
+
+🏀 POSITION-BY-POSITION BREAKDOWN:
+Position    {team_a:<12} {team_b:<12} Advantage
+"""
+   
+    for pos, matchup in positional_advantages.items():
+        advantage_symbol = "🔥" if matchup['advantage'] == 'team_a' else "❄️" if matchup['advantage'] == 'team_b' else "⚖️"
+        advantage_text = team_a if matchup['advantage'] == 'team_a' else team_b if matchup['advantage'] == 'team_b' else "Even"
+       
+        matchup_text += f"{pos:<8}    {matchup['team_a_total']:<12.1f} {matchup['team_b_total']:<12.1f} {advantage_symbol} {advantage_text}\n"
+   
+    # Add style analysis
+    matchup_text += f"""
+🎯 PLAYING STYLE ANALYSIS:
+{matchup_analysis.get('style_matchup', {}).get('analysis', 'Style analysis not available')}
+
+🏋️ DEPTH COMPARISON:
+{matchup_analysis.get('depth_comparison', {}).get('analysis', 'Depth analysis not available')}
+
+📊 PREDICTION METHOD COMPARISON:
+"""
+   
+    # Show different prediction methods
+    predictions = results['predictions']
+    for method, pred in predictions.items():
+        if method != 'ensemble':
+            method_name = method.replace('_', ' ').title()
+            matchup_text += f"{method_name}:\n"
+            matchup_text += f"  • {team_a}: {pred['team_a_score']:.1f} points\n"
+            matchup_text += f"  • {team_b}: {pred['team_b_score']:.1f} points\n"
+            matchup_text += f"  • Win Prob: {pred['win_probability_a']:.1%} / {pred['win_probability_b']:.1%}\n\n"
+   
+    self.matchup_text.setPlainText(matchup_text)
+
+def _display_monte_carlo_results(self, results: Dict):
+    """Display Monte Carlo simulation results."""
+    team_a = results['teams']['team_a']
+    team_b = results['teams']['team_b']
+   
+    monte_carlo = results['monte_carlo']
+    score_dist = monte_carlo['score_distributions']
+    margin_analysis = monte_carlo['margin_analysis']
+   
+    monte_carlo_text = f"""🎲 MONTE CARLO SIMULATION RESULTS: {team_a.upper()} vs {team_b.upper()}
+{'='*80}
+
+📈 SIMULATION SUMMARY:
+Simulations Run: {monte_carlo['simulations_run']:,}
+{team_a} Win Probability: {monte_carlo['win_probability_a']:.2%}
+{team_b} Win Probability: {monte_carlo['win_probability_b']:.2%}
+
+📊 SCORE DISTRIBUTION ANALYSIS:
+
+{team_a.upper()} SCORING:
+Mean Score: {score_dist['team_a']['mean']:.1f} points
+Standard Deviation: {score_dist['team_a']['std']:.1f} points
+Score Ranges:
+- 10th Percentile: {score_dist['team_a']['percentiles']['10th']:.1f} points
+- 25th Percentile: {score_dist['team_a']['percentiles']['25th']:.1f} points
+- 50th Percentile: {score_dist['team_a']['percentiles']['50th']:.1f} points
+- 75th Percentile: {score_dist['team_a']['percentiles']['75th']:.1f} points
+- 90th Percentile: {score_dist['team_a']['percentiles']['90th']:.1f} points
+
+{team_b.upper()} SCORING:
+Mean Score: {score_dist['team_b']['mean']:.1f} points
+Standard Deviation: {score_dist['team_b']['std']:.1f} points
+Score Ranges:
+- 10th Percentile: {score_dist['team_b']['percentiles']['10th']:.1f} points
+- 25th Percentile: {score_dist['team_b']['percentiles']['25th']:.1f} points
+- 50th Percentile: {score_dist['team_b']['percentiles']['50th']:.1f} points
+- 75th Percentile: {score_dist['team_b']['percentiles']['75th']:.1f} points
+- 90th Percentile: {score_dist['team_b']['percentiles']['90th']:.1f} points
+
+🎯 GAME OUTCOME PROBABILITIES:
+Close Game (≤5 points): {margin_analysis['close_game_probability']:.1%}
+{team_a} Blowout Win (≥15 points): {margin_analysis['blowout_probability_a']:.1%}
+{team_b} Blowout Win (≥15 points): {margin_analysis['blowout_probability_b']:.1%}
+
+Average Margin: {margin_analysis['avg_margin']:+.1f} points
+Margin Standard Deviation: {margin_analysis['margin_std']:.1f} points
+
+💰 BETTING INSIGHTS:
+Based on the simulation results:
+
+SPREAD BETTING:
+- Current Model Spread: {results['predictions']['ensemble']['spread']:+.1f}
+- Confidence in Spread: {'High' if abs(margin_analysis['avg_margin']) > margin_analysis['margin_std'] else 'Medium' if abs(margin_analysis['avg_margin']) > margin_analysis['margin_std']/2 else 'Low'}
+
+TOTAL BETTING:
+- Predicted Total: {results['predictions']['ensemble']['total']:.1f}
+- Total Range (80% confidence): {score_dist['team_a']['percentiles']['10th'] + score_dist['team_b']['percentiles']['10th']:.1f} - {score_dist['team_a']['percentiles']['90th'] + score_dist['team_b']['percentiles']['90th']:.1f}
+
+MONEYLINE VALUE:
+- Model implies {team_a} should be {'favorite' if monte_carlo['win_probability_a'] > 0.5 else 'underdog'}
+- Win probability edge: {abs(monte_carlo['win_probability_a'] - 0.5)*200:.1f}% over 50/50
+
+🎯 RISK ASSESSMENT:
+Game Volatility: {'High' if margin_analysis['margin_std'] > 12 else 'Medium' if margin_analysis['margin_std'] > 8 else 'Low'} 
+(Std Dev: {margin_analysis['margin_std']:.1f})
+Upset Potential: {(1 - max(monte_carlo['win_probability_a'], monte_carlo['win_probability_b']))*100:.1f}%
+"""
+   
+    self.monte_carlo_text.setPlainText(monte_carlo_text)
+
+def _display_player_breakdown_results(self, results: Dict):
+    """Display detailed player breakdown."""
+    team_a = results['teams']['team_a']
+    team_b = results['teams']['team_b']
+   
+    # Get team data from the results
+    team_a_data = results.get('team_data', {}).get('team_a', {})
+    team_b_data = results.get('team_data', {}).get('team_b', {})
+   
+    # If team data not available in results, create simplified version
+    if not team_a_data:
+        player_text = f"""👥 PLAYER BREAKDOWN: {team_a.upper()} vs {team_b.upper()}
+{'='*80}
+
+⚠️ Detailed player breakdown not available in this analysis.
+   
+To get individual player predictions:
+1. Use the 'Predictions' tab to analyze specific players
+2. Run individual player analysis for each team member
+3. Use the 'Training' tab to ensure all team players are in the model
+
+💡 This feature requires the enhanced team comparison engine to be fully integrated.
+"""
+        self.player_breakdown_text.setPlainText(player_text)
+        return
+   
+    player_text = f"""👥 DETAILED PLAYER BREAKDOWN: {team_a.upper()} vs {team_b.upper()}
+{'='*80}
+
+🔥 {team_a.upper()} ROSTER ANALYSIS:
+"""
+   
+    # Sort players by predicted points for team A
+    team_a_players = sorted(
+        team_a_data.get('players', {}).items(),
+        key=lambda x: x[1]['predicted_points'],
+        reverse=True
+    )
+   
+    for player_name, player_data in team_a_players:
+        pos = player_data['position']
+        pts = player_data['predicted_points']
+        ci_low, ci_high = player_data['confidence_interval']
+        tier = player_data['usage_tier']
+        minutes = player_data['playing_time_estimate']
+       
+        player_text += f"{player_name} ({pos}) - {tier.title()}:\n"
+        player_text += f"  • Predicted: {pts:.1f} points (Range: {ci_low:.1f}-{ci_high:.1f})\n"
+        player_text += f"  • Est. Minutes: {minutes:.0f} | Confidence: ±{player_data['model_mae']:.1f}\n\n"
+   
+    player_text += f"""
+❄️ {team_b.upper()} ROSTER ANALYSIS:
+"""
+   
+    # Sort players by predicted points for team B
+    team_b_players = sorted(
+        team_b_data.get('players', {}).items(),
+        key=lambda x: x[1]['predicted_points'],
+        reverse=True
+    )
+   
+    for player_name, player_data in team_b_players:
+        pos = player_data['position']
+        pts = player_data['predicted_points']
+        ci_low, ci_high = player_data['confidence_interval']
+        tier = player_data['usage_tier']
+        minutes = player_data['playing_time_estimate']
+       
+        player_text += f"{player_name} ({pos}) - {tier.title()}:\n"
+        player_text += f"  • Predicted: {pts:.1f} points (Range: {ci_low:.1f}-{ci_high:.1f})\n"
+        player_text += f"  • Est. Minutes: {minutes:.0f} | Confidence: ±{player_data['model_mae']:.1f}\n\n"
+   
+    # Add head-to-head comparisons
+    player_text += """🥊 POSITION-BY-POSITION HEAD-TO-HEAD:
+"""
+   
+    positions = ['PG', 'SG', 'SF', 'PF', 'C']
+    for pos in positions:
+        team_a_pos_players = [p for name, p in team_a_players if p['position'] == pos]
+        team_b_pos_players = [p for name, p in team_b_players if p['position'] == pos]
+       
+        if team_a_pos_players and team_b_pos_players:
+            team_a_top = max(team_a_pos_players, key=lambda x: x['predicted_points'])
+            team_b_top = max(team_b_pos_players, key=lambda x: x['predicted_points'])
+           
+            advantage = "🔥" if team_a_top['predicted_points'] > team_b_top['predicted_points'] else "❄️"
+           
+            player_text += f"{pos}: {team_a_top['predicted_points']:.1f} vs {team_b_top['predicted_points']:.1f} {advantage}\n"
+   
+    self.player_breakdown_text.setPlainText(player_text)
+
+def compare_starting_lineups(self):
+    """Compare starting lineups of selected teams."""
+    if not self.is_model_loaded:
+        QMessageBox.warning(self, "Warning", "Please load or train a model first.")
+        return
+   
+    team_a = self.team_a_combo.currentText()
+    team_b = self.team_b_combo.currentText()
+   
+    if team_a == team_b:
+        QMessageBox.warning(self, "Warning", "Please select different teams.")
+        return
+   
+    try:
+        # This would integrate with your existing team prediction system
+        # For now, show a simplified comparison
+       
+        lineup_text = f"""👥 STARTING LINEUP COMPARISON: {team_a} vs {team_b}
+{'='*60}
+
+⚠️ Starting lineup analysis coming soon!
+
+This feature will provide:
+- Position-by-position starter comparisons
+- Combined starting 5 predictions
+- Bench vs bench analysis
+- Rotation depth evaluation
+
+💡 Use the full team analysis for comprehensive comparison.
+"""
+       
+        self.matchup_text.setPlainText(lineup_text)
+        self.analysis_tabs.setCurrentIndex(1)  # Switch to matchup tab
+       
+    except Exception as e:
+        logger.error(f"Error comparing lineups: {e}")
+
+def run_monte_carlo_simulation(self):
+    """Run dedicated Monte Carlo simulation."""
+    if not self.is_model_loaded:
+        QMessageBox.warning(self, "Warning", "Please load or train a model first.")
+        return
+   
+    team_a = self.team_a_combo.currentText()
+    team_b = self.team_b_combo.currentText()
+   
+    if team_a == team_b:
+        QMessageBox.warning(self, "Warning", "Please select different teams.")
+        return
+   
+    try:
+        self.monte_carlo_text.setPlainText(f"Running Monte Carlo simulation for {team_a} vs {team_b}...\n")
+        QApplication.processEvents()
+       
+        # This would run the Monte Carlo simulation
+        simulation_text = f"""🎲 MONTE CARLO SIMULATION: {team_a} vs {team_b}
+{'='*60}
+
+⚠️ Dedicated Monte Carlo simulation coming soon!
+
+This feature will provide:
+- 10,000+ game simulations
+- Win probability distributions
+- Score range analysis
+- Betting value identification
+- Risk assessment metrics
+
+💡 Use the full team analysis to see Monte Carlo results.
+"""
+       
+        self.monte_carlo_text.setPlainText(simulation_text)
+        self.analysis_tabs.setCurrentIndex(2)  # Switch to Monte Carlo tab
+       
+    except Exception as e:
+        logger.error(f"Error running simulation: {e}")
+
+def _get_nba_teams(self):
+    """Get list of NBA teams."""
+    return [
+        "Atlanta Hawks", "Boston Celtics", "Brooklyn Nets", "Charlotte Hornets",
+        "Chicago Bulls", "Cleveland Cavaliers", "Dallas Mavericks", "Denver Nuggets",
+        "Detroit Pistons", "Golden State Warriors", "Houston Rockets", "Indiana Pacers",
+        "LA Clippers", "Los Angeles Lakers", "Memphis Grizzlies", "Miami Heat",
+        "Milwaukee Bucks", "Minnesota Timberwolves", "New Orleans Pelicans", "New York Knicks",
+        "Oklahoma City Thunder", "Orlando Magic", "Philadelphia 76ers", "Phoenix Suns",
+        "Portland Trail Blazers", "Sacramento Kings", "San Antonio Spurs", "Toronto Raptors",
+        "Utah Jazz", "Washington Wizards"
+    ]
+
+def _get_groupbox_style(self):
+    """Get consistent GroupBox styling."""
+    return """
+        QGroupBox {
+            color: white;
+            border: 2px solid #555;
+            border-radius: 5px;
+            margin: 10px;
+            padding-top: 10px;
+            font-weight: bold;
+        }
+        QGroupBox::title {
+            subcontrol-origin: margin;
+            left: 10px;
+            padding: 0 5px 0 5px;
+        }
+    """
+
+def _get_combo_style(self):
+    """Get consistent ComboBox styling."""
+    return """
+        QComboBox {
+            padding: 8px;
+            border: 1px solid #555;
+            border-radius: 3px;
+            background-color: #2c3e50;
+            color: white;
+            min-height: 20px;
+        }
+        QComboBox::drop-down {
+            border: none;
+        }
+        QComboBox::down-arrow {
+            image: none;
+            border-left: 5px solid transparent;
+            border-right: 5px solid transparent;
+            border-top: 5px solid white;
+        }
+        QComboBox QAbstractItemView {
+            background-color: #2c3e50;
+            color: white;
+            selection-background-color: #3498db;
+        }
+    """
+
+def _get_secondary_button_style(self):
+    """Get secondary button styling."""
+    return """
+        QPushButton {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            padding: 8px 16px;
+            font-weight: bold;
+        }
+        QPushButton:hover {
+            background-color: #2980b9;
+        }
+        QPushButton:disabled {
+            background-color: #7f8c8d;
+        }
+    """
+
+    def create_tabs(self, layout):
+        """Create the enhanced main tab widget."""
+        self.tab_widget = QTabWidget()
+        self.tab_widget.setFont(QFont("Arial", 10))
+        self.tab_widget.setStyleSheet("""
+            QTabWidget::pane {
+                border: 1px solid #555;
+                background-color: #3c3c3c;
+            }
+            QTabBar::tab {
+                background-color: #404040;
+                color: white;
+                padding: 8px 16px;
+                margin-right: 2px;
+                border-top-left-radius: 5px;
+                border-top-right-radius: 5px;
+            }
+            QTabBar::tab:selected {
+                background-color: #3498db;
+            }
+        """)
+    
+        # Create tabs
+        self.create_prediction_tab()
+        self.create_analysis_tab()
+        self.create_enhanced_team_comparison_tab()  # Add this line
+        self.create_training_tab()
+        self.create_nba_data_tab()
+    
+        layout.addWidget(self.tab_widget)
+
+   
+
+    def update_ui_state(self):
+        """Update UI state based on model status."""
+        self.predict_button.setEnabled(self.is_model_loaded)
+        self.save_button.setEnabled(self.is_model_loaded)
+        self.player_combo.setEnabled(self.is_model_loaded)
+    
+        # Enable team comparison when model is loaded
+        if hasattr(self, 'analyze_teams_button'):
+            self.analyze_teams_button.setEnabled(self.is_model_loaded)
+        if hasattr(self, 'compare_lineups_button'):
+            self.compare_lineups_button.setEnabled(self.is_model_loaded)
+        if hasattr(self, 'monte_carlo_button'):
+            self.monte_carlo_button.setEnabled(self.is_model_loaded)
+    
+        if self.is_model_loaded:
+            self.model_status_label.setText("Model: Loaded ✓")
+            self.model_status_label.setStyleSheet("color: #27ae60;")
+        
+            # Update quick stats when teams are selected
+            if hasattr(self, 'team_a_combo') and hasattr(self, 'team_b_combo'):
+                self._update_quick_team_stats()
+        else:
+            self.model_status_label.setText("Model: Not Loaded")
+            self.model_status_label.setStyleSheet("color: #e74c3c;")
+
+    def _update_quick_team_stats(self):
+        """Update quick team comparison stats."""
+        try:
+            team_a = self.team_a_combo.currentText()
+            team_b = self.team_b_combo.currentText()
+        
+            if team_a != team_b and self.is_model_loaded:
+                # Show basic team info
+                quick_stats = f"""📊 Quick Comparison:
+    🔥 {team_a}
+    ❄️ {team_b}
+
+    💡 Select 'Analyze Teams' for comprehensive comparison including:
+    - Win probability prediction
+    - Individual player breakdowns  
+    - Positional matchup analysis
+    - Monte Carlo simulation
+    - Betting insights & recommendations
+    """
+                self.quick_stats_label.setText(quick_stats)
+            else:
+                self.quick_stats_label.setText("Select different teams to see comparison...")
+            
+        except Exception as e:
+            logger.error(f"Error updating quick stats: {e}")
     
     def create_training_tab(self):
         """Create the enhanced training tab with role-based features."""
