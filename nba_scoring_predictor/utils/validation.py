@@ -12,13 +12,13 @@ def validate_player_prediction(prediction: float, player_name: str = "Unknown") 
     return prediction
 
 def validate_team_total(team_total: float, team_name: str = "Unknown") -> float:
-    """Validate and cap team totals."""
-    if team_total > 140:  # NBA teams rarely score 140+
+    """More aggressive validation for team totals."""
+    if team_total > 130:  # Very high-scoring games
         logger.warning(f"Unrealistic team total for {team_name}: {team_total:.1f}, capping at 125")
         return 125.0
-    elif team_total < 80:
-        logger.warning(f"Unrealistic low total for {team_name}: {team_total:.1f}, setting to 95")
-        return 95.0
+    elif team_total < 90:
+        logger.warning(f"Unrealistic low total for {team_name}: {team_total:.1f}, setting to 100")
+        return 100.0
     return team_total
 
 def validate_game_prediction(team_a_score: float, team_b_score: float, 

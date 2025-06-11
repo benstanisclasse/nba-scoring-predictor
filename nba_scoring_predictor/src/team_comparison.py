@@ -177,41 +177,7 @@ class EnhancedTeamComparison:
 
     
 
-    def _predict_direct_aggregation(self, team_a_data: Dict, team_b_data: Dict) -> Dict:
-        """Simple aggregation of individual player predictions - FIXED VERSION."""
     
-        # FIXED: Remove playing time adjustment that was causing inflation
-        team_a_total = sum(
-            player['predicted_points'] 
-            for player in team_a_data['players'].values()
-        )
-    
-        team_b_total = sum(
-            player['predicted_points'] 
-            for player in team_b_data['players'].values()
-        )
-    
-        # ADD: Validation to ensure realistic totals
-        from utils.validation import validate_game_prediction
-        team_a_total, team_b_total = validate_game_prediction(
-            team_a_total, team_b_total, 
-            team_a_data['team_name'], team_b_data['team_name']
-        )
-    
-        # Calculate win probability
-        point_diff = team_a_total - team_b_total
-        win_prob_a = self._calculate_win_probability(point_diff)
-    
-        return {
-            'team_a_score': round(team_a_total, 1),
-            'team_b_score': round(team_b_total, 1),
-            'win_probability_a': win_prob_a,
-            'win_probability_b': 1 - win_prob_a,
-            'spread': round(point_diff, 1),
-            'total': round(team_a_total + team_b_total, 1),
-            'method': 'direct_aggregation'
-        }    
-
     def _predict_possession_based(self, team_a_data: Dict, team_b_data: Dict,
                                 team_a_metrics: Dict, team_b_metrics: Dict) -> Dict:
         """Possession-based prediction model."""
@@ -291,6 +257,202 @@ class EnhancedTeamComparison:
             return base
         else:
             return max(base - 10, 12)
+    
+    def _predict_direct_aggregation(self, team_a_data: Dict, team_b_data: Dict) -> Dict:
+        """
+        Direct aggregation of individual player predictions with realistic playing time adjustments.
+    
+        Args:
+            team_a_data: Team A player data and predictions
+            team_b_data: Team B player data and predictions
+        
+        Returns:
+            Dictionary with team scores, win probabilities, and game metrics
+        """
+    
+        # Get players sorted by predicted points (proxy for playing time/importance)
+        team_a_players = sorted(
+            team_a_data['players'].values(), 
+            key=lambda x: x['predicted_points'], 
+            reverse=True
+        )
+        team_b_players = sorted(
+            team_b_data['players'].values(), 
+            key=lambda x: x['predicted_points'], 
+            reverse=True
+        )
+    
+        # Calculate team totals with realistic playing time distribution
+        team_a_total = self._calculate_realistic_team_total(team_a_players, team_a_data['team_name'])
+        team_b_total = self._calculate_realistic_team_total(team_b_players, team_b_data['team_name'])
+    
+        # Apply validation to ensure realistic game totals
+        from utils.validation import validate_game_prediction
+        team_a_total, team_b_total = validate_game_prediction(
+            team_a_total, team_b_total, 
+            team_a_data['team_name'], team_b_data['team_name']
+        )
+    
+        # Calculate win probability
+        point_diff = team_a_total - team_b_total
+        win_prob_a = self._calculate_win_probability(point_diff)
+    
+        # Log the breakdown for debugging
+        logger.info(f"Direct aggregation: {team_a_data['team_name']} {team_a_total:.1f} - {team_b_total:.1f} {team_b_data['team_name']}")
+    
+        return {
+            'team_a_score': round(team_a_total, 1),
+            'team_b_score': round(team_b_total, 1),
+            'win_probability_a': win_prob_a,
+            'win_probability_b': 1 - win_prob_a,
+            'spread': round(point_diff, 1),
+            'total': round(team_a_total + team_b_total, 1),
+            'method': 'direct_aggregation'
+        }
+
+    def _calculate_realistic_team_total(self, sorted_players: List[Dict], team_name: str) -> float:
+        """
+        Calculate realistic team total considering NBA playing time distribution.
+    
+        Args:
+            sorted_players: Players sorted by predicted points (descending)
+            team_name: Team name for logging
+        
+        Returns:
+            Realistic team total points
+        """
+    
+        if not sorted_players:
+            logger.warning(f"No players found for {team_name}")
+            return 100.0  # Fallback total
+    
+        team_total = 0.0
+    
+        # Playing time tiers based on NBA reality
+        playing_time_adjustments = {
+            'starters': {'count': 5, 'multiplier': 1.0},      # Top 5 players: full prediction
+            'sixth_man': {'count': 1, 'multiplier': 0.85},    # 6th player: slight reduction
+            'rotation': {'count': 2, 'multiplier': 0.70},     # 7th-8th players: rotation players
+            'limited': {'count': 2, 'multiplier': 0.40},      # 9th-10th players: limited minutes
+            'bench': {'count': None, 'multiplier': 0.15}      # Rest: garbage time only
+        }
+    
+        player_index = 0
+        breakdown = []
+    
+        # Process each tier
+        for tier, config in playing_time_adjustments.items():
+            tier_count = config['count'] if config['count'] else len(sorted_players) - player_index
+            tier_multiplier = config['multiplier']
+            tier_total = 0.0
+            tier_players = 0
+        
+            for i in range(tier_count):
+                if player_index >= len(sorted_players):
+                    break
+                
+                player = sorted_players[player_index]
+                adjusted_points = player['predicted_points'] * tier_multiplier
+            
+                # Cap individual contributions to reasonable levels
+                if tier == 'starters':
+                    adjusted_points = min(adjusted_points, 35.0)  # Even superstars rarely score 35+
+                elif tier == 'sixth_man':
+                    adjusted_points = min(adjusted_points, 25.0)
+                elif tier == 'rotation':
+                    adjusted_points = min(adjusted_points, 18.0)
+                elif tier == 'limited':
+                    adjusted_points = min(adjusted_points, 12.0)
+                else:  # bench
+                    adjusted_points = min(adjusted_points, 8.0)
+            
+                tier_total += adjusted_points
+                tier_players += 1
+                player_index += 1
+        
+            if tier_players > 0:
+                breakdown.append(f"{tier}: {tier_players} players, {tier_total:.1f} pts")
+                team_total += tier_total
+        
+            # Stop if we've processed enough players (top 10)
+            if tier == 'limited':
+                break
+    
+        # Log the breakdown for debugging
+        logger.info(f"{team_name} breakdown - {' | '.join(breakdown)} | Total: {team_total:.1f}")
+    
+        # Additional safety check - ensure team total is within reasonable NBA range
+        if team_total > 135:
+            logger.warning(f"Team total still too high for {team_name}: {team_total:.1f}, capping at 130")
+            team_total = 130.0
+        elif team_total < 85:
+            logger.warning(f"Team total too low for {team_name}: {team_total:.1f}, raising to 95")
+            team_total = 95.0
+    
+        return team_total
+
+    def _get_player_tier_multiplier(self, player_rank: int, total_players: int) -> float:
+        """
+        Get playing time multiplier based on player ranking and team depth.
+    
+        Args:
+            player_rank: Player's rank on team (0-based, 0 = best player)
+            total_players: Total players on roster
+        
+        Returns:
+            Multiplier for player's predicted points (0.0 to 1.0)
+        """
+    
+        if player_rank == 0:  # Star player
+            return 1.0
+        elif player_rank <= 4:  # Other starters
+            return 0.95
+        elif player_rank == 5:  # Sixth man
+            return 0.80
+        elif player_rank <= 7:  # Rotation players
+            return 0.65
+        elif player_rank <= 9:  # Limited role players
+            return 0.35
+        else:  # Deep bench
+            return 0.15
+
+    def _validate_individual_prediction(self, prediction: float, player_name: str, tier: str) -> float:
+        """
+        Validate individual player prediction based on their role tier.
+    
+        Args:
+            prediction: Raw prediction
+            player_name: Player name for logging
+            tier: Player tier (starter, rotation, bench, etc.)
+        
+        Returns:
+            Validated prediction
+        """
+    
+        # Tier-based caps
+        tier_caps = {
+            'starters': 40.0,    # Extreme outlier games
+            'sixth_man': 30.0,   # Strong sixth man performance
+            'rotation': 20.0,    # Good rotation player game
+            'limited': 15.0,     # Limited minutes player
+            'bench': 10.0        # Bench player in extended minutes
+        }
+    
+        cap = tier_caps.get(tier, 15.0)
+    
+        if prediction > cap:
+            logger.warning(f"High prediction for {tier} player {player_name}: {prediction:.1f}, capping at {cap}")
+            return cap
+        elif prediction < 0:
+            logger.warning(f"Negative prediction for {player_name}: {prediction:.1f}, setting to 2.0")
+            return 2.0
+    
+        return prediction
+
+
+
+
+
 
     def _predict_matchup_adjusted(self, team_a_data: Dict, team_b_data: Dict, 
                            matchup_analysis: Dict) -> Dict:
