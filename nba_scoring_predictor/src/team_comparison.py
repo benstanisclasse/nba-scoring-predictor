@@ -26,8 +26,7 @@ class EnhancedTeamComparison:
         self.matchup_engine = MatchupAnalysisEngine()
         self.monte_carlo = MonteCarloSimulator()
         
-    def compare_teams_comprehensive(self, team_a: str, team_b: str, 
-                              game_context: Dict = None) -> Dict:
+    def compare_teams_comprehensive(self, team_a: str, team_b: str, game_context: Dict = None) -> Dict:
         """
         Comprehensive team comparison with multiple methodologies.
     
@@ -39,6 +38,13 @@ class EnhancedTeamComparison:
         Returns:
             Comprehensive comparison results
         """
+
+        nba_data = self.player_fetcher.load_players_data()
+        if nba_data:
+            logger.info(f"NBA data loaded: {nba_data['metadata']['total_players']} players")
+            logger.info(f"Teams available: {list(nba_data.get('players_by_team', {}).keys())}")
+        else:
+            logger.warning("No NBA data loaded - will use fallbacks")
         logger.info(f"Running comprehensive team comparison: {team_a} vs {team_b}")
     
         # 1. Get team rosters and individual predictions
@@ -667,19 +673,57 @@ class EnhancedTeamComparison:
        }
 
     def _get_team_roster(self, team_name: str) -> List[str]:
-       """Get current roster for a team."""
-       # Try to get from NBA data
-       nba_data = self.player_fetcher.load_players_data()
-   
-       if nba_data:
-           # Find team abbreviation
-           team_abbrev = self._get_team_abbreviation(team_name)
-       
-           if team_abbrev and team_abbrev in nba_data.get('players_by_team', {}):
-               return [p['name'] for p in nba_data['players_by_team'][team_abbrev]['players']]
-   
-       # Fallback to common rosters
-       return self._get_fallback_roster(team_name)
+        """Get current roster for a team - IMPROVED VERSION."""
+        # Try to get from NBA data
+        nba_data = self.player_fetcher.load_players_data()
+    
+        if nba_data:
+            # Method 1: Try team abbreviation lookup
+            team_abbrev = self._get_team_abbreviation(team_name)
+        
+            if team_abbrev and team_abbrev in nba_data.get('players_by_team', {}):
+                roster = [p['name'] for p in nba_data['players_by_team'][team_abbrev]['players']]
+                logger.info(f"Found {len(roster)} players for {team_name} via team lookup")
+                return roster
+        
+            # Method 2: Search by team name in all players
+            roster = self._search_players_by_team_name(nba_data, team_name)
+            if roster:
+                logger.info(f"Found {len(roster)} players for {team_name} via name search")
+                return roster
+        
+            # Method 3: Use positional selection from all available players
+            roster = self._create_balanced_roster_from_available_players(nba_data)
+            logger.warning(f"Using balanced roster for {team_name} from available players")
+            return roster
+    
+        # Final fallback - but now it's team-specific
+        logger.warning(f"Using hardcoded fallback for {team_name}")
+        return self._get_fallback_roster(team_name)
+
+    def _search_players_by_team_name(self, nba_data: Dict, team_name: str) -> List[str]:
+        """Search for players by team name in the all_players list."""
+        roster = []
+    
+        for player in nba_data.get('all_players', []):
+            if team_name.lower() in player.get('team', '').lower():
+                roster.append(player['name'])
+    
+        return roster
+
+    def _create_balanced_roster_from_available_players(self, nba_data: Dict) -> List[str]:
+        """Create a balanced roster from available players by position."""
+        roster = []
+    
+        # Get 2-3 players from each position
+        for position in ['PG', 'SG', 'SF', 'PF', 'C']:
+            position_players = nba_data['players_by_position'].get(position, [])
+            # Take first 2 players from each position
+            for i, player in enumerate(position_players[:2]):
+                if len(roster) < 10:  # Limit roster size
+                    roster.append(player['name'])
+    
+        return roster
 
     def _get_team_abbreviation(self, team_name: str) -> str:
         """Convert team name to abbreviation - COMPLETE VERSION."""
@@ -689,8 +733,8 @@ class EnhancedTeamComparison:
             'Dallas Mavericks': 'DAL', 'Denver Nuggets': 'DEN', 'Detroit Pistons': 'DET',
             'Golden State Warriors': 'GSW', 'Houston Rockets': 'HOU', 'Indiana Pacers': 'IND',
             'LA Clippers': 'LAC', 'Los Angeles Lakers': 'LAL', 'Memphis Grizzlies': 'MEM',
-            'Miami Heat': 'MIA', 'Milwaukee Bucks': 'MIL', 'Minnesota Timberwolves': 'MIN',
-            'New Orleans Pelicans': 'NOP', 'New York Knicks': 'NYK', 'Oklahoma City Thunder': 'OKC',
+            'Miami Heat': 'MIA', 'Milwaukee Bucks': 'MIL', 'Minnesota Timberwolves': 'MIN',  # MISSING!
+            'New Orleans Pelicans': 'NOP', 'New York Knicks': 'NYK', 'Oklahoma City Thunder': 'OKC',  # MISSING!
             'Orlando Magic': 'ORL', 'Philadelphia 76ers': 'PHI', 'Phoenix Suns': 'PHX',
             'Portland Trail Blazers': 'POR', 'Sacramento Kings': 'SAC', 'San Antonio Spurs': 'SAS',
             'Toronto Raptors': 'TOR', 'Utah Jazz': 'UTA', 'Washington Wizards': 'WAS'
