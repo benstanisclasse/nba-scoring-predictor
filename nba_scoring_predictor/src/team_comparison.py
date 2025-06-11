@@ -12,6 +12,7 @@ from datetime import datetime, timedelta
 from utils.logger import main_logger as logger
 from utils.nba_player_fetcher import NBAPlayerFetcher
 from utils.player_roles import PlayerRoles
+from src.team_comparison import EnhancedTeamComparison
 
 class EnhancedTeamComparison:
     """Enhanced team comparison with advanced metrics and analysis."""

@@ -38,7 +38,7 @@ except ImportError:
     print("qdarkstyle not available, using default theme")
 
 try:
-    from src.team_comparison import EnhancedTeamComparison
+    
     from src.player_search_widget import PlayerSearchWidget
     from src.predictor import EnhancedNBAPredictor
     from utils.logger import main_logger as logger
@@ -1880,41 +1880,7 @@ NBA Data Management Instructions:
         else:
             event.accept()
     
-    # Add this to the src/gui.py file, in the create_tabs method:
-
-    def create_tabs(self, layout):
-        """Create the enhanced main tab widget."""
-        self.tab_widget = QTabWidget()
-        self.tab_widget.setFont(QFont("Arial", 10))
-        self.tab_widget.setStyleSheet("""
-            QTabWidget::pane {
-                border: 1px solid #555;
-                background-color: #3c3c3c;
-            }
-            QTabBar::tab {
-                background-color: #404040;
-                color: white;
-                padding: 8px 16px;
-                margin-right: 2px;
-                border-top-left-radius: 5px;
-                border-top-right-radius: 5px;
-            }
-            QTabBar::tab:selected {
-                background-color: #3498db;
-            }
-        """)
-    
-        # Create tabs
-        self.create_prediction_tab()
-        self.create_analysis_tab()
-        self.create_training_tab()
-        self.create_team_comparison_tab()  # ADD THIS LINE
-        self.create_nba_data_tab()
-    
-        layout.addWidget(self.tab_widget)
-
-
-
+   
     def create_team_comparison_tab(self):
         """Create the team comparison tab."""
         team_comp_widget = QWidget()
@@ -2207,32 +2173,32 @@ NBA Data Management Instructions:
         if not self.is_model_loaded:
             QMessageBox.warning(self, "Warning", "Please load or train a model first.")
             return
-    
+
         team_a = self.team_a_combo.currentText()
         team_b = self.team_b_combo.currentText()
-    
+
         if team_a == team_b:
             QMessageBox.warning(self, "Warning", "Please select two different teams.")
             return
-    
+
         try:
             self.update_status(f"Comparing teams: {team_a} vs {team_b}")
             self.team_comparison_results.setPlainText("Generating comprehensive team comparison...\n")
             QApplication.processEvents()
-        
+    
             # Get game context
             game_context = {
                 'home_team': None,
                 'rest_differential': 0
             }
-        
+    
             # Parse home team selection
             home_selection = self.home_team_combo.currentText()
             if home_selection == "Team A":
                 game_context['home_team'] = 'team_a'
             elif home_selection == "Team B":
                 game_context['home_team'] = 'team_b'
-        
+    
             # Parse rest differential
             rest_selection = self.rest_combo.currentText()
             if "Team A" in rest_selection:
@@ -2245,23 +2211,35 @@ NBA Data Management Instructions:
                     game_context['rest_differential'] = -1
                 elif "+2 days" in rest_selection:
                     game_context['rest_differential'] = -2
-        
+    
+            # FIXED: Import inside the method to avoid circular imports
+            try:
+                from src.team_comparison import EnhancedTeamComparison
+            except ImportError as import_error:
+                logger.error(f"Could not import EnhancedTeamComparison: {import_error}")
+                QMessageBox.critical(
+                    self, "Import Error", 
+                    "Team comparison functionality is not available.\n"
+                    "Please check the installation."
+                )
+                return
+    
             # Use enhanced team comparison
-            from src.team_comparison import EnhancedTeamComparison
             team_comparator = EnhancedTeamComparison(self.predictor)
-        
+    
             # Get comprehensive comparison
             comparison_results = team_comparator.compare_teams_comprehensive(
                 team_a, team_b, game_context
             )
-        
+    
             # Display detailed results
             self.display_team_comparison_results(comparison_results)
             self.update_status("Team comparison completed successfully!")
-        
+    
         except Exception as e:
             error_msg = f"Error comparing teams: {str(e)}"
             logger.error(error_msg)
+            logger.error(traceback.format_exc())  # Add this for better debugging
             self.team_comparison_results.setPlainText(f"Error: {error_msg}")
             self.update_status("Team comparison failed")
 
