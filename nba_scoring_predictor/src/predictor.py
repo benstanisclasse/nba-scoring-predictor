@@ -259,16 +259,20 @@ class EnhancedNBAPredictor:
         else:
             return fallback_players['PG']  # Default fallback
     
+    
     def predict_player_points_enhanced(self, player_name: str, recent_games: int = 10) -> Dict:
         """
         Enhanced prediction that uses position-specific models when available.
         """
         if not self.is_trained:
             raise ValueError("No models trained. Call train_by_category() first.")
-        
+    
+        logger.info(f"Starting prediction for {player_name} (recent games: {recent_games})")
+    
         # Try to determine player's position
         player_position = self._get_player_position(player_name)
-        
+        logger.info(f"Player position: {player_position}")
+    
         # Use position-specific model if available
         if player_position in self.position_models:
             logger.info(f"Using {player_position}-specific model for {player_name}")
@@ -282,65 +286,159 @@ class EnhancedNBAPredictor:
             logger.info(f"Using default model for {player_name}")
             model_trainer = self.model_trainer
             feature_engineer = self.feature_engineer
-        
+    
         # Get recent data for the player
-        player_data = self._get_player_recent_data(player_name, recent_games)
-        
+        logger.info(f"Fetching recent data for {player_name}...")
+        player_data = self._get_player_recent_data(player_name, recent_games * 2)  # Get more data to be safe
+    
         if player_data.empty:
-            raise ValueError(f"No recent data found for player: {player_name}")
+            logger.error(f"No recent data found for player: {player_name}")
         
-        # Process the data using the appropriate feature engineer
-        processed_data = feature_engineer.engineer_features(player_data)
-        
-        if len(processed_data) == 0:
-            raise ValueError(f"Insufficient data for prediction for player: {player_name}")
-        
-        # Get the most recent game's features
-        latest_game = processed_data.iloc[-1:].copy()
-        
-        # Ensure we have the same features as training
-        if hasattr(model_trainer, 'feature_names') and model_trainer.feature_names:
-            missing_features = set(model_trainer.feature_names) - set(latest_game.columns)
-            for feature in missing_features:
-                latest_game[feature] = 0
+            # Try to get ANY data for this player
+            all_player_data = self._get_player_recent_data(player_name, 100)  # Try last 100 games
+            if all_player_data.empty:
+                # Check if player exists in database at all
+                available_players = self.get_available_players()
+                similar_players = [p for p in available_players if player_name.lower() in p.lower() or p.lower() in player_name.lower()]
             
-            # Select only the features used in training
-            latest_game = latest_game[model_trainer.feature_names]
+                if similar_players:
+                    raise ValueError(f"No data found for '{player_name}'. Did you mean: {', '.join(similar_players[:3])}?")
+                else:
+                    raise ValueError(f"Player '{player_name}' not found in database. Available players: {len(available_players)} total.")
+            else:
+                raise ValueError(f"No recent data found for {player_name}. Last game was {all_player_data['GAME_DATE'].max()}")
+    
+        logger.info(f"Found {len(player_data)} games for {player_name}")
+    
+        # Add minimum data validation
+        required_columns = ['PTS', 'GAME_DATE', 'PLAYER_NAME']
+        missing_cols = [col for col in required_columns if col not in player_data.columns]
+        if missing_cols:
+            raise ValueError(f"Missing required columns for {player_name}: {missing_cols}")
+    
+        # Ensure we have enough games with valid points
+        valid_games = player_data[player_data['PTS'].notna() & (player_data['PTS'] >= 0)]
+        if len(valid_games) < 3:
+            raise ValueError(f"Insufficient valid games for {player_name}. Found {len(valid_games)} games with valid scoring data.")
+    
+        try:
+            # Process the data using the appropriate feature engineer
+            logger.info(f"Engineering features for {player_name}...")
+            processed_data = feature_engineer.engineer_features(player_data)
         
-        X, _, _ = feature_engineer.prepare_features(latest_game)
+            if len(processed_data) == 0:
+                raise ValueError(f"Feature engineering produced no valid rows for {player_name}")
         
-        if X.shape[1] == 0:
-            raise ValueError("No valid features generated for prediction")
+            logger.info(f"Generated {len(processed_data)} processed games with {processed_data.shape[1]} features")
         
-        # Scale features
-        X_scaled = model_trainer.scaler.transform(X)
+        except Exception as e:
+            logger.error(f"Feature engineering failed for {player_name}: {e}")
+            raise ValueError(f"Feature engineering failed for {player_name}: {str(e)}")
+    
+        # Get the most recent game's features
+        try:
+            latest_game = processed_data.iloc[-1:].copy()
+            logger.info(f"Using latest game data from {latest_game.get('GAME_DATE', 'unknown date').iloc[0] if 'GAME_DATE' in latest_game.columns else 'unknown date'}")
         
+            # Ensure we have the same features as training - MORE ROBUST VERSION
+            if hasattr(model_trainer, 'feature_names') and model_trainer.feature_names:
+                logger.info(f"Model expects {len(model_trainer.feature_names)} features")
+            
+                # Add missing features with safe defaults
+                missing_features = set(model_trainer.feature_names) - set(latest_game.columns)
+                if missing_features:
+                    logger.warning(f"Adding {len(missing_features)} missing features with default values")
+                    for feature in missing_features:
+                        if 'PCT' in feature.upper() or 'RATE' in feature.upper():
+                            latest_game[feature] = 0.5  # Default percentage
+                        elif 'ROLL' in feature.upper():
+                            latest_game[feature] = player_data['PTS'].tail(5).mean() if not player_data.empty else 15.0
+                        else:
+                            latest_game[feature] = 0  # Default to 0
+            
+                # Select only the features used in training, in the correct order
+                try:
+                    latest_game = latest_game[model_trainer.feature_names]
+                except KeyError as e:
+                    logger.error(f"Feature mismatch for {player_name}. Model features: {model_trainer.feature_names[:5]}...")
+                    logger.error(f"Available features: {list(latest_game.columns)[:5]}...")
+                    raise ValueError(f"Feature mismatch: {str(e)}")
+        
+            # Alternative feature preparation if model doesn't have feature_names
+            else:
+                logger.warning("Model doesn't have feature_names, using feature_engineer prepare_features")
+                X, _, feature_names = feature_engineer.prepare_features(latest_game)
+                if X.shape[1] == 0:
+                    raise ValueError("Feature engineering produced no valid features")
+            
+                # Convert back to DataFrame for consistency
+                latest_game = pd.DataFrame(X, columns=feature_names)
+        
+            logger.info(f"Final feature matrix shape: {latest_game.shape}")
+        
+        except Exception as e:
+            logger.error(f"Feature preparation failed for {player_name}: {e}")
+            raise ValueError(f"Feature preparation failed: {str(e)}")
+    
+        # Convert to numpy array for prediction
+        try:
+            if hasattr(model_trainer, 'feature_names'):
+                X = latest_game.values
+            else:
+                X, _, _ = feature_engineer.prepare_features(latest_game)
+        
+            if X.shape[1] == 0:
+                raise ValueError("No valid features generated for prediction")
+        
+            logger.info(f"Prediction input shape: {X.shape}")
+        
+            # Scale features
+            X_scaled = model_trainer.scaler.transform(X)
+        
+        except Exception as e:
+            logger.error(f"Feature scaling failed for {player_name}: {e}")
+            raise ValueError(f"Feature scaling failed: {str(e)}")
+    
         # Make predictions with all models
         predictions = {}
         for model_name, model_data in model_trainer.models.items():
-            model = model_data['model']
-            pred = model.predict(X_scaled)[0]
+            try:
+                model = model_data['model']
+                pred = model.predict(X_scaled)[0]
             
-            from utils.validation import validate_player_prediction
-            pred = validate_player_prediction(pred, player_name)
-
-            # Calculate confidence interval
-            test_mae = model_data['test_mae']
-            predictions[model_name] = {
-                'predicted_points': max(0, pred),
-                'confidence_interval': (max(0, pred - test_mae), pred + test_mae),
-                'model_mae': test_mae
-            }
-        
+                # Validate prediction
+                from utils.validation import validate_player_prediction
+                pred = validate_player_prediction(pred, player_name)
+            
+                # Calculate confidence interval
+                test_mae = model_data['test_mae']
+                predictions[model_name] = {
+                    'predicted_points': max(0, pred),
+                    'confidence_interval': (max(0, pred - test_mae), pred + test_mae),
+                    'model_mae': test_mae
+                }
+            
+                logger.info(f"{model_name} prediction: {pred:.1f} points")
+            
+            except Exception as e:
+                logger.warning(f"Prediction failed for model {model_name}: {e}")
+                # Skip this model but continue with others
+                continue
+    
+        if not predictions:
+            raise ValueError("All prediction models failed")
+    
         # Add context information
         recent_avg = player_data['PTS'].tail(recent_games).mean()
         predictions['recent_average'] = recent_avg
         predictions['player_name'] = player_name
         predictions['player_position'] = player_position
         predictions['model_used'] = f"{player_position}-specific" if player_position in self.position_models else "general"
-        
-        return predictions
+        predictions['games_analyzed'] = len(player_data)
     
+        logger.info(f"Prediction completed successfully for {player_name}")
+        return predictions
+
     def _get_player_position(self, player_name: str) -> str:
         """Get a player's position."""
         try:
@@ -394,23 +492,88 @@ class EnhancedNBAPredictor:
         
         return results
     
+    
     def _get_player_recent_data(self, player_name: str, n_games: int) -> pd.DataFrame:
-        """Get recent game data for a specific player."""
+        """Get recent game data for a specific player with enhanced search."""
+        logger.info(f"Searching for recent data for '{player_name}' (last {n_games} games)")
+    
         if self.raw_data is None:
             # Try to collect data for this player
+            logger.info("No raw data available, attempting to collect fresh data...")
             try:
-                data = self.data_collector.collect_player_data([player_name])
-                return data.tail(n_games)
-            except:
-                return pd.DataFrame()
+                data = self.data_collector.collect_player_data([player_name], use_cache=True)
+                if not data.empty:
+                    logger.info(f"Successfully collected {len(data)} games for {player_name}")
+                    return data.tail(n_games)
+                else:
+                    logger.warning(f"No data collected for {player_name}")
+            except Exception as e:
+                logger.error(f"Failed to collect data for {player_name}: {e}")
         
-        # Filter from existing data
-        player_data = self.raw_data[
-            self.raw_data['PLAYER_NAME'].str.contains(player_name, case=False)
-        ].copy()
-        
-        return player_data.tail(n_games)
+            return pd.DataFrame()
     
+        # Search with multiple strategies
+        player_data = pd.DataFrame()
+    
+        # Strategy 1: Exact match
+        exact_match = self.raw_data[self.raw_data['PLAYER_NAME'] == player_name].copy()
+        if not exact_match.empty:
+            logger.info(f"Found exact match: {len(exact_match)} games")
+            player_data = exact_match
+    
+        # Strategy 2: Case-insensitive search
+        if player_data.empty:
+            case_insensitive = self.raw_data[
+                self.raw_data['PLAYER_NAME'].str.lower() == player_name.lower()
+            ].copy()
+            if not case_insensitive.empty:
+                logger.info(f"Found case-insensitive match: {len(case_insensitive)} games")
+                player_data = case_insensitive
+    
+        # Strategy 3: Partial name match
+        if player_data.empty:
+            partial_match = self.raw_data[
+                self.raw_data['PLAYER_NAME'].str.contains(player_name, case=False, na=False)
+            ].copy()
+            if not partial_match.empty:
+                logger.info(f"Found partial match: {len(partial_match)} games")
+                player_data = partial_match
+    
+        # Strategy 4: Try first/last name individually
+        if player_data.empty and ' ' in player_name:
+            name_parts = player_name.split()
+            for part in name_parts:
+                if len(part) > 2:  # Only try meaningful name parts
+                    name_part_match = self.raw_data[
+                        self.raw_data['PLAYER_NAME'].str.contains(part, case=False, na=False)
+                    ].copy()
+                    if not name_part_match.empty:
+                        logger.info(f"Found match using name part '{part}': {len(name_part_match)} games")
+                        player_data = name_part_match
+                        break
+    
+        if player_data.empty:
+            logger.error(f"No data found for '{player_name}' using any search strategy")
+            # Log available players for debugging
+            if 'PLAYER_NAME' in self.raw_data.columns:
+                unique_players = self.raw_data['PLAYER_NAME'].unique()
+                logger.info(f"Available players in database: {len(unique_players)} total")
+                # Show similar names
+                similar = [p for p in unique_players if any(part.lower() in p.lower() for part in player_name.split())]
+                if similar:
+                    logger.info(f"Similar player names found: {similar[:5]}")
+        
+            return pd.DataFrame()
+    
+        # Sort by date and return most recent games
+        if 'GAME_DATE' in player_data.columns:
+            player_data = player_data.sort_values('GAME_DATE')
+    
+        recent_data = player_data.tail(n_games)
+        logger.info(f"Returning {len(recent_data)} most recent games for {player_name}")
+    
+        return recent_data
+
     def get_model_performance(self) -> pd.DataFrame:
         """Get performance metrics for all trained models."""
         if not self.is_trained:
