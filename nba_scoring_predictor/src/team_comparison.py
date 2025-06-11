@@ -588,24 +588,27 @@ class EnhancedTeamComparison:
 
     def _add_realistic_team_variance(self, team_a_data: Dict, team_b_data: Dict) -> Tuple[Dict, Dict]:
         """Add realistic variance between teams based on player quality."""
-    
+
         # Calculate team quality scores
         team_a_quality = self._calculate_team_quality(team_a_data)
         team_b_quality = self._calculate_team_quality(team_b_data)
-    
+
+        # ADD THIS DEBUG LINE RIGHT HERE:
+        logger.info(f"Team A quality: {team_a_quality:.2f}, Team B quality: {team_b_quality:.2f}")
+
         # Apply quality-based adjustments
         quality_diff = team_a_quality - team_b_quality
-    
+
         # Adjust individual player predictions based on team context
         for player_name, player_data in team_a_data['players'].items():
             # Better teams get slight boost, worse teams get slight penalty
             adjustment = quality_diff * 0.1  # Small adjustment factor
             player_data['predicted_points'] = max(5, player_data['predicted_points'] + adjustment)
-    
+
         for player_name, player_data in team_b_data['players'].items():
             adjustment = -quality_diff * 0.1
             player_data['predicted_points'] = max(5, player_data['predicted_points'] + adjustment)
-    
+
         return team_a_data, team_b_data
 
     def _calculate_team_quality(self, team_data: Dict) -> float:
