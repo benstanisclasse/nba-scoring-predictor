@@ -374,11 +374,11 @@ class MultiTargetModelTrainer:
         logger.info("=== Multi-Target Model Training Results ===")
         for model_name, metrics in results.items():
             logger.info(f"\n{model_name.upper()}:")
-            logger.info(f"  Overall - Test MAE: {metrics['test_mae']:.3f}, Test R²: {metrics['test_r2']:.3f}")
+            logger.info(f"  Overall - Test MAE: {metrics['test_mae']:.3f}, Test RÂ²: {metrics['test_r2']:.3f}")
             for target in self.target_names:
                 target_mae = metrics[f'{target}_test_mae']
                 target_r2 = metrics[f'{target}_test_r2']
-                logger.info(f"  {target}: MAE={target_mae:.3f}, R²={target_r2:.3f}")
+                logger.info(f"  {target}: MAE={target_mae:.3f}, RÂ²={target_r2:.3f}")
     
     def save_models(self, filepath: str):
         """Save trained multi-target models."""
