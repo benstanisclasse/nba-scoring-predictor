@@ -26,77 +26,76 @@ class EnhancedTeamComparison:
         self.team_analyzer = AdvancedTeamAnalyzer(player_predictor)
         self.matchup_engine = MatchupAnalysisEngine()
         self.monte_carlo = MonteCarloSimulator()
-        
-        def compare_teams_comprehensive(self, team_a: str, team_b: str, game_context: Dict = None) -> Dict:
-        
-            """
-            Comprehensive team comparison with multiple methodologies.
-    
-            Args:
-                team_a: First team name
-                team_b: Second team name  
-                game_context: Game context (home/away, rest, injuries, etc.)
-        
-            Returns:
-                Comprehensive comparison results
-            """
 
-            nba_data = self.player_fetcher.load_players_data()
-            if nba_data:
-                logger.info(f"NBA data loaded: {nba_data['metadata']['total_players']} players")
-                logger.info(f"Teams available: {list(nba_data.get('players_by_team', {}).keys())}")
-            else:
-                logger.warning("No NBA data loaded - will use fallbacks")
-            logger.info(f"Running comprehensive team comparison: {team_a} vs {team_b}")
+    def compare_teams_comprehensive(self, team_a: str, team_b: str, game_context: Dict = None) -> Dict:
+        """
+        Comprehensive team comparison with multiple methodologies.
+
+        Args:
+            team_a: First team name
+            team_b: Second team name  
+            game_context: Game context (home/away, rest, injuries, etc.)
     
-            # 1. Get team rosters and individual predictions
-            team_a_data = self._get_enhanced_team_data(team_a)
-            team_b_data = self._get_enhanced_team_data(team_b)
-    
-            # ADD THIS LINE RIGHT HERE - After getting team data but before calculations
-            team_a_data, team_b_data = self._add_realistic_team_variance(team_a_data, team_b_data)
-    
-            # 2. Calculate advanced team metrics
-            team_a_metrics = self.team_analyzer.calculate_team_metrics(team_a_data)
-            team_b_metrics = self.team_analyzer.calculate_team_metrics(team_b_data)
-    
-            # 3. Perform matchup analysis
-            matchup_analysis = self.matchup_engine.analyze_matchup(
-                team_a_data, team_b_data, team_a_metrics, team_b_metrics
-            )
-    
-            # 4. Multiple prediction methods
-            predictions = self._generate_ensemble_predictions(
-                team_a_data, team_b_data, team_a_metrics, team_b_metrics, 
-                matchup_analysis, game_context
-            )
-    
-            # 5. Monte Carlo simulation
-            monte_carlo_results = self.monte_carlo.simulate_game(
-                team_a_data, team_b_data, predictions, n_simulations=10000
-            )
-    
-            # 6. Confidence and uncertainty analysis
-            confidence_analysis = self._analyze_prediction_confidence(
-                team_a_data, team_b_data, predictions, monte_carlo_results
-            )
-    
-            return {
-                'teams': {
-                    'team_a': team_a,
-                    'team_b': team_b
-                },
-                'team_metrics': {
-                    'team_a': team_a_metrics,
-                    'team_b': team_b_metrics
-                },
-                'matchup_analysis': matchup_analysis,
-                'predictions': predictions,
-                'monte_carlo': monte_carlo_results,
-                'confidence_analysis': confidence_analysis,
-                'game_context': game_context or {},
-                'timestamp': datetime.now().isoformat()
-            }
+        Returns:
+            Comprehensive comparison results
+        """
+
+        nba_data = self.player_fetcher.load_players_data()
+        if nba_data:
+            logger.info(f"NBA data loaded: {nba_data['metadata']['total_players']} players")
+            logger.info(f"Teams available: {list(nba_data.get('players_by_team', {}).keys())}")
+        else:
+            logger.warning("No NBA data loaded - will use fallbacks")
+        logger.info(f"Running comprehensive team comparison: {team_a} vs {team_b}")
+
+        # 1. Get team rosters and individual predictions
+        team_a_data = self._get_enhanced_team_data(team_a)
+        team_b_data = self._get_enhanced_team_data(team_b)
+
+        # ADD THIS LINE RIGHT HERE - After getting team data but before calculations
+        team_a_data, team_b_data = self._add_realistic_team_variance(team_a_data, team_b_data)
+
+        # 2. Calculate advanced team metrics
+        team_a_metrics = self.team_analyzer.calculate_team_metrics(team_a_data)
+        team_b_metrics = self.team_analyzer.calculate_team_metrics(team_b_data)
+
+        # 3. Perform matchup analysis
+        matchup_analysis = self.matchup_engine.analyze_matchup(
+            team_a_data, team_b_data, team_a_metrics, team_b_metrics
+        )
+
+        # 4. Multiple prediction methods
+        predictions = self._generate_ensemble_predictions(
+            team_a_data, team_b_data, team_a_metrics, team_b_metrics, 
+            matchup_analysis, game_context
+        )
+
+        # 5. Monte Carlo simulation
+        monte_carlo_results = self.monte_carlo.simulate_game(
+            team_a_data, team_b_data, predictions, n_simulations=10000
+        )
+
+        # 6. Confidence and uncertainty analysis
+        confidence_analysis = self._analyze_prediction_confidence(
+            team_a_data, team_b_data, predictions, monte_carlo_results
+        )
+
+        return {
+            'teams': {
+                'team_a': team_a,
+                'team_b': team_b
+            },
+            'team_metrics': {
+                'team_a': team_a_metrics,
+                'team_b': team_b_metrics
+            },
+            'matchup_analysis': matchup_analysis,
+            'predictions': predictions,
+            'monte_carlo': monte_carlo_results,
+            'confidence_analysis': confidence_analysis,
+            'game_context': game_context or {},
+            'timestamp': datetime.now().isoformat()
+        }
    
         
     
