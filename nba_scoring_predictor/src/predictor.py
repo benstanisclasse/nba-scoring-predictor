@@ -695,6 +695,131 @@ class EnhancedNBAPredictor:
             return "Moderate recommendation - Proceed with caution"
         else:
             return "Avoid - Low confidence prediction"
+     
+        # Add these methods to src/predictor.py
+
+    def train_multi_target(self, data: pd.DataFrame = None, optimize: bool = True) -> Dict:
+        """Train multi-target prediction models for points, assists, and rebounds."""
+        if data is None:
+            if self.processed_data is None:
+                raise ValueError("No processed data available. Call process_data() first.")
+            data = self.processed_data
+    
+        logger.info("Preparing multi-target training data...")
+        X, y, feature_names, target_names = self.feature_engineer.prepare_multi_target_features(data)
+    
+        # Initialize multi-target trainer
+        from src.multi_target_model_trainer import MultiTargetModelTrainer
+        self.multi_target_trainer = MultiTargetModelTrainer()
+    
+        logger.info("Training multi-target models...")
+        results = self.multi_target_trainer.train_models(X, y, feature_names, target_names, optimize=optimize)
+    
+        self.is_trained = True
+        self.is_multi_target = True
+        logger.info("Multi-target training completed successfully!")
+    
+        return results
+
+    def predict_player_multi_stats(self, player_name: str, recent_games: int = 10) -> Dict:
+        """
+        Enhanced prediction for points, assists, and rebounds.
+        """
+        if not hasattr(self, 'multi_target_trainer') or not self.is_trained:
+            raise ValueError("No multi-target models trained. Call train_multi_target() first.")
+    
+        logger.info(f"Making multi-target prediction for {player_name} (recent games: {recent_games})")
+    
+        # Get recent data for the player
+        player_data = self._get_player_recent_data(player_name, recent_games * 2)
+    
+        if player_data.empty:
+            raise ValueError(f"No recent data found for player: {player_name}")
+    
+        # Process the data
+        processed_data = self.feature_engineer.engineer_features(player_data)
+    
+        if len(processed_data) == 0:
+            raise ValueError(f"Feature engineering produced no valid rows for {player_name}")
+    
+        # Get the most recent game's features
+        latest_game = processed_data.iloc[-1:].copy()
+    
+        # Ensure we have the same features as training
+        if hasattr(self.multi_target_trainer, 'feature_names') and self.multi_target_trainer.feature_names:
+            # Add missing features with defaults
+            missing_features = set(self.multi_target_trainer.feature_names) - set(latest_game.columns)
+            if missing_features:
+                for feature in missing_features:
+                    if 'PCT' in feature.upper() or 'RATE' in feature.upper():
+                        latest_game[feature] = 0.5
+                    elif 'ROLL' in feature.upper():
+                        latest_game[feature] = player_data['PTS'].tail(5).mean() if not player_data.empty else 15.0
+                    else:
+                        latest_game[feature] = 0
+        
+            # Select only the features used in training
+            latest_game = latest_game[self.multi_target_trainer.feature_names]
+    
+        # Convert to numpy array for prediction
+        X = latest_game.values
+    
+        # Make predictions with all models
+        predictions = {}
+        target_names = self.multi_target_trainer.target_names
+    
+        for model_name, model_data in self.multi_target_trainer.models.items():
+            try:
+                model_predictions = self.multi_target_trainer.predict_multi_target(X, model_name)
+            
+                # Convert to prediction format for each target
+                model_results = {}
+                for target in target_names:
+                    pred = model_predictions[target][0]  # Single prediction
+                
+                    # Validate prediction
+                    from utils.validation import validate_player_prediction
+                    if target == 'PTS':
+                        pred = validate_player_prediction(pred, player_name)
+                    elif target == 'AST':
+                        pred = max(0, min(pred, 20))  # Reasonable assist range
+                    elif target == 'REB':
+                        pred = max(0, min(pred, 25))  # Reasonable rebound range
+                
+                    # Get model MAE for confidence intervals
+                    target_mae_key = f'{target}_test_mae'
+                    test_mae = model_data.get(target_mae_key, 2.0)
+                
+                    model_results[target] = {
+                        'predicted_value': max(0, pred),
+                        'confidence_interval': (max(0, pred - test_mae), pred + test_mae),
+                        'model_mae': test_mae
+                    }
+            
+                predictions[model_name] = model_results
+            
+            except Exception as e:
+                logger.warning(f"Multi-target prediction failed for model {model_name}: {e}")
+                continue
+    
+        if not predictions:
+            raise ValueError("All multi-target prediction models failed")
+    
+        # Add context information
+        recent_stats = {}
+        for target in target_names:
+            if target in player_data.columns:
+                recent_stats[f'{target.lower()}_recent_average'] = player_data[target].tail(recent_games).mean()
+            else:
+               recent_stats[f'{target.lower()}_recent_average'] = 0.0
+
+            predictions.update(recent_stats)
+            predictions['player_name'] = player_name
+            predictions['games_analyzed'] = len(player_data)
+   
+            logger.info(f"Multi-target prediction completed successfully for {player_name}")
+            return predictions
+    
 
 # TEAM PREDICTION SYSTEM (keep the existing team prediction classes...)
 class TeamGamePredictor:

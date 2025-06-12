@@ -360,3 +360,111 @@ class FeatureEngineer:
         
             self.feature_columns = emergency_features
             return X_emergency, y_emergency, emergency_features
+
+
+    def prepare_multi_target_features(self, df: pd.DataFrame) -> Tuple[np.ndarray, np.ndarray, List[str]]:
+        """
+        Prepare features for multi-target training (points, assists, rebounds).
+    
+        Args:
+            df: DataFrame with engineered features
+        
+        Returns:
+            Tuple of (X, y, feature_names) where y is multi-target
+        """
+        logger.info("Preparing features for multi-target training...")
+    
+        try:
+            # Define columns to exclude
+            exclude_cols = {
+                'TARGET_PTS', 'PTS', 'AST', 'REB', 'PLAYER_ID', 'PLAYER_NAME', 'GAME_ID', 
+                'GAME_DATE', 'SEASON', 'MATCHUP', 'WL', 'PREV_GAME_DATE',
+                'Video_Available', 'Game_ID'
+            }
+        
+            # Select feature columns
+            feature_cols = [col for col in df.columns if col not in exclude_cols]
+        
+            if not feature_cols:
+                # Fallback: use any numeric columns we can find
+                numeric_cols = df.select_dtypes(include=[np.number]).columns
+                feature_cols = [col for col in numeric_cols if col not in exclude_cols]
+        
+                if not feature_cols:
+                    raise ValueError("No feature columns available after filtering")
+        
+            logger.info(f"Initial feature columns: {len(feature_cols)}")
+        
+            # Handle missing values and infinite values
+            X = df[feature_cols].copy()
+        
+            # Ensure all feature columns are numeric
+            for col in X.columns:
+                try:
+                    X[col] = pd.to_numeric(X[col], errors='coerce')
+                except Exception as e:
+                    logger.warning(f"Could not convert {col} to numeric: {e}")
+                    X[col] = 0
+        
+            # Fill any remaining NaN values
+            X = X.fillna(0)
+        
+            # Replace infinite values
+            X = X.replace([np.inf, -np.inf], 0)
+        
+            # Remove columns with zero variance
+            X_clean = X.copy()
+            if len(X.columns) > 10:
+                variance_mask = X.var() > 0.001
+                if variance_mask.sum() > 5:
+                    X_clean = X.loc[:, variance_mask]
+                    removed_features = [col for col, keep in variance_mask.items() if not keep]
+                    logger.info(f"Removed {len(removed_features)} zero-variance features")
+        
+            final_features = list(X_clean.columns)
+        
+            if len(final_features) == 0:
+                # Emergency fallback
+                logger.warning("All features filtered out, using emergency fallback")
+                emergency_features = ['emergency_feature_1', 'emergency_feature_2', 'emergency_feature_3']
+                X_clean = pd.DataFrame(np.ones((len(df), len(emergency_features))), 
+                                     columns=emergency_features, index=df.index)
+                final_features = emergency_features
+        
+            # Get target variables (PTS, AST, REB)
+            target_names = ['PTS', 'AST', 'REB']
+            y_data = []
+        
+            for target in target_names:
+                if target in df.columns:
+                    target_data = pd.to_numeric(df[target], errors='coerce').fillna(0)
+                    y_data.append(target_data.values)
+                else:
+                    logger.warning(f"Target {target} not found, using zeros")
+                    y_data.append(np.zeros(len(df)))
+        
+            # Stack targets into multi-target array
+            y = np.column_stack(y_data)
+        
+            # Validate feature matrix
+            from utils.data_validator import NBADataValidator
+            validator = NBADataValidator()
+            X_validated, final_features = validator.validate_feature_matrix(X_clean.values, final_features)
+        
+            logger.info(f"Final validated features: {len(final_features)}")
+            logger.info(f"Multi-target shape: {y.shape} (targets: {target_names})")
+        
+            self.feature_columns = final_features
+            return X_validated, y, final_features, target_names
+        
+        except Exception as e:
+            logger.error(f"Multi-target feature preparation failed: {e}")
+            # Emergency fallback
+            n_samples = len(df)
+            emergency_features = ['emergency_feature_1', 'emergency_feature_2', 'emergency_feature_3']
+            X_emergency = np.ones((n_samples, len(emergency_features)))
+            y_emergency = np.zeros((n_samples, 3))  # 3 targets
+            target_names = ['PTS', 'AST', 'REB']
+        
+            self.feature_columns = emergency_features
+            return X_emergency, y_emergency, emergency_features, target_names

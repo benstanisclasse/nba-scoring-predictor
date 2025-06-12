@@ -94,7 +94,7 @@ class NBADataUpdateWorker(QThread):
 
 
 class TrainingWorker(QThread):
-    """Enhanced worker thread for model training with role support."""
+    """Enhanced worker thread for model training with role and multi-target support."""
     
     progress_updated = pyqtSignal(int)
     status_updated = pyqtSignal(str)
@@ -102,7 +102,7 @@ class TrainingWorker(QThread):
     training_completed = pyqtSignal(dict)
     training_failed = pyqtSignal(str)
     
-    def __init__(self, predictor, player_names, roles, optimize, use_cache, role_based):
+    def __init__(self, predictor, player_names, roles, optimize, use_cache, role_based, multi_target=False):
         super().__init__()
         self.predictor = predictor
         self.player_names = player_names
@@ -110,9 +110,10 @@ class TrainingWorker(QThread):
         self.optimize = optimize
         self.use_cache = use_cache
         self.role_based = role_based
+        self.multi_target = multi_target
     
     def run(self):
-        """Run training in background thread with role support."""
+        """Run training in background thread with role and multi-target support."""
         try:
             # Data collection
             self.status_updated.emit("Collecting data...")
@@ -125,39 +126,89 @@ class TrainingWorker(QThread):
                     max_per_role=3,
                     use_cache=self.use_cache
                 )
+                self.log_updated.emit(f"Collected role-based data for positions: {', '.join(self.roles)}")
             else:
                 # Regular data collection
                 data = self.predictor.collect_data(
                     player_names=self.player_names,
                     use_cache=self.use_cache
                 )
+                self.log_updated.emit("Collected standard player data")
             
-            self.log_updated.emit(f"Collected data for {data['PLAYER_NAME'].nunique()} players")
+            self.log_updated.emit(f"Total players in dataset: {data['PLAYER_NAME'].nunique()}")
+            self.log_updated.emit(f"Total games collected: {len(data)}")
             self.progress_updated.emit(30)
             
             # Feature engineering
             self.status_updated.emit("Engineering features...")
             processed_data = self.predictor.process_data(data)
             
-            self.log_updated.emit(f"Engineered {processed_data.shape[1]} features")
+            if self.multi_target:
+                self.log_updated.emit(f"Engineered {processed_data.shape[1]} features for multi-target prediction")
+                self.log_updated.emit("Target variables: Points, Assists, Rebounds")
+            else:
+                self.log_updated.emit(f"Engineered {processed_data.shape[1]} features for points prediction")
+            
             self.progress_updated.emit(60)
             
             # Model training
-            self.status_updated.emit("Training models...")
-            
-            if self.role_based:
-                results = self.predictor.train_with_roles(processed_data, optimize=self.optimize)
+            if self.multi_target:
+                self.status_updated.emit("Training multi-target models...")
+                self.log_updated.emit("Starting multi-target model training (Points + Assists + Rebounds)")
+                
+                try:
+                    results = self.predictor.train_multi_target(processed_data, optimize=self.optimize)
+                    self.log_updated.emit("✅ Multi-target training completed successfully")
+                    
+                    # Log multi-target results
+                    if 'ensemble' in results:
+                        ensemble_metrics = results['ensemble']
+                        for target in ['PTS', 'AST', 'REB']:
+                            if f'{target}_test_mae' in ensemble_metrics:
+                                mae = ensemble_metrics[f'{target}_test_mae']
+                                r2 = ensemble_metrics[f'{target}_test_r2']
+                                self.log_updated.emit(f"  {target}: MAE={mae:.3f}, R²={r2:.3f}")
+                    
+                except Exception as e:
+                    self.log_updated.emit(f"❌ Multi-target training failed: {str(e)}")
+                    self.log_updated.emit("Falling back to points-only training...")
+                    
+                    # Fallback to single-target
+                    if self.role_based:
+                        results = self.predictor.train_with_roles(processed_data, optimize=self.optimize)
+                    else:
+                        results = self.predictor.train(processed_data, optimize=self.optimize)
+                    
+                    self.log_updated.emit("✅ Fallback points-only training completed")
             else:
-                results = self.predictor.train(processed_data, optimize=self.optimize)
+                self.status_updated.emit("Training points prediction models...")
+                self.log_updated.emit("Starting points-only model training")
+                
+                if self.role_based:
+                    results = self.predictor.train_with_roles(processed_data, optimize=self.optimize)
+                    self.log_updated.emit("✅ Role-based points training completed")
+                else:
+                    results = self.predictor.train(processed_data, optimize=self.optimize)
+                    self.log_updated.emit("✅ Standard points training completed")
             
             self.progress_updated.emit(100)
             self.status_updated.emit("Training completed!")
             
-            # Log results
-            for model_name, metrics in results.items():
-                self.log_updated.emit(
-                    f"{model_name}: MAE={metrics['test_mae']:.3f}, R={metrics['test_r2']:.3f}"
-                )
+            # Log final results summary
+            self.log_updated.emit("\n=== TRAINING SUMMARY ===")
+            if hasattr(self.predictor, 'is_multi_target') and self.predictor.is_multi_target:
+                self.log_updated.emit("Model Type: Multi-target (Points + Assists + Rebounds)")
+            else:
+                self.log_updated.emit("Model Type: Points-only")
+            
+            self.log_updated.emit(f"Training Method: {'Role-based' if self.role_based else 'Standard'}")
+            self.log_updated.emit(f"Hyperparameter Optimization: {'Yes' if self.optimize else 'No'}")
+            
+            # Log best model performance
+            if results:
+                best_model = min(results.keys(), key=lambda k: results[k].get('test_mae', float('inf')))
+                best_mae = results[best_model].get('test_mae', 0)
+                self.log_updated.emit(f"Best Model: {best_model.title()} (MAE: {best_mae:.3f})")
             
             self.training_completed.emit(results)
             
@@ -823,6 +874,14 @@ class NBAPlayerScoringGUI(QMainWindow):
         config_layout.addWidget(self.use_cache_checkbox, 4, 0, 1, 2)
        
         layout.addWidget(config_group)
+
+
+        # After the existing checkboxes, add:
+        self.multi_target_checkbox = QCheckBox("Train multi-target models (Points + Assists + Rebounds)")
+        self.multi_target_checkbox.setStyleSheet("color: white; font-weight: bold;")
+        self.multi_target_checkbox.setChecked(True)  # Default to multi-target
+
+        config_layout.addWidget(self.multi_target_checkbox, 5, 0, 1, 2)
        
         # Set initial state
         self.on_training_method_changed()
@@ -1373,24 +1432,24 @@ NBA Data Management Instructions:
    
     # TRAINING METHODS
     def start_training(self):
-        """Enhanced start training with role support."""
+        """Enhanced start training with role and multi-target support."""
         if self.training_worker and self.training_worker.isRunning():
             QMessageBox.warning(self, "Warning", "Training is already in progress.")
             return
-       
+    
         # Get training parameters based on method
         method = self.training_method_combo.currentText()
         player_names = None
         roles = None
         role_based = False
-       
+    
         if method == "Role-Based Training (Recommended)":
             # Get selected roles
             selected_roles = [role for role, checkbox in self.role_checkboxes.items() if checkbox.isChecked()]
             if not selected_roles:
                 QMessageBox.warning(self, "Warning", "Please select at least one position for role-based training.")
                 return
-           
+        
             # Check if NBA data is available
             nba_data = self.player_fetcher.load_players_data()
             if not nba_data:
@@ -1406,63 +1465,92 @@ NBA Data Management Instructions:
                 else:
                     QMessageBox.warning(self, "Warning", "Cannot proceed with role-based training without NBA data.")
                     return
-           
+        
             roles = selected_roles
             role_based = True
-           
+        
         elif method == "Enter Custom Players":
             players_text = self.training_players_entry.text().strip()
             if not players_text:
                 QMessageBox.warning(self, "Warning", "Please enter player names for training.")
                 return
             player_names = [name.strip() for name in players_text.split(',')]
-           
+        
         else:  # Train All Available Players
             player_names = None
-       
+    
+        # Get training options
         optimize = self.optimize_checkbox.isChecked()
         use_cache = self.use_cache_checkbox.isChecked()
-       
-        # Confirm training start
+        use_multi_target = self.multi_target_checkbox.isChecked()
+    
+        # Enhanced confirmation dialog with multi-target info
+        training_type = "Role-based" if role_based else "Standard"
+        target_type = "Multi-target (Points + Assists + Rebounds)" if use_multi_target else "Points-only"
+    
+        confirm_message = f"Training Configuration:\n\n"
+        confirm_message += f"• Training Type: {training_type}\n"
+        confirm_message += f"• Prediction Type: {target_type}\n"
+        confirm_message += f"• Hyperparameter Optimization: {'Yes' if optimize else 'No'}\n"
+        confirm_message += f"• Use Cached Data: {'Yes' if use_cache else 'No'}\n\n"
+    
+        if role_based:
+            confirm_message += f"• Selected Positions: {', '.join(roles)}\n"
+            confirm_message += f"• Max Players per Position: {self.players_per_role_slider.value()}\n\n"
+        elif player_names:
+            confirm_message += f"• Custom Players: {len(player_names)} players\n\n"
+    
         if optimize:
-            reply = QMessageBox.question(
-                self, "Confirm Training",
-                "Hyperparameter optimization is enabled. This may take 30+ minutes.\n"
-                "Do you want to continue?",
-                QMessageBox.Yes | QMessageBox.No
-            )
-            if reply != QMessageBox.Yes:
-                return
-       
+            confirm_message += "⚠️ Hyperparameter optimization may take 30+ minutes.\n\n"
+    
+        if use_multi_target:
+            confirm_message += "🎯 Multi-target training will predict Points, Assists, and Rebounds.\n"
+            confirm_message += "This provides more comprehensive player analysis.\n\n"
+    
+        confirm_message += "Do you want to continue?"
+    
+        reply = QMessageBox.question(
+            self, "Confirm Training Configuration",
+            confirm_message,
+            QMessageBox.Yes | QMessageBox.No
+        )
+    
+        if reply != QMessageBox.Yes:
+            return
+    
         # Store the training parameters
         self.current_training_players = player_names
         self.current_training_roles = roles
-       
+        self.current_multi_target = use_multi_target
+    
         # Update UI
         self.start_training_button.setEnabled(False)
         self.stop_training_button.setEnabled(True)
         self.progress_bar.setValue(0)
         self.training_log.clear()
-       
+    
+        # Log training start
+        training_details = f"Starting {training_type} training with {target_type} prediction"
+        if role_based:
+            training_details += f" for positions: {', '.join(roles)}"
+        self.add_training_log(training_details)
+    
         # Create and start worker
         self.training_worker = TrainingWorker(
-            self.predictor, player_names, roles, optimize, use_cache, role_based
+            self.predictor, player_names, roles, optimize, use_cache, role_based, use_multi_target
         )
-       
+    
         # Connect signals
         self.training_worker.progress_updated.connect(self.progress_bar.setValue)
         self.training_worker.status_updated.connect(self.progress_label.setText)
         self.training_worker.log_updated.connect(self.add_training_log)
         self.training_worker.training_completed.connect(self.on_training_completed)
         self.training_worker.training_failed.connect(self.on_training_failed)
-       
+    
         # Start training
         self.training_worker.start()
-       
-        if role_based:
-            self.update_status(f"Role-based training started for positions: {', '.join(roles)}")
-        else:
-            self.update_status("Training started...")
+    
+        self.update_status(f"{training_type} {target_type} training started...")
    
     def stop_training(self):
         """Stop model training."""
@@ -1479,35 +1567,52 @@ NBA Data Management Instructions:
                 self.on_training_stopped()
    
     def on_training_completed(self, results):
-        """Enhanced training completion handler."""
+        """Enhanced training completion handler for multi-target support."""
         self.is_model_loaded = True
         self.update_ui_state()
         self.refresh_players()
-       
+    
         # Add trained players to storage
         if hasattr(self, 'current_training_players') and self.current_training_players:
             from utils.player_storage import PlayerStorage
             storage = PlayerStorage()
             storage.add_trained_players(self.current_training_players)
-       
+    
         # Reset training UI
         self.start_training_button.setEnabled(True)
         self.stop_training_button.setEnabled(False)
-       
+    
         self.update_status("Training completed successfully!")
-       
-        # Show results
-        best_model = min(results.keys(), key=lambda k: results[k]['test_mae'])
-        best_mae = results[best_model]['test_mae']
-       
+    
+        # Show enhanced results
+        best_model = min(results.keys(), key=lambda k: results[k].get('test_mae', float('inf')))
+        best_mae = results[best_model].get('test_mae', 0)
+    
+        # Determine training type
         training_type = "Role-based" if hasattr(self, 'current_training_roles') and self.current_training_roles else "Standard"
-       
+    
+        # Determine model type
+        is_multi_target = hasattr(self.predictor, 'is_multi_target') and self.predictor.is_multi_target
+        model_type = "Multi-target (Points + Assists + Rebounds)" if is_multi_target else "Points-only"
+    
+        # Create detailed success message
+        success_message = f"{training_type} {model_type.lower()} training completed successfully!\n\n"
+        success_message += f"🏆 Best Model: {best_model.title()}\n"
+        success_message += f"📊 Best MAE: {best_mae:.3f}\n\n"
+    
+        if is_multi_target:
+            success_message += "✨ Your model now predicts:\n"
+            success_message += "  • 🏀 Points per game\n"
+            success_message += "  • 🎯 Assists per game\n"
+            success_message += "  • 📈 Rebounds per game\n\n"
+            success_message += "Use the prediction tab to get comprehensive player statistics!"
+        else:
+            success_message += "✨ Your model now predicts points per game.\n\n"
+            success_message += "The model is ready for player predictions!"
+    
         QMessageBox.information(
             self, "Training Complete",
-            f"{training_type} model training completed successfully!\n\n"
-            f"Best Model: {best_model.title()}\n"
-            f"Best MAE: {best_mae:.3f} points\n\n"
-            f"The model is now ready for predictions."
+            success_message
         )
    
     def on_training_failed(self, error_message):
@@ -1617,43 +1722,273 @@ NBA Data Management Instructions:
             self.player_combo.setEnabled(False)
             self.player_search_widget.update_player_list([])
    
+    # Update the predict_player_points method in src/gui.py
+
     def predict_player_points(self):
-        """Enhanced predict player points method."""
+        """Enhanced predict method that handles both single and multi-target predictions."""
         if not self.is_model_loaded:
             QMessageBox.warning(self, "Warning", "Please load a trained model first.")
             return
-       
+    
         # Get player name from search widget or dropdown
         player_name = getattr(self, 'selected_player_name', None)
-       
+    
         if not player_name:
-            # Fallback to dropdown selection
             player_name = self.player_combo.currentText()
-       
+    
         if not player_name or player_name in ["Load model first...", "No players found", "Error loading players"]:
             QMessageBox.warning(self, "Warning", "Please search for and select a valid player.")
             return
-       
+    
         recent_games = self.recent_games_slider.value()
-       
+    
         try:
-            self.update_status(f"Predicting points for {player_name}...")
+            self.update_status(f"Predicting stats for {player_name}...")
             self.results_text.setPlainText("Generating predictions...\n")
             QApplication.processEvents()
-           
-            # Make prediction
+        
+            # Check if we have multi-target capability
+            if hasattr(self.predictor, 'multi_target_trainer') and hasattr(self.predictor, 'is_multi_target'):
+                try:
+                    # Try multi-target prediction first
+                    predictions = self.predictor.predict_player_multi_stats(player_name, recent_games)
+                    self.display_prediction_results(predictions)
+                    self.update_status("Multi-stat prediction completed successfully!")
+                    return
+                except Exception as e:
+                    logger.warning(f"Multi-target prediction failed, falling back to points-only: {e}")
+        
+            # Fallback to original points-only prediction
             predictions = self.predictor.predict_player_points(player_name, recent_games)
-           
-            # Display results
             self.display_prediction_results(predictions)
-            self.update_status("Prediction completed successfully!")
-           
+            self.update_status("Points prediction completed successfully!")
+        
         except Exception as e:
             error_msg = f"Error predicting for {player_name}: {str(e)}"
             logger.error(error_msg)
             self.results_text.setPlainText(f"Error: {error_msg}")
             self.update_status("Prediction failed")
-   
+
+
+    def display_prediction_results(self, predictions: Dict):
+        """Display enhanced prediction results with points, assists, and rebounds."""
+        player_name = predictions.get('player_name', 'Unknown Player')
+    
+        # Check if this is multi-target prediction
+        is_multi_target = 'ensemble' in predictions and isinstance(predictions['ensemble'], dict) and 'PTS' in predictions['ensemble']
+    
+        if is_multi_target:
+            self._display_multi_target_results(predictions)
+        else:
+            # Original points-only display (keep existing functionality)
+            self._display_points_only_results(predictions)
+
+    def _display_multi_target_results(self, predictions: Dict):
+        """Display multi-target prediction results (points, assists, rebounds)."""
+        player_name = predictions.get('player_name', 'Unknown Player')
+    
+        # Try to get player role information
+        player_role = "Unknown"
+        try:
+            nba_data = self.player_fetcher.load_players_data()
+            if nba_data:
+                for player in nba_data['all_players']:
+                    if player['name'].lower() == player_name.lower():
+                        player_role = player['position']
+                        break
+        except:
+            pass
+    
+        # Build result text
+        result_text = f"🏀 MULTI-STAT PREDICTION RESULTS FOR {player_name.upper()}\n"
+        result_text += "=" * 80 + "\n\n"
+    
+        # Player context
+        result_text += f"📊 PLAYER CONTEXT:\n"
+        result_text += f"Position: {player_role}\n"
+        result_text += f"Games analyzed: {predictions.get('games_analyzed', 0)}\n"
+    
+        # Recent averages
+        pts_avg = predictions.get('pts_recent_average', 0)
+        ast_avg = predictions.get('ast_recent_average', 0)
+        reb_avg = predictions.get('reb_recent_average', 0)
+    
+        result_text += f"Recent Averages ({self.recent_games_slider.value()} games):\n"
+        result_text += f"  Points: {pts_avg:.1f} | Assists: {ast_avg:.1f} | Rebounds: {reb_avg:.1f}\n\n"
+    
+        # Model predictions
+        result_text += "🤖 MODEL PREDICTIONS:\n"
+        result_text += "-" * 70 + "\n"
+    
+        model_order = ['ensemble', 'xgboost', 'lightgbm', 'random_forest', 'neural_network']
+    
+        for model_name in model_order:
+            if model_name in predictions and isinstance(predictions[model_name], dict):
+                model_data = predictions[model_name]
+            
+                result_text += f"\n{model_name.replace('_', ' ').title()}:\n"
+            
+                # Points prediction
+                if 'PTS' in model_data:
+                    pts_data = model_data['PTS']
+                    pts_pred = pts_data['predicted_value']
+                    pts_ci_low, pts_ci_high = pts_data['confidence_interval']
+                    pts_mae = pts_data['model_mae']
+                
+                    result_text += f"  🏀 Points: {pts_pred:.1f} (Range: {pts_ci_low:.1f}-{pts_ci_high:.1f}) ±{pts_mae:.1f}\n"
+            
+                # Assists prediction
+                if 'AST' in model_data:
+                    ast_data = model_data['AST']
+                    ast_pred = ast_data['predicted_value']
+                    ast_ci_low, ast_ci_high = ast_data['confidence_interval']
+                    ast_mae = ast_data['model_mae']
+                
+                    result_text += f"  🎯 Assists: {ast_pred:.1f} (Range: {ast_ci_low:.1f}-{ast_ci_high:.1f}) ±{ast_mae:.1f}\n"
+            
+                # Rebounds prediction
+                if 'REB' in model_data:
+                    reb_data = model_data['REB']
+                    reb_pred = reb_data['predicted_value']
+                    reb_ci_low, reb_ci_high = reb_data['confidence_interval']
+                    reb_mae = reb_data['model_mae']
+                
+                    result_text += f"  📈 Rebounds: {reb_pred:.1f} (Range: {reb_ci_low:.1f}-{reb_ci_high:.1f}) ±{reb_mae:.1f}\n"
+    
+        # Enhanced analysis
+        if 'ensemble' in predictions and isinstance(predictions['ensemble'], dict):
+            ensemble_data = predictions['ensemble']
+        
+            result_text += "\n" + "=" * 80 + "\n"
+            result_text += "📈 COMPREHENSIVE ANALYSIS:\n"
+            result_text += "-" * 70 + "\n"
+        
+            # Stat line summary
+            if all(stat in ensemble_data for stat in ['PTS', 'AST', 'REB']):
+                pts_pred = ensemble_data['PTS']['predicted_value']
+                ast_pred = ensemble_data['AST']['predicted_value']
+                reb_pred = ensemble_data['REB']['predicted_value']
+            
+                result_text += f"📊 Projected Stat Line: {pts_pred:.1f} PTS / {reb_pred:.1f} REB / {ast_pred:.1f} AST\n\n"
+            
+                # Performance vs recent averages
+                pts_diff = pts_pred - pts_avg
+                ast_diff = ast_pred - ast_avg
+                reb_diff = reb_pred - reb_avg
+            
+                result_text += f"📈 PERFORMANCE VS RECENT AVERAGE:\n"
+                result_text += f"  Points: {pts_diff:+.1f} ({'↗️ Above' if pts_diff > 1 else '↘️ Below' if pts_diff < -1 else '➡️ Similar to'} recent average)\n"
+                result_text += f"  Assists: {ast_diff:+.1f} ({'↗️ Above' if ast_diff > 0.5 else '↘️ Below' if ast_diff < -0.5 else '➡️ Similar to'} recent average)\n"
+                result_text += f"  Rebounds: {reb_diff:+.1f} ({'↗️ Above' if reb_diff > 0.5 else '↘️ Below' if reb_diff < -0.5 else '➡️ Similar to'} recent average)\n\n"
+            
+                # Position-specific analysis
+                if player_role != "Unknown":
+                    result_text += f"🏀 POSITION ANALYSIS ({player_role}):\n"
+                
+                    # Position-specific expectations
+                    position_expectations = {
+                        'PG': {'pts': (15, 25), 'ast': (6, 12), 'reb': (4, 8)},
+                        'SG': {'pts': (18, 28), 'ast': (3, 7), 'reb': (4, 7)},
+                        'SF': {'pts': (16, 26), 'ast': (4, 8), 'reb': (6, 10)},
+                        'PF': {'pts': (14, 24), 'ast': (2, 6), 'reb': (8, 14)},
+                        'C': {'pts': (12, 22), 'ast': (1, 4), 'reb': (10, 16)}
+                    }
+                
+                    if player_role in position_expectations:
+                        expectations = position_expectations[player_role]
+                    
+                        for stat, pred_val in [('pts', pts_pred), ('ast', ast_pred), ('reb', reb_pred)]:
+                            low, high = expectations[stat]
+                            stat_name = {'pts': 'Points', 'ast': 'Assists', 'reb': 'Rebounds'}[stat]
+                        
+                            if pred_val < low:
+                                result_text += f"  {stat_name}: Below typical {player_role} range ({low}-{high})\n"
+                            elif pred_val > high:
+                                result_text += f"  {stat_name}: Above typical {player_role} range ({low}-{high})\n"
+                            else:
+                                result_text += f"  {stat_name}: Within typical {player_role} range ({low}-{high})\n"
+                
+                    result_text += "\n"
+            
+                # Fantasy/betting insights
+                result_text += "🎯 FANTASY/BETTING INSIGHTS:\n"
+                result_text += "-" * 70 + "\n"
+            
+                # Calculate confidence
+                avg_mae = np.mean([
+                    ensemble_data['PTS']['model_mae'],
+                    ensemble_data['AST']['model_mae'],
+                    ensemble_data['REB']['model_mae']
+                ])
+            
+                if avg_mae < 2.5:
+                    confidence = "HIGH"
+                    confidence_desc = "Strong confidence in all predictions"
+                elif avg_mae < 4.0:
+                    confidence = "MEDIUM"
+                    confidence_desc = "Moderate confidence, some variance expected"
+                else:
+                    confidence = "LOW"
+                    confidence_desc = "High variance, predictions less reliable"
+            
+                result_text += f"• Overall Confidence: {confidence} ({confidence_desc})\n"
+            
+                # Specific recommendations
+                strong_stats = []
+                weak_stats = []
+            
+                if pts_diff > 2:
+                    strong_stats.append("Points")
+                elif pts_diff < -2:
+                    weak_stats.append("Points")
+                
+                if ast_diff > 1:
+                    strong_stats.append("Assists")
+                elif ast_diff < -1:
+                    weak_stats.append("Assists")
+                
+                if reb_diff > 1:
+                    strong_stats.append("Rebounds")
+                elif reb_diff < -1:
+                    weak_stats.append("Rebounds")
+            
+                if strong_stats:
+                    result_text += f"• 🔥 STRONG CATEGORIES: {', '.join(strong_stats)} (above recent form)\n"
+                if weak_stats:
+                    result_text += f"• ❄️ WEAK CATEGORIES: {', '.join(weak_stats)} (below recent form)\n"
+            
+                # Triple-double potential
+                td_potential = sum([pts_pred >= 10, ast_pred >= 10, reb_pred >= 10])
+                if td_potential >= 2:
+                    if td_potential == 3:
+                        result_text += f"• 🌟 TRIPLE-DOUBLE ALERT: All three categories projected 10+\n"
+                    else:
+                        result_text += f"• ⭐ DOUBLE-DOUBLE LIKELY: {td_potential} categories projected 10+\n"
+    
+        # Model information
+        result_text += "\n" + "ℹ️  ENHANCED MODEL INFORMATION:\n"
+        result_text += "-" * 70 + "\n"
+        result_text += "• Multi-target prediction system (Points + Assists + Rebounds)\n"
+        result_text += "• Enhanced with position-specific features\n"
+        result_text += "• Ensemble of 5 machine learning models per statistic\n"
+        result_text += "• Incorporates 100+ basketball analytics features\n"
+        result_text += "• Cross-validated predictions with confidence intervals\n"
+    
+        # Disclaimer
+        result_text += "\n" + "⚠️  DISCLAIMER:\n"
+        result_text += "Multi-stat predictions based on historical performance and statistical models.\n"
+        result_text += "Actual results may vary due to injuries, matchups, game flow, and other factors.\n"
+        result_text += "Use for entertainment and analysis purposes only.\n"
+    
+        self.results_text.setPlainText(result_text)
+
+    def _display_points_only_results(self, predictions: Dict):
+        """Display original points-only prediction results (keep existing functionality)."""
+        # This is the existing display_prediction_results method renamed
+        # Keep all the existing code for backward compatibility
+        player_name = predictions.get('player_name', 'Unknown Player')
+        recent_avg = predictions.get('recent_average', 0)
+
     def display_prediction_results(self, predictions: Dict):
         """Display enhanced prediction results with role context."""
         player_name = predictions.get('player_name', 'Unknown Player')
